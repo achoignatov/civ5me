@@ -1,5 +1,7 @@
 # Custom city models: what the game supports and the plan
 
+> **2026-11-23 late: Barad-dûr is wired back in** (`build_dlc.py --landmarks --no-landmark-tests`, also used by the mod manager's dev build). The empty-tile bug in §8 is still open.
+>
 > **2026-11-23: custom city models are switched OFF.** Every city uses stock art. The models, scripts and tools
 > stay in the repo; `python3 tools/build_dlc.py --landmarks` builds them back in (`--redraw-button` adds the debug
 > buttons). Before resuming, read "2026-11-23 evening: STATUS" in §8: several earlier results are invalid.
@@ -461,7 +463,8 @@ Everything on the wonder path is deterministic, so it can't produce 3-in-10 resu
 | Map | terrain is fixed data (64,28 = plains **hill** next to mountains 65,28 / 65,29); **resources and some city-state starts are re-rolled each game** (`Map.Rand`), so two launches are never the same map |
 
 New evidence from the two screenshots (19:27 empty, 19:29 rendered): in the empty launch an **orange fire glow is
-visible on the ground just west of the city tile**, and the city's ground decal is drawn. That suggests the landmark
+visible on the ground just west of the city tile**, and the city's ground decal is drawn. **(2026-11-23: the user says
+this is not true; the fire does not burn beside the tile. Ignore this clue.)** That suggests the landmark
 instance (and its effects) was created and the city's model group was hidden or torn down afterwards, i.e. not the
 "never bound" path assumed above. Unconfirmed.
 
@@ -630,3 +633,63 @@ orbit would have overwritten the beam's gaze). Diagnostic cities: "Doom Test 1" 
 
 **In-game check:** found or rename a city "Mount Doom". Effect sizes are the only untested numbers: if the ash column is
 too small or too big, change `scale` in `landmarks.EFFECTS['DOOM_*']` (no model rebuild needed).
+
+### 2026-11-23 late: "one registration" experiment (installed, awaiting the user's test)
+
+Question: does the second city fail because it is a SECOND building + WonderArtInfo bound to the same `.fxsxml`?
+`landmarks.ONE_REGISTRATION = True` moves Mount Doom's name key and alias onto Barad-dûr's row, so the pack has ONE
+landmark building (`BUILDING_MEC_LM_BARAD_DUR`) and ONE WonderArtInfo, and both cities get it. Read the result:
+- Mount Doom (2nd city) now draws -> the second registration was the problem; give each landmark its own copy of the files
+  or keep one registration per model.
+- Still never draws -> it's the city (slot 32 without a palace / city layout / bounds), not the registration.
+`test_landmarks.py` reports the Mount Doom checks as failures while this is on (expected).
+**Result (user, 2026-11-23 late):** same behaviour: the capital draws as before, Mount Doom (same building, same
+WonderArtInfo) still never draws. **The second registration is ruled out.** The failure belongs to the city (non-capital /
+no palace / location), not to the name, building row or art entry.
+
+### 2026-11-23 late: focus = capital 100%. Step 1: static only (installed, awaiting the user's launches)
+`landmarks.SHOW_VARIANT = 'T1'`: Barad-dûr shows `MEC_LM_BaradDur_T1.fxsxml` (static fortress + tower, `Wonder_DecisionTree`,
+no skinned Eye, no Idle animation, no triggers/effects/beam). (The "fire glowing on the ground west of the tile" clue,
+from a screenshot read on 2026-11-22, is WRONG per the user; don't use it.) Plain bisection: static draws in every launch -> the
+animated part is the cause; add pieces back one at a time. Static also fails -> next suspect is size (shrink into the hex).
+
+### 2026-11-23 late: "build it later" (user's idea; installed, replaces the static step, which was never tested)
+The model is no longer added at founding. `landmarks.BUILDABLE = True`: `BUILDING_MEC_LM_BARAD_DUR` costs 1 production,
+can only be built in a city whose name matches (`GameEvents.CityCanConstruct` in MEC_Landmarks.lua, synced data only),
+and Lua never gives it (it only removes it after a rename). Until it's built the capital shows stock art; once built
+(next turn), the full model (`SHOW_VARIANT = None`) is added to a city whose art already exists. Tests: buildable mode
+in test_landmarks.py. If this draws every time, the failure is tied to adding the art in the founding frame.
+**Result (user):** 4 tries: the model drew on completion 3 times; the 4th time it did not draw. So adding later does not
+make it 100%.
+
+### 2026-11-23 late: given on the next turn, no building to choose (installed)
+`BUILDABLE = False`, `GIVE_AT_FOUNDING = False`: the founding and capture events only remove; the owner's next
+`PlayerDoTurn` adds the landmark (so it appears at the start of the turn after founding). Loaded games still get it at load.
+Full model. Tests: delayed mode in test_landmarks.py.
+**Result (user):** when it fails, the houses and everything else on the tile disappear (the known whole-tile symptom).
+
+### 2026-11-23 late: zeroed bounding boxes (built, not installed yet: the game was running)
+Field-by-field comparison of our .gr2 with the stock palace: same structure, bone bindings all resolve; differences left
+are the BoneBinding OBBMin/OBBMax (stock: always 0; ours: real boxes) and the material FallbackMtl (stock: a hashed name,
+ours: empty; UseFallbackMtl = 0 in both, so probably unused). `landmarks.ZERO_OBB = True` writes every landmark .gr2 with
+zeroed boxes like stock (the earlier T1Z probe went through the broken Cycle button, so this was never really tested).
+Still given on the turn after founding.
+**Correction:** the zero-OBB build was NOT tested yet: the user's session 23:30-23:34 ran the previous "next turn" build
+(installed 23:29; the zero-OBB install was refused because the game was running). Installed after that session (23:36).
+
+**Session 23:30-23:34 (next-turn build, Lua.log saved in ~/civ5-backup-20261121-capitals/zeroobb-20261123-233610/):**
+ONE game process (Lua initialised once, timestamps continuous): new game 1 drew, new game 2 drew, new game 3 failed
+(whole tile empty), then loading that game's autosave IN THE SAME PROCESS still failed. Lua side identical every time
+(BUILDING_MEC_LM_BARAD_DUR = 1 at 64,28). So the bad state starts at some point inside a session and then sticks for the
+rest of that process. Memory (memwatch CSVs 16:47-17:51): VmSize ~2.75 GB, ~1.3 GB free, largest gap ~0.9 GB, flat
+across games: no exhaustion. Next: count games per process; does the FIRST game after a fresh start of Civ ever fail?
+
+### 2026-11-23 late: EXTERNAL MODEL test (user: "is it Blender / our pipeline?") - installed
+`landmarks.EXTERNAL_ART`: Barad-dûr's landmark shows a model NOT made by us: the community "Blue Mosque" wonder
+(github.com/clumsy/Civ5-MP_MODSPACK, Mods/Wonder - Blue Mosque), `Blue_Mosque.gr2` copied byte-identical (Granny
+Standard Exporter 2.8.21 from 3ds Max: a reworked stock Hagia Sophia; textures = the stock Hagia Sophia ones from
+WonderTextures.fpk). fxsxml written like the stock `hagia_sophia.fxsxml`, fScale 0.05 (stock Hagia Sophia's). Same
+mechanism as ours (palace slot 32, given the turn after founding). Files in build/external/bluemosque (gitignored, SOURCE.txt).
+Read: it also vanishes the same way -> not Blender / our writer / our files: the mechanism (dummy building in slot 32,
+loose art via WonderDefines) is the problem. It never vanishes over many games -> our files are the problem.
+Backup: /home/acho/civ5-backup-20261121-capitals/external-20261123-234203

@@ -313,7 +313,7 @@ def build_landmarks():
         import probes
         for f in sorted(set(need)):
             if f.endswith('.gr2'):      # stock section layout (docs/CITY_MODELS.md §8, 2026-11-23)
-                probes.to_stock_sections(os.path.join(landmarks.OUT, f), os.path.join(art, f))
+                probes.to_stock_sections(os.path.join(landmarks.OUT, f), os.path.join(art, f), zero_obb=landmarks.ZERO_OBB)
             else:
                 shutil.copy2(os.path.join(landmarks.OUT, f), art)
     if diag and not stock:   # Test 1 rewritten like stock files (hashed strings / zero OBB), tools/landmarks/probes.py
@@ -325,6 +325,13 @@ def build_landmarks():
                      os.path.join(art, landmarks.LOOSE_MODEL + '.gr2'))
         open(os.path.join(art, landmarks.LOOSE_MODEL + '.fxsxml'), 'w', encoding='utf-8', newline='\r\n').write(
             landmarks.loose_probe_fxsxml())
+    if landmarks.EXTERNAL_ART:     # a model not made by us (docs/CITY_MODELS.md §8, "external model")
+        x = landmarks.EXTERNAL_ART
+        for f in os.listdir(x['dir']):
+            if f.lower().endswith(('.gr2', '.dds')):
+                shutil.copy2(os.path.join(x['dir'], f), art)      # byte-identical, no conversion
+        open(os.path.join(art, 'MEC_Ext_%s.fxsxml' % x['model']), 'w', encoding='utf-8', newline='\r\n').write(
+            landmarks.external_fxsxml())
     open(os.path.join(art, landmarks.WONDER_XML), 'w', encoding='utf-8', newline='\r\n').write(
         landmarks.wonder_defines(stock_art=stock, with_diagnostics=diag))
     vfx, vmodels = [], []
@@ -365,7 +372,7 @@ def build_landmarks():
     for e in landmarks.entries(diag):
         r = db.execute('select Cost, ArtDefineTag, DisplayPosition, ArtInfoCulturalVariation, ArtInfoEraVariation, '
                        'ArtInfoRandomVariation from Buildings where Type=?', (e['building'],)).fetchone()
-        assert r is not None and r[0] == -1 and r[1] == e['tag'], r
+        assert r is not None and r[0] == (1 if landmarks.BUILDABLE and e['keys'] else -1) and r[1] == e['tag'], r
         assert os.path.exists(os.path.join(art, e['fxsxml'])) or stock or e.get('stock'), e['fxsxml']
         assert r[2] == e.get('display', landmarks.DISPLAY_POSITION) and not any(v in (1, 'true') for v in r[3:]), r
     db.close()

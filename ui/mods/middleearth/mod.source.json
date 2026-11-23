@@ -17,7 +17,7 @@
     }
   },
   "build": {
-    "_comment": "Development only (the app running from this repository): run before every install of this mod, so the app installs the working tree as it is now, committed or not. cwd is relative to ui/. Then the app regenerates this mod's payload. Packaged apps never build. (2026-11-23: the 'Landmark models (Blender)' step was removed: custom city models are off, see docs/CITY_MODELS.md; to bring them back, re-add it and pass --landmarks to build_dlc.py.)",
+    "_comment": "Development only (the app running from this repository): run before every install of this mod, so the app installs the working tree as it is now, committed or not. cwd is relative to ui/. Then the app regenerates this mod's payload. Packaged apps never build. (2026-11-23 later: landmarks back ON for Barad-dur/Mount Doom via --landmarks --no-landmark-tests; models come prebuilt from build/landmarks/out, rebuild them with blender -b --factory-startup -P tools/landmarks/build_models.py.)",
     "cwd": "..",
     "steps": [
       {
@@ -36,12 +36,16 @@
         "name": "DLC pack",
         "command": [
           "python3",
-          "tools/build_dlc.py"
+          "tools/build_dlc.py",
+          "--landmarks",
+          "--no-landmark-tests"
         ],
         "commandWin32": [
           "py",
           "-3",
-          "tools/build_dlc.py"
+          "tools/build_dlc.py",
+          "--landmarks",
+          "--no-landmark-tests"
         ]
       }
     ]

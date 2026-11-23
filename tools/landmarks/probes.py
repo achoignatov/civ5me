@@ -23,10 +23,15 @@ sys.path.insert(0, HERE)
 from landmarks import T1_PROBES as VARIANTS  # noqa: E402  (suffix, label, hashed, zero OBB, stock sections)
 
 
-def to_stock_sections(src, dst):
-    """Copy a .gr2 rewritten in the stock section layout (vertices / indices / types in their own sections)."""
+def to_stock_sections(src, dst, zero_obb=False):
+    """Copy a .gr2 rewritten in the stock section layout (vertices / indices / types in their own sections).
+    zero_obb: also zero every BoneBinding OBBMin/OBBMax like ALL stock files (2026-11-23: the earlier T1Z test of
+    this ran through the broken Cycle button, so it was never really tested)."""
     f = gr2.read(src)
-    gr2.write(dst, f.root_type, f.root(), f.tag, sections=True)
+    root = f.root()
+    if zero_obb:
+        _zero_obb(root)
+    gr2.write(dst, f.root_type, root, f.tag, sections=True)
 
 
 def _zero_obb(v, seen=None):

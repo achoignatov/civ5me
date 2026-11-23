@@ -40,11 +40,16 @@ local function LandmarkFor(city)
 	return g_ByName[key] or g_ByName[string.lower(key)]
 end
 
-local function SyncCity(city)
+-- g_Buildable (landmarks.BUILDABLE): the landmark is built by the city (1 production, only where the name matches),
+-- so Lua never ADDS it; it only removes a landmark from a city whose name no longer matches.
+-- canAdd = false: only remove (g_GiveAtFounding = false: founding/capture events never add the art; the owner's next
+-- PlayerDoTurn does, so the model goes into a city whose art already exists).
+local function SyncCity(city, canAdd)
 	if not city then return end
 	local want = LandmarkFor(city)
 	for _, id in ipairs(g_AllIDs) do
 		local n = (id == want) and 1 or 0
+		if (g_Buildable or canAdd == false) and n == 1 then n = city:GetNumRealBuilding(id) end
 		if city:GetNumRealBuilding(id) ~= n then
 			city:SetNumRealBuilding(id, n)
 			print("MEC_Landmarks: " .. tostring(city:GetNameKey()) .. " (" .. city:GetX() .. "," .. city:GetY() .. ") "
@@ -56,7 +61,7 @@ end
 local function SyncPlayer(playerID)
 	local player = Players[playerID]
 	if player and player:IsAlive() then
-		for city in player:Cities() do SyncCity(city) end
+		for city in player:Cities() do SyncCity(city, true) end
 	end
 end
 
@@ -66,10 +71,22 @@ end
 
 local function SyncAt(x, y)
 	local plot = Map.GetPlot(x, y)
-	if plot then SyncCity(plot:GetPlotCity()) end
+	if plot then SyncCity(plot:GetPlotCity(), g_GiveAtFounding) end
 end
 
+local g_IsLandmark = {}
+for _, id in ipairs(g_AllIDs) do g_IsLandmark[id] = true end
+
 if #g_AllIDs > 0 then
+	if g_Buildable then
+		-- a landmark can only be built in the city whose name matches it (synchronised data only)
+		GameEvents.CityCanConstruct.Add(function(playerID, cityID, buildingType)
+			if not g_IsLandmark[buildingType] then return true end
+			local player = Players[playerID]
+			local city = player and player:GetCityByID(cityID)
+			return city ~= nil and LandmarkFor(city) == buildingType
+		end)
+	end
 	-- registered after METSL_InGame (loaded first), so a Dynamic City Naming rename has already happened
 	GameEvents.PlayerCityFounded.Add(function(playerID, x, y) SyncAt(x, y) end)
 	GameEvents.CityCaptureComplete.Add(function(oldOwner, isCapital, x, y, newOwner) SyncAt(x, y) end)

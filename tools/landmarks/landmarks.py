@@ -68,6 +68,54 @@ LANDMARKS = [
          art_of='BARAD_DUR'),
 ]
 
+# 2026-11-23 experiment (docs/CITY_MODELS.md §8, "one registration"): the second city has never drawn, while
+# the capital usually does. Test whether the SECOND building / WonderArtInfo registration is the problem:
+# Mount Doom's names go onto Barad-dur's row, so both cities get BUILDING_MEC_LM_BARAD_DUR and the pack has
+# only ONE landmark building and ONE WonderArtInfo. Set to False to restore the separate Mount Doom row.
+ONE_REGISTRATION = True
+if ONE_REGISTRATION:
+    _doom = [x for x in LANDMARKS if x['key'] == 'MOUNT_DOOM'][0]
+    _barad = [x for x in LANDMARKS if x['key'] == 'BARAD_DUR'][0]
+    _barad['name_keys'] = _barad['name_keys'] + _doom['name_keys']
+    _barad['aliases'] = _barad['aliases'] + _doom['aliases']
+    LANDMARKS.remove(_doom)
+
+# 2026-11-23 experiment "capital 100%": which variant the real landmark shows. None = the full model (Eye animation,
+# fire, beam). 'T1' = static fortress + tower only (no skinned Eye, no animation, no effects): an empty-tile launch
+# showed the Eye's fire on the ground west of the tile, so the animated part is the first suspect.
+SHOW_VARIANT = None   # 2026-11-23: back to the full model for the 'build it later' test (static was never tested)
+
+# 2026-11-23 experiment (user): the model is NOT given at founding. The landmark is a normal building costing 1
+# production, buildable only in a city whose name matches (GameEvents.CityCanConstruct in MEC_Landmarks.lua).
+# Until it's built the city shows stock art; once built (next turn), our model is added to an existing city.
+# False = given by Lua (see GIVE_AT_FOUNDING), never buildable.
+# Result (user, 4 tries): drew on completion 3 times, not the 4th.
+BUILDABLE = False
+
+# 2026-11-23 (user): no building to choose. Lua gives the landmark on the owner's first turn AFTER the city was
+# founded (PlayerDoTurn), never in the founding event itself, so the art is added to a city whose art already exists.
+# True = old behaviour (given in PlayerCityFounded / CityCaptureComplete).
+GIVE_AT_FOUNDING = False
+
+# 2026-11-23: every stock .gr2 leaves the BoneBinding OBBMin/OBBMax at zero; ours had real boxes. If the engine uses
+# them for the city group's bounds, a wrong box could stop the whole tile (houses too) from drawing. Never validly
+# tested before (the T1Z probe went through the broken Cycle button). True = written zeroed like stock.
+ZERO_OBB = True
+
+# 2026-11-23 experiment (user): show a model that is NOT made by us (not Blender, not our .gr2 writer) through the
+# same landmark mechanism. None = our model. The files come from build/external/<name>/ (see SOURCE.txt there).
+# fxsxml written like the stock Hagia Sophia's; fScale 0.05 = the stock wonder scale for this model.
+EXTERNAL_ART = dict(dir=os.path.join(ROOT, 'build', 'external', 'bluemosque'), model='Blue_Mosque', scale=0.05,
+                    textures=['HBHagiaSophia_DIFF.dds', 'HBHagiaSophia_SREF.dds', 'Hagia_Sophia_DIFF.dds',
+                              'Hagia_Sophia_SREF.dds', 'Generic_Grey_8.dds'])
+
+
+def external_fxsxml():
+    x = EXTERNAL_ART
+    return ('<Asset>\n\t<Mesh file="%s.gr2"/>\n' % x['model']
+            + ''.join('\t<Texture file="%s"/>\n' % t for t in x['textures'])
+            + '\t<DecisionTree file="Wonder_DecisionTree.ddtxml" source="Tool"/>\n</Asset>\n')
+
 # ---------------------------------------------------------------------------------------------
 # Effects on the animated part's bones (rig() in the model module names the key per bone).
 # Particle/model effects are the game's own systems; only the transform is ours. Effect sizes are
@@ -172,8 +220,12 @@ def entries(with_diagnostics=True):
     """One building per entry: the landmark itself, plus the diagnostic variants of animated ones."""
     out = []
     for lm in LANDMARKS:
-        out.append(dict(building=building(lm), tag=art_tag(lm), title=lm['title'], fxsxml=art_model(lm) + '.fxsxml',
-                        scale=lm['scale'], keys=lm['name_keys'], aliases=lm['aliases']))
+        main = art_model(lm) + ('_%s' % SHOW_VARIANT if SHOW_VARIANT and lm.get('animated') else '') + '.fxsxml'
+        scale = lm['scale']
+        if EXTERNAL_ART:
+            main, scale = 'MEC_Ext_%s.fxsxml' % EXTERNAL_ART['model'], EXTERNAL_ART['scale']
+        out.append(dict(building=building(lm), tag=art_tag(lm), title=lm['title'], fxsxml=main,
+                        scale=scale, keys=lm['name_keys'], aliases=lm['aliases']))
         if lm.get('animated') and with_diagnostics:
             first = lm.get('test_prefix') or lm['aliases'][0].split()[0]     # "Barad Test 1", "Doom Test 1" ...
             for suffix, label, _ in DIAGNOSTICS:
@@ -249,7 +301,7 @@ def _x(s):
 
 def gamedata(with_diagnostics=True):
     L = ['<?xml version="1.0" encoding="utf-8"?>',
-         '<!-- Middle-earth landmark buildings: no gameplay, never buildable; given by MEC_Landmarks.lua -->',
+         '<!-- Middle-earth landmark buildings: no gameplay; buildable for 1 production only in the matching city (BUILDABLE), or given by MEC_Landmarks.lua -->',
          '<GameData>', '\t<BuildingClasses>']
     for e in entries(with_diagnostics):
         b = e['building']
@@ -262,7 +314,7 @@ def gamedata(with_diagnostics=True):
         for k, v in (('Type', b), ('BuildingClass', b.replace('BUILDING_', 'BUILDINGCLASS_')),
                      ('Description', 'TXT_KEY_' + b), ('Help', 'TXT_KEY_' + b + '_HELP'),
                      ('Civilopedia', 'TXT_KEY_' + b + '_HELP'),
-                     ('Cost', -1), ('FaithCost', -1), ('GoldMaintenance', 0), ('ConquestProb', 100),
+                     ('Cost', 1 if BUILDABLE and e['keys'] else -1), ('FaithCost', -1), ('GoldMaintenance', 0), ('ConquestProb', 100),
                      ('NeverCapture', 'false'), ('NukeImmune', 'true'), ('HurryCostModifier', -1),
                      ('MinAreaSize', -1), ('ArtDefineTag', e['tag']), ('DisplayPosition', e.get('display', DISPLAY_POSITION)),
                      ('ArtInfoCulturalVariation', 'false'), ('ArtInfoEraVariation', 'false'),
@@ -312,4 +364,6 @@ def lua_table(with_diagnostics=True):
             lstr(e['building']), ', '.join(lstr(k) for k in e['keys']),
             ', '.join(lstr(a) for a in e['aliases'])))
     L.append('}')
+    L.append('g_Buildable = %s' % ('true' if BUILDABLE else 'false'))
+    L.append('g_GiveAtFounding = %s' % ('true' if GIVE_AT_FOUNDING else 'false'))
     return '\n'.join(L)

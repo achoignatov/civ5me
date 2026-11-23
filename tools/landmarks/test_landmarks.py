@@ -33,7 +33,9 @@ GameInfo = { Buildings = setmetatable({}, {
 local handlers = {}
 local function event(name) handlers[name] = {}; return { Add = function(f) table.insert(handlers[name], f) end } end
 GameEvents = { PlayerCityFounded = event("PlayerCityFounded"), CityCaptureComplete = event("CityCaptureComplete"),
-               PlayerDoTurn = event("PlayerDoTurn") }
+               PlayerDoTurn = event("PlayerDoTurn"), CityCanConstruct = event("CityCanConstruct") }
+-- like the game: every handler must allow it
+function CanConstruct(p, c, b) for _, f in ipairs(handlers.CityCanConstruct) do if not f(p, c, b) then return false end end return true end
 function Fire(name, ...) for _, f in ipairs(handlers[name]) do f(...) end end
 
 local plots = {}
@@ -42,10 +44,12 @@ for i = 0, 3 do
   local p = { id = i, cities = {} }
   function p:IsAlive() return true end
   function p:Cities() local i2 = 0; return function() i2 = i2 + 1; return self.cities[i2] end end
+  function p:GetCityByID(id) for _, c in ipairs(self.cities) do if c.id == id then return c end end end
   Players[i] = p
 end
 function NewCity(owner, x, y, key)
-  local c = { owner = owner, x = x, y = y, key = key, b = {} }
+  NextCityID = (NextCityID or 100) + 1
+  local c = { owner = owner, x = x, y = y, key = key, b = {}, id = NextCityID }
   function c:GetNameKey() return self.key end
   function c:SetName(k) self.key = k end
   function c:GetX() return self.x end
@@ -66,6 +70,70 @@ Map = { GetPlot = function(x, y) local c = plots[x .. "," .. y]; return { GetPlo
 '''
 
 
+def buildable_tests(lua, pre, LM, n, check, fails):
+    """landmarks.BUILDABLE: never given by Lua; buildable (1 production) only in the matching city."""
+    can = lambda c, b=LM: lua.eval('CanConstruct')(c.owner, c.id, b)
+    check('existing Barad-dur on load is NOT given the landmark', n(pre), 0)
+    cap = lua.eval('NewCity(1, 5, 5, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
+    lua.eval('Fire("PlayerCityFounded", 1, 5, 5)')
+    check('capital founded as Barad-dur: nothing given (stock art)', n(cap), 0)
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check('... still nothing after a turn', n(cap), 0)
+    check('Barad-dur CAN build the landmark', can(cap), True)
+    other = lua.eval('NewCity(1, 6, 6, "TXT_KEY_CITY_NAME_MEC_GORGOROTH")')
+    check('other city can NOT build it', can(other), False)
+    check('other buildings unaffected', can(other, 0), True)
+    doom = lua.eval('NewCity(1, 7, 7, "TXT_KEY_CITY_NAME_MEC_MOUNT_DOOM")')
+    check('Mount Doom can build it (ONE_REGISTRATION)', can(doom), True)
+    cap.SetNumRealBuilding(cap, LM, 1)          # the city finishes building it
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check('built landmark stays', n(cap), 1)
+    cap.SetName(cap, 'Dark Tower')
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check('renamed away: landmark removed', n(cap), 0)
+    check('renamed away: can no longer build it', can(cap), False)
+    other.SetName(other, 'barad-dûr')
+    check('player-typed "barad-dûr" can build it', can(other), True)
+    if fails:
+        sys.exit('%d check(s) failed' % len(fails))
+    print('all checks passed (buildable mode)')
+
+
+def delayed_tests(lua, pre, LM, n, check, fails):
+    """landmarks.GIVE_AT_FOUNDING = False: given on the owner's next PlayerDoTurn, never in the founding event."""
+    check('existing Barad-dur on load gets the landmark', n(pre), 1)
+    cap = lua.eval('NewCity(1, 5, 5, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
+    lua.eval('Fire("PlayerCityFounded", 1, 5, 5)')
+    check('founding turn: nothing yet (stock art)', n(cap), 0)
+    lua.eval('Fire("PlayerDoTurn", 0)')
+    check("another player's turn: still nothing", n(cap), 0)
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check("owner's next turn: landmark given", n(cap), 1)
+    other = lua.eval('NewCity(1, 6, 6, "TXT_KEY_CITY_NAME_MEC_GORGOROTH")')
+    lua.eval('Fire("PlayerCityFounded", 1, 6, 6)')
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check('other city stays stock', n(other), 0)
+    lua.eval('MoveCity')(cap, 0)
+    lua.eval('Fire("CityCaptureComplete", 1, true, 5, 5, 0, 3, true)')
+    check('captured Barad-dur keeps it', n(cap), 1)
+    cap.SetName(cap, 'Dark Tower')
+    lua.eval('Fire("CityCaptureComplete", 1, true, 5, 5, 0, 3, true)')
+    check('capture event removes it after a rename', n(cap), 0)
+    lua.eval('Fire("PlayerDoTurn", 0)')
+    check('renamed away: stays removed', n(cap), 0)
+    other.SetName(other, 'barad-dûr')
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check('player-typed "barad-dûr": given on the next turn', n(other), 1)
+    doom = lua.eval('NewCity(1, 7, 7, "TXT_KEY_CITY_NAME_MEC_MOUNT_DOOM")')
+    lua.eval('Fire("PlayerCityFounded", 1, 7, 7)')
+    check('Mount Doom founding turn: nothing', n(doom), 0)
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check('Mount Doom next turn: Barad-dur landmark (ONE_REGISTRATION)', n(doom), 1)
+    if fails:
+        sys.exit('%d check(s) failed' % len(fails))
+    print('all checks passed (given on the next turn)')
+
+
 def main():
     if not os.path.exists(SCRIPT):
         sys.exit('build first: python3 tools/build_dlc.py')
@@ -83,6 +151,10 @@ def main():
         if got != want:
             fails.append(label)
 
+    if lua.eval('g_Buildable'):
+        return buildable_tests(lua, pre, LM, n, check, fails)
+    if not lua.eval('g_GiveAtFounding'):
+        return delayed_tests(lua, pre, LM, n, check, fails)
     check('existing city on load gets the landmark', n(pre), 1)
     # Mordor founds its capital: named Barad-dur from Civilization_CityNames
     cap = lua.eval('NewCity(1, 5, 5, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
