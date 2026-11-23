@@ -4,7 +4,7 @@
 > stay in the repo; `python3 tools/build_dlc.py --landmarks` builds them back in (`--redraw-button` adds the debug
 > buttons). Before resuming, read "2026-11-23 evening: STATUS" in §8: several earlier results are invalid.
 
-Status (2026-11-22 evening): **Plan A implemented for one city, Barad-dûr. Built and installed, not yet checked in game.**
+Historical status (2026-11-22 evening, superseded by the note above): **Plan A implemented for one city, Barad-dûr. Built and installed, not yet checked in game.**
 Steps 1 and 2 (stock model, then a re-shipped old model) were skipped at the user's request. A new Barad-dûr
 centrepiece was built directly, inside the envelope of the models that rendered on 2026-11-21 (see "Implementation"
 below). Every other city is untouched (stock art).

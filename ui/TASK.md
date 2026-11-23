@@ -1,5 +1,7 @@
 # Task: Build a React + Electron Mod Manager for Civilization V (BNW)
 
+> This is the original task description (2026-11-22). The implemented app is documented in [README.md](README.md), which wins where the two differ. Main differences: there is no folder picker and no "change directory" option (the app searches the default Steam locations and its own folder; for a custom location, start the app from the game folder); the MiddleEarth files come from the project's DLC build (`Assets/DLC/Shared`: one replaced file, `Upgrade1.Civ5Pkg`, plus the added `MiddleEarth/` folder) rather than Lua/asset patches spread over the install; and nothing is ever installed or restored automatically, only when the user clicks a tile.
+
 ## 1. Project Overview
 
 I have an existing multiplayer Civilization V: Brave New World (BNW) modification called **MiddleEarth**.

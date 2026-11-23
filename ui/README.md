@@ -13,7 +13,7 @@ Two ways to use this folder:
 
 | | Command | Result |
 |---|---|---|
-| **Developing the mod** (repo checkout) | `npm install` once, then `npm run dev` | Rebuilds the mod from the repository as it is now (committed or not), starts the app, and **installs that build into the game right away** |
+| **Developing the mod** (repo checkout) | `npm install` once, then `npm run dev` | Rebuilds the mod from the repository as it is now (committed or not) and starts the app. Nothing is installed until you click a tile |
 | **Sharing with friends** | `npm run build` | **One file:** `release/Civ5-MiddleEarth-<version>-windows.exe`. Friends just run it: Node/Electron and the mod are inside, nothing to install (no Node, Git or Python) |
 
 ```bash
@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-`npm run dev` needs what the mod build needs: Python 3 (`python3`, or `py -3` on Windows) and optionally Blender (see below). The app never installs or restores anything on its own: at startup it only detects and inspects the game (read-only); switching happens only when you click a tile.
+`npm run dev` needs what the mod build needs: Python 3 (`python3`, or `py -3` on Windows). The app never installs or restores anything on its own: at startup it only detects and inspects the game (read-only); switching happens only when you click a tile.
 
 Other commands:
 
@@ -33,7 +33,7 @@ Other commands:
 | `npm run typecheck` | Type-check main, preload and renderer |
 | `npm run dev` | Rebuilds the mod (`build:mod`), starts the app with hot reload (installs nothing; click a tile) |
 | `npm run build` | **Release build for friends:** rebuilds the mod from the repository (`npm run build:mod`), then produces a single portable `release/Civ5-MiddleEarth-<version>-windows.exe` with the mod inside |
-| `npm run build:mod` | Only the mod: runs the `build` steps of every `mod.source.json` (Blender, `tools/build.py`, `tools/build_dlc.py`), then regenerates the payload |
+| `npm run build:mod` | Only the mod: runs the `build` steps of every `mod.source.json` (`tools/build.py`, `tools/build_dlc.py`), then regenerates the payload |
 | `npm run bundle` | Only the production JS bundle in `out/` (no mod rebuild, no packaging) |
 | `npm start` | Run the production bundle |
 | `npm run dist:linux` | Like `build`, but a Linux AppImage (`release/Civ5-MiddleEarth-<version>-linux.AppImage`) |
@@ -44,12 +44,13 @@ Other commands:
 
 After that, while the app runs from this repository (`npm run dev` / `npm start`, i.e. not a packaged build), the **Middle Earth** tile first rebuilds the mod from the working tree as it is now (committed or not), then installs it. The steps come from the `build` section of `mods/middleearth/mod.source.json`:
 
-1. Landmark models (Blender, `tools/landmarks/build_models.py`; skipped with a note if Blender isn't installed),
-2. `python3 tools/build.py`,
-3. `python3 tools/build_dlc.py`,
-4. this mod's payload (`scripts/build-payload.mjs middleearth`).
+1. `python3 tools/build.py`,
+2. `python3 tools/build_dlc.py`,
+3. this mod's payload (`scripts/build-payload.mjs middleearth`).
 
-The tile says "rebuilds from the repository first (dev)". Progress shows the running step. The result names the revision (e.g. `48dbd07 + uncommitted changes`) and the build log (`<app data>/build-logs/build-middleearth.log`). If a step fails, nothing is installed and the error shows the step's last output. Installing again after a change rebuilds again and replaces the previous build (new build id). The **Vanilla BNW** tile never builds. Packaged apps (for players) never build; they install the payload they ship with. The rebuild code lives in `src/main/core/modManager/sourceBuild.ts`; other mods get it by adding a `build` section to their `mod.source.json`.
+Custom city models are switched off (see `../docs/CITY_MODELS.md`), so there is no Blender step. To bring them back, re-add a `blender … tools/landmarks/build_models.py` step before step 1 and pass `--landmarks` to `build_dlc.py`.
+
+The tile says "rebuilds from the repository first (dev)". Progress shows the running step. The result names the revision (e.g. `2725e68 + uncommitted changes`) and the build log (`<app data>/build-logs/build-middleearth.log`). If a step fails, nothing is installed and the error shows the step's last output. Installing again after a change rebuilds again and replaces the previous build (new build id). The **Vanilla BNW** tile never builds. Packaged apps (for players) never build; they install the payload they ship with. The rebuild code lives in `src/main/core/modManager/sourceBuild.ts`; other mods get it by adding a `build` section to their `mod.source.json`.
 
 `npm start`, `npm run dist:dir` and `npm run payload` use the existing `../dist` build; `npm run dev` and `npm run build` build it themselves.
 
@@ -59,8 +60,8 @@ The tile says "rebuilds from the repository first (dev)". Progress shows the run
 
 - **Windows:** a portable exe that carries Electron (Chromium + Node) and the mod. Nothing to install: it unpacks itself to a temp folder on every start, so the first window takes a few seconds. It has Electron's default icon and version info (editing exe resources from Linux would need Wine). It isn't signed, so SmartScreen warns: "More info" -> "Run anyway".
 - **Linux (optional, `npm run dist:linux`):** an AppImage. `chmod +x` it, then run it (needs FUSE, which most distributions have).
-- The file carries the whole payload (~290 MB uncompressed, ~235 MB download). All players must use the same build (compare the build id in the app).
-- Blender is optional: without it, the last generated landmark models are used and the build prints a warning.
+- The file carries the whole payload (~285 MB uncompressed, ~235 MB download). All players must use the same build (compare the build id in the app).
+- After changing the mod, run `npm run build` again and send the new exe: an old exe installs the old build.
 
 ## Using the app
 
@@ -73,7 +74,7 @@ The tile says "rebuilds from the repository first (dev)". Progress shows the run
 3. Click the **Vanilla BNW** or **Middle Earth** tile. Progress is shown; all buttons and tiles are locked while an operation runs. While Civilization V is running (checked every 5 seconds) a yellow bar at the bottom says so and both tiles are locked.
 4. After a switch the game cache is emptied (see below). Start the game normally.
 
-> **Your current install (2026-11-22):** the game already contains MiddleEarth, extracted by hand, so the app shows *Unknown / Inconsistent: installed, but not by this app*. Click the **Middle Earth** tile to let the app take it over. Nothing is copied: identical files are adopted and the original `Upgrade1.Civ5Pkg` is taken from the bundled copy. Or click the **Vanilla BNW** tile to remove it.
+> **Pack installed by hand (from `MiddleEarth_DLC.zip`)?** The app shows *Unknown / Inconsistent: installed, but not by this app*. Click the **Middle Earth** tile to let the app take it over: identical files are adopted, different ones are backed up and replaced, and the original `Upgrade1.Civ5Pkg` is taken from the bundled copy. Or click the **Vanilla BNW** tile to remove it.
 
 ## What gets installed (derived from the project)
 
@@ -90,7 +91,7 @@ After switching, the game's cache folder is emptied (the project README requires
 
 The cache is not deleted. It's moved to the app's data folder as `game-cache-previous` (replacing the previous one). The game rebuilds it.
 
-Nothing else is touched. `config.ini`, the MODS folder and other DLC folders stay as they are. The standalone `dist/DLC/MiddleEarth` build (rejected by the game) and the MPPatch mod build (`dist/Middle Earth MP (v 1)`) are not used.
+Nothing else is touched. `config.ini`, the MODS folder and other DLC folders stay as they are. The standalone `dist/DLC/MiddleEarth` build (ignored by the game) and the intermediate mod build (`dist/Middle Earth MP (v 1)`, only the input of `build_dlc.py`) are not installed.
 
 ## Architecture
 
@@ -201,15 +202,14 @@ In each case the message explains what to click.
 
 ## Assumptions about the MiddleEarth project
 
-- `dist/DLC_Shared/Shared` (from `tools/build_dlc.py`, the "Upgrade 1" packaging at commit 079b51c) is the current, working build. It is identical to `dist/MiddleEarth_DLC.zip`.
+- `dist/DLC_Shared/Shared` (from `tools/build_dlc.py`, the "Upgrade 1" packaging) is the current, working build. It is identical to `dist/MiddleEarth_DLC.zip`.
 - The only vanilla file it replaces is `Assets/DLC/Shared/Upgrade1.Civ5Pkg`. `vendor/civ5/Upgrade1_original.Civ5Pkg` is a genuine copy of the stock file and is the same on Windows and Linux (same Steam depot). Every other file goes into the new `Assets/DLC/Shared/MiddleEarth/` folder.
 - Emptying the game cache after switching is required in both directions (README: install step 2 and "Undo").
-- Players don't use the MPPatch mod build at the same time.
+- Players don't also enable the old `Middle Earth MP (v 1)` mod or the six original mods in the Mods menu.
 
 ## Remaining manual steps / open issues
 
-- **Not yet tested by switching the real game.** The tests and the smoke run only read the real install. The engine was exercised end-to-end with the real payload on a mock game folder (`tests/realPayload.test.ts`).
 - Steam updates or *Verify integrity* put back the stock `Upgrade1.Civ5Pkg`. The app then shows *Unknown / Inconsistent*; click the **Middle Earth** tile to repair.
 - After changing the mod, run `npm run build` again and redistribute the exe. Friends must use the same build id.
-- No app icon or branding yet; nothing is code-signed. The Windows installer build from Linux needs Wine.
+- No custom app icon or exe version info yet (editing exe resources from Linux needs Wine); nothing is code-signed.
 - On Windows the running-game check uses `tasklist`, and on Linux `/proc`. If the game runs under an unusual process name, close it manually before switching.

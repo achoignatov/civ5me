@@ -1,6 +1,6 @@
 # Middle Earth Multiplayer Pack
 
-Yenyang's six Middle-earth mods merged into a single mod that works in multiplayer (via MPPatch), hotseat and single player:
+Yenyang's six Middle-earth mods merged into one pack that works in multiplayer, hotseat and single player. It installs into the game folder as DLC content; it doesn't use the Mods menu and doesn't need MPPatch.
 
 | Original mod | What's in the pack |
 |---|---|
@@ -11,36 +11,48 @@ Yenyang's six Middle-earth mods merged into a single mod that works in multiplay
 | Middle Earth Soundtrack (v 1) | Good/Evil peace and war soundtrack |
 | Middle Earth True Start Location (v 2) | The Middle-earth maps, true start locations, natural wonders, resource rules, dynamic city naming |
 
-## Two ways to install
+## Install (every player)
 
-**A. DLC build (recommended, no MPPatch needed):** `dist/MiddleEarth_DLC.zip`
+All players must install the **same build**, or the game desyncs. The lobby can't check this for you (see "How it's packaged" below).
 
-1. Every player extracts it into the game's `Assets/DLC` folder and lets it **overwrite** `Shared/Upgrade1.Civ5Pkg`. Afterwards there is `Assets/DLC/Shared/MiddleEarth/` and a modified `Assets/DLC/Shared/Upgrade1.Civ5Pkg`.
+**A. Mod manager app (recommended).** [`ui/`](ui/README.md) is a small Windows/Linux app that switches the game between vanilla BNW and this pack with one click: it backs up the file it replaces, can restore vanilla, empties the game cache, and shows a build id that players can compare. Share `ui/release/Civ5-MiddleEarth-<version>-windows.exe` (built with `npm run build` in `ui/`) with your friends. Close Civilization V before clicking a tile.
+
+**B. By hand:** `dist/MiddleEarth_DLC.zip`
+
+1. Extract it into the game's `Assets/DLC` folder and let it **overwrite** `Shared/Upgrade1.Civ5Pkg`. Afterwards there is `Assets/DLC/Shared/MiddleEarth/` and a modified `Assets/DLC/Shared/Upgrade1.Civ5Pkg`.
    - Linux/Proton: `unzip -o MiddleEarth_DLC.zip -d ~/.local/share/Steam/steamapps/common/"Sid Meier's Civilization V"/Assets/DLC/`
    - Windows: extract into `C:\Program Files (x86)\Steam\steamapps\common\Sid Meier's Civilization V\Assets\DLC\` and confirm overwriting.
+   - Updating an earlier hand install: delete `Assets/DLC/Shared/MiddleEarth/` first. Extracting never deletes files that a newer build no longer has.
 2. With the game closed, empty `Documents/My Games/Sid Meier's Civilization 5/cache`.
-3. Start Civ 5 normally. Don't use the Mods menu, and don't enable the Middle Earth mods: the pack replaces them.
-4. **Multiplayer → Standard Game → Host**, then choose a *Middle-earth TSL* map type.
+   - Linux/Proton: `~/.local/share/Steam/steamapps/compatdata/8930/pfx/drive_c/users/steamuser/Documents/My Games/Sid Meier's Civilization 5/cache`
 
-It doesn't show up as its own entry under "DLC Allowed"; it rides inside the game's free "Upgrade 1" package, which every copy of Civ 5 has.
+**Undo (by hand):** Steam → Civ V → Properties → Installed Files → *Verify integrity* restores the original `Upgrade1.Civ5Pkg`. Then delete `Assets/DLC/Shared/MiddleEarth` and empty the cache. A Steam update of the game can do the same verify on its own and disable the pack; install it again afterwards (in the app: click the **Middle Earth** tile).
 
-**Why "Upgrade 1":** Civ 5 only registers DLC packages whose `<Key>` signature is valid, and that signature can't be produced for a new package. A standalone `Assets/DLC/MiddleEarth` package is silently ignored (tested). So the pack is attached to the existing free package `Upgrade 1`. Its signed header (GUID, SteamApp, Version, Ownership, Key, PTags) is kept byte-for-byte. Only a load priority (400, after BNW and every DLC) and the Middle-earth entries are added. Tested on 2026-11-20: the game registers it, and its database then contains exactly the modded data.
+Don't enable the six original Middle Earth mods (or the old `Middle Earth MP (v 1)` mod) in the Mods menu at the same time: the pack already contains them.
 
-**Important for multiplayer:** the lobby can't tell whether a player has the pack, because "Upgrade 1" exists either way. Every player must install the identical zip, or the game will desync.
+## Play in multiplayer
 
-**Undo:** Steam → Civ V → Properties → Installed Files → *Verify integrity* restores the original `Upgrade1.Civ5Pkg`. Then delete `Assets/DLC/Shared/MiddleEarth` and empty the cache. The same verify also removes the pack after Steam updates the game; just extract the zip again.
+1. Start Civ 5 normally (not through the Mods menu): **Multiplayer → Standard Game → Host**.
+2. In the staging room:
+   - **Map Type:** *Middle-earth TSL: Third Age (Huge, World Wrap)* (the main map) or *Middle-earth TSL: Third Age (Large)*. Four more Standard/Huge/Large variants are listed too.
+   - **Map Size:** Huge for the Huge maps, Large for the Large maps, Standard for the Standard maps. The map grid is fixed; the size setting controls game balance (tech costs, etc.).
+   - **City-States:** with "Only TSL", set the slider to the **maximum**. The game picks random city-states and removes the ones without a start location, so a low slider leaves fewer than you asked for. The Huge map has 20 city-state locations, the Large map 18.
+   - Set the Middle-earth options under the map type (see below).
+3. Friends join, pick one of the 14 Middle-earth civs, and the host starts the game.
 
-How it works: DLC packages accept only XML data, no SQL or mod Lua hooks. So the build computes the final modded database and writes it as plain XML. Replaying that XML on the vanilla database reproduces the modded database exactly. Text, audio, art and map scripts are converted to the official DLC formats. The in-game scripts (dynamic city naming, city-state cleanup, Wood Elves) are loaded through an `InGame.lua` UI override, the way EUI and MP mod packs do it. This conflicts with EUI, which also overrides `InGame.lua`.
+Single player and hotseat work the same way from their own setup screens.
 
-Rebuild with `python3 tools/build.py && python3 tools/build_dlc.py --zip`.
+## How it's packaged
 
-**Easiest: the mod manager app** in [`ui/`](ui/README.md) switches the game between vanilla BNW and this DLC build with one click (backups, restore, cache clearing; Windows and Linux).
+**Why "Upgrade 1":** Civ 5 only registers DLC packages whose `<Key>` signature is valid, and that signature can't be produced for a new package. A standalone `Assets/DLC/MiddleEarth` package is silently ignored (tested). So the pack is attached to the existing free package "Upgrade 1", which every copy of Civ 5 has. Its signed header (GUID, SteamApp, Version, Ownership, Key, PTags) is kept byte-for-byte. Only a load priority (400, after BNW and every DLC) and the Middle-earth entries are added. Because of this the pack doesn't show up as its own entry under "DLC Allowed", and the lobby can't tell whether a player has it.
 
-**B. Mod build (requires MPPatch):** `dist/Middle Earth MP (v 1).zip`. See below.
+**How the mods are converted:** DLC packages accept only XML data, no SQL or mod Lua hooks. So the build computes the final modded database and writes it as plain XML. Replaying that XML on the vanilla database reproduces the modded database exactly. Text, audio, art and map scripts are converted to the official DLC formats. The in-game scripts (dynamic city naming, city-state cleanup, extra settler, Wood Elves) are loaded through an `InGame.lua` UI override, the way EUI and MP mod packs do it. This conflicts with EUI, which also overrides `InGame.lua`.
+
+**Why not MPPatch:** the first version of this pack was a normal mod for the Mods menu, played in multiplayer through MPPatch. MPPatch (v0.2.0-alpha.2) refuses the current Steam build of Civ 5 ("unknown version", upstream issue Lymia/MPPatch#102), and the DLC packaging needs no third-party patcher at all. The mod build (`dist/Middle Earth MP (v 1)`) is still produced, but only as the input of the DLC build.
 
 ## Why the originals broke in multiplayer
 
-Everything except True Start Location (TSL) is plain database/art content, and that already works with MPPatch. TSL didn't, for three reasons:
+Everything except True Start Location (TSL) is plain database/art content. TSL wasn't multiplayer-capable, for three reasons:
 
 1. **It only worked from its own single-player setup screen.** That screen saved the chosen map and options to a per-PC file (`ModUserData`) and set a flag `LoadingMetsl = true`. The map initializer ran only when the flag was set. The MP lobby never shows that screen, so the initializer printed "Not loading from Metsl setup, do nothing". That's why you got no start locations, no resources and no natural wonders.
 2. **It used `math.random`**, which is not synchronized between players. Even when it ran, each player would have generated different resources, causing desyncs.
@@ -56,40 +68,17 @@ Everything except True Start Location (TSL) is plain database/art content, and t
   - Canonical Resource Regions
   - Civilization Start Resources
   - Dynamic City Naming, plus its two sub-options
+  - Extra Starting Settler (new): every civ starts with 2 Settlers instead of 1
 
-  The two main maps (Huge World Wrap, Large) have all options. The four extra maps have start locations and random resources only, as in the original.
+  The two main maps (Huge World Wrap, Large) have all options. The four extra maps have true start locations with random resources, as in the original; their options are City-State Placement, Resources and Extra Starting Settler.
 - **Randomness:** only the synchronized game RNGs are used (`Map.Rand` during map generation, `Game.Rand` in game).
 - **Coordinates:** the resource placement code is ported with correct X/Y throughout.
 - **City-states under "Only TSL":** the game picks the city-states. Those without a start location on the chosen map are removed on turn 0, as the original did. The removal is deterministic on every client.
 - **Dynamic city naming:** stores the text key, so each player sees the name in their own game language.
 - **Wood Elves script:** fixed an undefined range variable, a crash on dead units, a territory check that always tested player 0's territory, and logging on every unit move.
-- **One mod:** all six original mods are blocked by this pack so they can't be loaded twice. The database result was checked to be identical to loading the six originals in order.
+- **One pack:** the database result was checked to be identical to loading the six originals in order.
 
-## Install (every player)
-
-All players need **MPPatch** and the **same** version of this pack.
-
-1. In the Civ 5 **Mods** menu, untick the six original Middle Earth mods. You can also delete them from the MODS folder.
-2. Extract `dist/Middle Earth MP (v 1).zip` into your MODS folder. You should end up with `MODS/Middle Earth MP (v 1)/Middle Earth MP (v 1).modinfo`.
-   - Linux/Proton (your setup): `~/.local/share/Steam/steamapps/compatdata/8930/pfx/drive_c/users/steamuser/Documents/My Games/Sid Meier's Civilization 5/MODS/`
-   - Windows: `Documents\My Games\Sid Meier's Civilization 5\MODS\`
-
-   ```bash
-   unzip "dist/Middle Earth MP (v 1).zip" -d ~/.local/share/Steam/steamapps/compatdata/8930/pfx/drive_c/users/steamuser/Documents/My\ Games/Sid\ Meier\'s\ Civilization\ 5/MODS/
-   ```
-3. Recommended once: with the game closed, delete the contents of the `cache` folder next to `MODS` (the game rebuilds it).
-
-## Play in multiplayer
-
-1. **Mods** menu → enable only **Middle Earth Multiplayer Pack** → use MPPatch's **Multiplayer** button → host a game.
-2. In the staging room:
-   - **Map Type:** *Middle-earth TSL: Third Age (Huge, World Wrap)* (the main map) or *Middle-earth TSL: Third Age (Large)*.
-   - **Map Size:** Huge for the Huge maps, Large for the Large maps, Standard for the Standard maps. The map grid is fixed; the size setting controls game balance (tech costs, etc.).
-   - **City-States:** with "Only TSL", set the slider to the **maximum**. The game picks random city-states and removes the ones without a start location, so a low slider leaves fewer than you asked for. The Huge map has 20 city-state locations, the Large map 18.
-   - Set the Middle-earth options under the map type.
-3. Friends join, pick civs (only the 14 Middle-earth civs exist), and the host starts the game.
-
-## What to check in the first test
+## What to check in a test game
 
 - Every civ starts at its canonical location: Hobbits in the Shire, Gondor in Minas Tirith, Mordor next to the Ephel Dúath, and so on.
 - Resources are visible on the map, including the civ-specific ones near each capital (e.g. horses for Rohan, iron and coal for Mordor).
@@ -97,27 +86,40 @@ All players need **MPPatch** and the **same** version of this pack.
 - City-states are at their canonical places (Bree, Dale, Lake-town, …).
 - The Middle-earth soundtrack and leader music play.
 - Founding a city at a named place renames it (e.g. a Hobbit city at Hobbiton). This needs "Dynamic City Naming" on.
+- With "Extra Starting Settler" on, every civ has two Settlers on turn 0.
 - Several turns pass without a desync.
+
+Known issue: cities sometimes don't draw (city missing at founding, or vanishing when it grows). The six original mods had the same sporadic problem; see [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §8.
 
 ## If something doesn't work
 
-Turn on logging. Close the game, edit `config.ini` (next to `MODS`) and set `LoggingEnabled = 1`, then reproduce the problem. Afterwards, look in `Logs/Lua.log` for lines starting with `METSL`. Map generation prints every placed start and resource count, and the in-game script prints what it removed and renamed. Also check `Logs/Database.log` for errors. Send me those two files.
+Turn on logging. Close the game, edit `config.ini` (in `Documents/My Games/Sid Meier's Civilization 5/`) and set `LoggingEnabled = 1`, then reproduce the problem. Afterwards, look in `Logs/Lua.log` for lines starting with `METSL`. Map generation prints every placed start and resource count, and the in-game script prints what it removed, renamed and gave out. Lines with `Runtime Error` point to script bugs. Also check `Logs/Database.log` for errors. Send me those two files.
 
 ## Rebuilding / development
 
+```bash
+python3 tools/build.py              # merged mod      -> dist/Middle Earth MP (v 1)   (input of the next step)
+python3 tools/build_dlc.py --zip    # DLC pack        -> dist/DLC_Shared/Shared + dist/MiddleEarth_DLC.zip
 ```
+
+The mod manager's `npm run dev` / `npm run build` (in `ui/`) run both steps themselves. Simulation needs `pip install lupa`.
+
+```
+tools/build.py        merge the six mods into dist/Middle Earth MP (v 1) (+ --zip)
+tools/build_dlc.py    convert it into the "Upgrade 1" DLC pack (dist/DLC_Shared/Shared, + --zip).
+                      Also writes dist/DLC/MiddleEarth, a standalone package the game ignores (kept for reference).
 tools/civ5map.py      Civ5Map reader          tools/map2lua.py   Civ5Map -> Lua map data
 tools/rivertest.py    river edge decoding     tools/flowtest.py  river flow decoding
+tools/render.py       print a Civ5Map as text (terrain check)
 tools/dbreplay.py     replay mod XML/SQL on a copy of the game DB and report errors
 tools/mockciv.lua     mock of the Civ5 map Lua API   tools/simulate.py  run a map script through it (Lua 5.1 via lupa)
-tools/testmatrix.py / determinism.py / ingametest.py   test runs
-tools/build.py        assemble dist/Middle Earth MP (v 1) (+ --zip)
-src/                  new and replaced files (map scripts, METSL Lua, fixed Wood Elves script)
+tools/testmatrix.py / determinism.py / ingametest.py / dlctest.py   test runs
+tools/landmarks/, tools/capitals/, tools/rendertest/   custom city models (switched off, see below)
+src/                  new and replaced files (map scripts, METSL Lua, fixed Wood Elves script, art fixes)
 vendor/civ5/          files copied from the stock game (vanilla DB, InGame.lua, Upgrade1.Civ5Pkg, palace .gr2 template)
 mods/                 the untouched original mods
+ui/                   the mod manager app (Electron), see ui/README.md
 build/, dist/         generated (not in git): venv, Blender output, temp DBs / built mod + DLC + zips
 ```
 
 Custom city landmark models are **switched off** (2026-11-23): every city uses stock art. The work in progress (per city name; Barad-dûr so far) stays in the repo and is built in with `python3 tools/build_dlc.py --landmarks`; see [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md). Preview a landmark's model, animation and effects as a GIF without the game: `blender -b --factory-startup -P tools/landmarks/render_gif.py -- barad_dur`.
-
-`python3 tools/build.py --zip` rebuilds the pack. Simulation needs `pip install lupa`.

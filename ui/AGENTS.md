@@ -27,7 +27,7 @@ Guidelines for anyone (human or AI) working on this app. Read README.md first fo
 ```bash
 npm install
 npm run typecheck && npm test     # must pass before committing
-npm run dev                       # rebuild the mod + install it into the real game (user's decision)
+npm run dev                       # rebuild the mod + start the app (installs only when the user clicks a tile)
 npm run smoke                     # headless read-only check against the detected game (screenshot in /tmp)
 ```
 
