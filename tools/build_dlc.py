@@ -36,10 +36,12 @@ DLC_GUID = '{3c9a6f2e-5b1d-4e7a-8f4c-2d6b9e1a7c53}'
 MAP_KEYS = ['TaHugeRndWw', 'TaLrgRndNww', 'TaHugeRndNww', 'TaLrgRndWw', 'TaStdRndWw', 'TaStdRndNww']
 DATA_EXT = ('.xml', '.sql', '.lua', '.modinfo', '.pdf', '.civ5map')
 SKIP_TABLES_PREFIX = ('Language_', 'Audio_')
-# Per-city landmark models (docs/CITY_MODELS.md) are OFF by default since 2026-11-23: every city uses stock art.
-# The models and code stay in the repo (tools/landmarks/); --landmarks turns them back on (the old --no-landmarks
-# is accepted and changes nothing). --landmark-stock-art shows the stock Polynesian palace instead (diagnostic).
-LANDMARKS_ON = '--landmarks' in sys.argv
+# Per-city landmark models (docs/CITY_MODELS.md) are ON by default since 2026-11-24: Barad-dur (and Mount Doom) show
+# the known-good base model vendor/landmarks/BaradDur (landmarks.EXTERNAL_ART), one turn after founding.
+# --no-landmarks: every city uses stock art (--landmarks is accepted and changes nothing).
+# --landmark-tests: add the diagnostic variants ("Barad Test 1..3"; only with our Blender models, EXTERNAL_ART = None).
+# --landmark-stock-art shows the stock Polynesian palace instead (diagnostic).
+LANDMARKS_ON = '--no-landmarks' not in sys.argv
 
 
 def q(v):
@@ -299,9 +301,11 @@ def build_lua():
 def build_landmarks():
     """Landmark buildings + art + effects + in-game script.
     Returns (gamedata, text, wonders, [vis effect defines], [vis effect model defines]) file names.
-    --no-landmark-tests leaves out the diagnostic variants ("Barad Test 1..3")."""
-    diag = '--no-landmark-tests' not in sys.argv
-    need = [f for lm in landmarks.LANDMARKS for f in landmarks.asset_files(lm)]
+    --landmark-tests adds the diagnostic variants ("Barad Test 1..3"); off by default (the old --no-landmark-tests is
+    accepted and changes nothing)."""
+    diag = '--landmark-tests' in sys.argv and not landmarks.EXTERNAL_ART
+    # our own Blender models (build/landmarks/out) are only needed when the base model is switched off
+    need = [] if landmarks.EXTERNAL_ART else [f for lm in landmarks.LANDMARKS for f in landmarks.asset_files(lm)]
     missing = [f for f in need if not os.path.exists(os.path.join(landmarks.OUT, f))]
     if missing:
         sys.exit('landmark models missing (run: blender -b --factory-startup -P tools/landmarks/build_models.py): %s'
@@ -330,12 +334,12 @@ def build_landmarks():
         for f in os.listdir(x['dir']):
             if f.lower().endswith(('.gr2', '.dds')):
                 shutil.copy2(os.path.join(x['dir'], f), art)      # byte-identical, no conversion
-        open(os.path.join(art, 'MEC_Ext_%s.fxsxml' % x['model']), 'w', encoding='utf-8', newline='\r\n').write(
+        open(os.path.join(art, x['model'] + '.fxsxml'), 'w', encoding='utf-8', newline='\r\n').write(
             landmarks.external_fxsxml())
     open(os.path.join(art, landmarks.WONDER_XML), 'w', encoding='utf-8', newline='\r\n').write(
         landmarks.wonder_defines(stock_art=stock, with_diagnostics=diag))
     vfx, vmodels = [], []
-    if any(lm.get('animated') for lm in landmarks.LANDMARKS) and not stock:
+    if any(lm.get('animated') for lm in landmarks.LANDMARKS) and not stock and not landmarks.EXTERNAL_ART:
         open(os.path.join(art, landmarks.VISEFFECTS_XML), 'w', encoding='utf-8', newline='\r\n').write(
             landmarks.vis_effects())
         open(os.path.join(art, landmarks.VISMODELS_XML), 'w', encoding='utf-8', newline='\r\n').write(

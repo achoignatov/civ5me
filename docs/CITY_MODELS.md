@@ -1,10 +1,12 @@
 # Custom city models: what the game supports and the plan
 
-> **2026-11-23 late: Barad-dûr is wired back in** (`build_dlc.py --landmarks --no-landmark-tests`, also used by the mod manager's dev build). The empty-tile bug in §8 is still open.
+> **CURRENT STATE (2026-11-24): stable baseline. Read §10 first.**
+> Barad-dûr's landmark shows a known-good model that we did NOT make (the community "Blue Mosque" wonder, a reworked
+> stock Hagia Sophia exported with Firaxis' Granny exporter), stored in `vendor/landmarks/BaradDur/`. It drew 5/5 in
+> the user's test, where our own Blender-made models made the whole city tile vanish in some games. Landmarks are ON
+> by default (`python3 tools/build_dlc.py`; `--no-landmarks` turns them off). Build on this baseline one step at a time.
 >
-> **2026-11-23: custom city models are switched OFF.** Every city uses stock art. The models, scripts and tools
-> stay in the repo; `python3 tools/build_dlc.py --landmarks` builds them back in (`--redraw-button` adds the debug
-> buttons). Before resuming, read "2026-11-23 evening: STATUS" in §8: several earlier results are invalid.
+> Older notes below (§1-§9) are history. Several results in them are invalid (see "2026-11-23 evening: STATUS" in §8).
 
 Historical status (2026-11-22 evening, superseded by the note above): **Plan A implemented for one city, Barad-dûr. Built and installed, not yet checked in game.**
 Steps 1 and 2 (stock model, then a re-shipped old model) were skipped at the user's request. A new Barad-dûr
@@ -693,3 +695,52 @@ mechanism as ours (palace slot 32, given the turn after founding). Files in buil
 Read: it also vanishes the same way -> not Blender / our writer / our files: the mechanism (dummy building in slot 32,
 loose art via WonderDefines) is the problem. It never vanishes over many games -> our files are the problem.
 Backup: /home/acho/civ5-backup-20261121-capitals/external-20261123-234203
+
+
+## 10. Stable baseline (2026-11-24): a known-good model that is not ours
+
+### The finding
+| Test (same mechanism: dummy building, palace slot 32, `WonderDefines` in the DLC package) | Result |
+|---|---|
+| Our Barad-dûr (Blender geometry + our Python `.gr2` writer, animated Eye + effects), given at founding | capital drew in most games; the whole tile (houses too) vanished in some; the second city never drew |
+| Same, only ONE building/art entry for both cities (`ONE_REGISTRATION`) | no change: registration ruled out |
+| Same, built for 1 production a turn later (`BUILDABLE`) | 3/4, then vanished |
+| Same, given the turn after founding (`GIVE_AT_FOUNDING = False`) | games 1-2 drew, game 3 vanished, and reloading it in the same process still vanished: the bad state sticks for the rest of the process |
+| **A downloaded community model** (`EXTERNAL_ART`, everything else identical) | **5/5 drew** (user, 2026-11-23) |
+
+So the mechanism works; **something in our own model files is what breaks**. The cause inside our files is still
+unknown. Candidates, in the order the baseline lets us test them: (1) the animated, skinned Eye + its animation and
+decision tree; (2) the timed triggers / particle effects / the beam model effect; (3) size (ours: about 43 world units
+from the centre, the base model: about 8 at fScale 0.05, inside the hex); (4) how our writer fills the `.gr2`
+(see the field comparison in §8: OBB, FallbackMtl).
+
+### The baseline asset
+- `vendor/landmarks/BaradDur/MEC_LM_BaradDur_Base.gr2`: `Blue_Mosque.gr2` byte for byte, renamed. Source, licence
+  notes and contents: `vendor/landmarks/BaradDur/SOURCE.md`.
+- It uses the game's own Hagia Sophia textures (`WonderTextures.fpk`), so no `.dds` is shipped.
+- `tools/landmarks/landmarks.py`: `EXTERNAL_ART` (directory, model name, fScale 0.05, texture list) and
+  `external_fxsxml()` (written like the stock `hagia_sophia.fxsxml`, with `Wonder_DecisionTree`).
+- `tools/build_dlc.py` `build_landmarks()`: copies the `.gr2` unchanged, writes the `.fxsxml`, and doesn't need
+  Blender output (`build/landmarks/out`), our effects or the diagnostic variants while `EXTERNAL_ART` is set.
+
+### Current switches (`tools/landmarks/landmarks.py`)
+| Switch | Value | Meaning |
+|---|---|---|
+| `EXTERNAL_ART` | base model | `None` = our Blender model again (needs `blender -b --factory-startup -P tools/landmarks/build_models.py`) |
+| `GIVE_AT_FOUNDING` | `False` | the landmark is added on the owner's first turn after founding (`PlayerDoTurn`), never in the founding event |
+| `BUILDABLE` | `False` | `True` = the city builds it for 1 production instead |
+| `ONE_REGISTRATION` | `True` | Mount Doom uses Barad-dûr's building (one building, one art entry) |
+| `SHOW_VARIANT` | `None` | `'T1'` = our static variant (only with `EXTERNAL_ART = None`) |
+| `ZERO_OBB` | `True` | our `.gr2` files written with zeroed bounding boxes like stock (only with `EXTERNAL_ART = None`) |
+
+Build: `python3 tools/build.py && python3 tools/build_dlc.py --zip` (the mod manager's dev build runs the same).
+In game: found Barad-dûr (Mordor's capital) or Mount Doom, end the turn: a small Hagia Sophia stands in the city centre.
+`Lua.log`: `MEC_Landmarks: ... BUILDING_MEC_LM_BARAD_DUR = 1`.
+
+### How to build on it
+Change one thing at a time and test each step over several games in ONE launch of the game (the failure appeared in
+game 3 of a session and then stuck until the game was quit):
+1. Second city: does Mount Doom draw the base model? (it never drew with our model)
+2. Size: same `.gr2`, larger fScale (0.1, 0.2) - does a bigger model start to vanish?
+3. Our geometry: our static Barad-dûr in place of the base model (`EXTERNAL_ART = None`, `SHOW_VARIANT = 'T1'`).
+4. Then animation, then effects, then the beam.

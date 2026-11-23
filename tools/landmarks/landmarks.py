@@ -102,10 +102,11 @@ GIVE_AT_FOUNDING = False
 # tested before (the T1Z probe went through the broken Cycle button). True = written zeroed like stock.
 ZERO_OBB = True
 
-# 2026-11-23 experiment (user): show a model that is NOT made by us (not Blender, not our .gr2 writer) through the
-# same landmark mechanism. None = our model. The files come from build/external/<name>/ (see SOURCE.txt there).
-# fxsxml written like the stock Hagia Sophia's; fScale 0.05 = the stock wonder scale for this model.
-EXTERNAL_ART = dict(dir=os.path.join(ROOT, 'build', 'external', 'bluemosque'), model='Blue_Mosque', scale=0.05,
+# DEFAULT since 2026-11-24 (docs/CITY_MODELS.md §10): the landmark shows a known-good model that is NOT made by us
+# (not Blender, not our .gr2 writer): vendor/landmarks/BaradDur/MEC_LM_BaradDur_Base.gr2 (source in SOURCE.md there),
+# copied byte-identical. Our own models (build/landmarks/out) made the whole city tile vanish in some games; this one
+# drew 5/5 through the same mechanism. None = our Blender model again (needs build_models.py output).
+EXTERNAL_ART = dict(dir=os.path.join(ROOT, 'vendor', 'landmarks', 'BaradDur'), model='MEC_LM_BaradDur_Base', scale=0.05,
                     textures=['HBHagiaSophia_DIFF.dds', 'HBHagiaSophia_SREF.dds', 'Hagia_Sophia_DIFF.dds',
                               'Hagia_Sophia_SREF.dds', 'Generic_Grey_8.dds'])
 
@@ -223,7 +224,7 @@ def entries(with_diagnostics=True):
         main = art_model(lm) + ('_%s' % SHOW_VARIANT if SHOW_VARIANT and lm.get('animated') else '') + '.fxsxml'
         scale = lm['scale']
         if EXTERNAL_ART:
-            main, scale = 'MEC_Ext_%s.fxsxml' % EXTERNAL_ART['model'], EXTERNAL_ART['scale']
+            main, scale = EXTERNAL_ART['model'] + '.fxsxml', EXTERNAL_ART['scale']
         out.append(dict(building=building(lm), tag=art_tag(lm), title=lm['title'], fxsxml=main,
                         scale=scale, keys=lm['name_keys'], aliases=lm['aliases']))
         if lm.get('animated') and with_diagnostics:

@@ -114,12 +114,13 @@ tools/render.py       print a Civ5Map as text (terrain check)
 tools/dbreplay.py     replay mod XML/SQL on a copy of the game DB and report errors
 tools/mockciv.lua     mock of the Civ5 map Lua API   tools/simulate.py  run a map script through it (Lua 5.1 via lupa)
 tools/testmatrix.py / determinism.py / ingametest.py / dlctest.py   test runs
-tools/landmarks/, tools/capitals/, tools/rendertest/   custom city models (switched off, see below)
+tools/landmarks/, tools/capitals/, tools/rendertest/   custom city models (see below)
 src/                  new and replaced files (map scripts, METSL Lua, fixed Wood Elves script, art fixes)
 vendor/civ5/          files copied from the stock game (vanilla DB, InGame.lua, Upgrade1.Civ5Pkg, palace .gr2 template)
+vendor/landmarks/     third-party landmark models (Barad-dûr's base model, see its SOURCE.md)
 mods/                 the untouched original mods
 ui/                   the mod manager app (Electron), see ui/README.md
 build/, dist/         generated (not in git): venv, Blender output, temp DBs / built mod + DLC + zips
 ```
 
-Custom city landmark models are **switched off** (2026-11-23): every city uses stock art. The work in progress (per city name; Barad-dûr so far) stays in the repo and is built in with `python3 tools/build_dlc.py --landmarks`; see [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md). Preview a landmark's model, animation and effects as a GIF without the game: `blender -b --factory-startup -P tools/landmarks/render_gif.py -- barad_dur`.
+Custom city landmarks are **on** (2026-11-24): a city named Barad-dûr (Mordor's capital) or Mount Doom gets a landmark model in its centre, added the turn after it's founded. For now it's a known-good base model that we didn't make (a reworked Hagia Sophia from a community mod, `vendor/landmarks/BaradDur/`), because our own Blender-made models made the whole city tile vanish in some games. `python3 tools/build_dlc.py --no-landmarks` builds the pack without landmarks. Details, findings and next steps: [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §10. Preview our own model as a GIF without the game: `blender -b --factory-startup -P tools/landmarks/render_gif.py -- barad_dur`.
