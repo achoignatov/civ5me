@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by ModBuddy on 7/6/2014 12:31:48 PM -->
+<GameData>
+	<Language_en_US>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_ARCHER_GOBLINS">
+			<Text>Goblin Archer</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_WARRIOR_GOBLINS">
+			<Text>Goblin Warrior</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_SWORDSMAN_ORCS">
+			<Text>Orc Swordsman</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_DUNLENDINGS">
+			<Text>Dunlending Axman</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_COMPOSITE_BOWMAN_GOBLINS">
+			<Text>Goblin Composite Bowman</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_CROSSBOWMAN_GOBLINS">
+			<Text>Goblin Crossbowman</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_MUSKETMAN_GOBLINS">
+			<Text>Goblin Musketman</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_KNIGHT_GOBLINS">
+			<Text>Goblin Warg Rider</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_HORSEMAN_GOBLINS">
+			<Text>Goblin Wolf Rider</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_LONGSWORDSMAN_ORCS">
+			<Text>Uruk Longswordsman</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_SPEARMAN_ORCS">
+			<Text>Rhudaur Spearman</Text>
+		</Row>
+	</Language_en_US>
+  
+</GameData>

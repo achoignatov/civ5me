@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by ModBuddy on 9/20/2014 11:27:10 AM -->
+<GameData>
+	<Features>
+		<Update>
+			<Set NaturalWonder ="false"></Set>
+			<Where Type="FEATURE_VOLCANO"></Where>
+		</Update>
+	</Features>
+	<Feature_YieldChanges>
+		<Update>
+			<Set Yield="0"></Set>
+			<Where FeatureType="FEATURE_VOLCANO"></Where>
+		</Update>
+	</Feature_YieldChanges>
+	<Natural_Wonder_Placement>
+		<Update>
+			<Set LandBased="true"></Set>
+			<Where NaturalWonderType="FEATURE_VOLCANO"></Where>
+		</Update>
+		<Update>
+			<Set AdjacentTilesCareAboutPlotTypes="false"></Set>
+			<Where NaturalWonderType="FEATURE_VOLCANO"></Where>
+		</Update>
+		<Update>
+			<Set AdjacentTilesAvoidAnyland="false"></Set>
+			<Where NaturalWonderType="FEATURE_VOLCANO"></Where>
+		</Update>
+		<Update>
+			<Set AdjacentTilesRequireShallowWater="false"></Set>
+			<Where NaturalWonderType="FEATURE_VOLCANO"></Where>
+		</Update>
+		<Update>
+			<Set RequiredNumberOfAdjacentShallowWater="0"></Set>
+			<Where NaturalWonderType="FEATURE_VOLCANO"></Where>
+		</Update>
+		<Update>
+			<Set AdjacentTilesCareAboutFeatureTypes="false"></Set>
+			<Where NaturalWonderType="FEATURE_VOLCANO"></Where>
+		</Update>
+		<Update>
+			<Set SetAdjacentTilesToShallowWater="false"></Set>
+			<Where NaturalWonderType="FEATURE_VOLCANO"></Where>
+		</Update>
+	</Natural_Wonder_Placement>
+	<!-- 
+	<Feature_TerrainBooleans>
+		<Row>
+			<FeatureType>FEATURE_VOLCANO</FeatureType>
+			<TerrainType>TERRAIN_MOUNTAIN</TerrainType>
+		</Row>
+		<Row>
+			<FeatureType>FEATURE_JUNGLE</FeatureType>
+			<TerrainType>TERRAIN_MOUNTAIN</TerrainType>
+		</Row>
+	</Feature_TerrainBooleans>
+	-->
+</GameData>

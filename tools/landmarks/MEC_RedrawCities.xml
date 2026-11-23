@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MEC_RedrawCities: debug button that forces the renderer to redraw every city (see MEC_RedrawCities.lua). -->
+<Context Font="TwCenMT16" FontStyle="Base" ColorSet="Beige_Black_Alpha">
+	<GridButton ID="RedrawButton" Anchor="C,T" Offset="-250,34" Size="170,30" Style="SmallButton" StateOffsetIncrement="0,0"
+		ToolTip="Debug: redraw cities">
+		<Label ID="RedrawLabel" Anchor="C,C" Offset="0,-1" String="Redraw cities" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" />
+	</GridButton>
+	<GridButton ID="CycleButton" Anchor="C,T" Offset="0,34" Size="320,30" Style="SmallButton" StateOffsetIncrement="0,0"
+		ToolTip="Debug: cycle landmark variant">
+		<Label ID="CycleLabel" Anchor="C,C" Offset="0,-1" String="Cycle landmark" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" />
+	</GridButton>
+	<GridButton ID="RevealButton" Anchor="C,T" Offset="250,34" Size="170,30" Style="SmallButton" StateOffsetIncrement="0,0"
+		ToolTip="Debug: reveal area">
+		<Label ID="RevealLabel" Anchor="C,C" Offset="0,-1" String="Reveal area" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" />
+	</GridButton>
+</Context>

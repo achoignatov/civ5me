@@ -1,0 +1,32 @@
+appId: local.civ5me.modmanager
+productName: Civilization V Mod Manager
+directories:
+  output: release
+  buildResources: build-resources
+files:
+  - out/**
+  - package.json
+# Mod manifests and payloads ship next to the app (resources/mods), outside the asar archive,
+# so the main process can copy them with plain fs calls.
+extraResources:
+  - from: mods
+    to: mods
+    filter:
+      - index.json
+      - "*/manifest.json"
+      - "*/payload/**"
+      - "*/originals/**"
+asar: true
+# `npm run build` produces ONE file to share: release/Civ5-MiddleEarth-<version>-windows.exe, a portable exe with
+# Electron (Chromium + Node) and the mod payload inside; nothing to install. Builds on Linux without Wine
+# (the exe keeps Electron's default icon/version info). `npm run dist:linux` makes an optional Linux AppImage.
+linux:
+  target: [AppImage]
+  category: Game
+  artifactName: Civ5-MiddleEarth-${version}-linux.${ext}
+win:
+  target: [portable]
+  # editing the exe resources (icon, version info) needs Wine on Linux; skipped
+  signAndEditExecutable: false
+portable:
+  artifactName: Civ5-MiddleEarth-${version}-windows.${ext}

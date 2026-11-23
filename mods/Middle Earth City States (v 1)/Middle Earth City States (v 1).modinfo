@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mod id="46830894-7582-4a69-8c5a-1837e053a9de" version="1">
+  <Properties>
+    <Name>Middle Earth City States</Name>
+    <Stability>Beta</Stability>
+    <Teaser>City States and other Allies from the Lord of the Rings</Teaser>
+    <Description>The primary goal of this mod is to add City States from the Lord of the Rings into Civ 5 to enhance the Lord of the Rings role playing while using my main mod Middle Earth Civilizations.
+
+If you Like the mod remember to give it a Thumbs Up Rating! If you Love the mod you should make it a Favorite too! 
+
+This mod should be compatible with Vanilla, Gods &amp; Kings, and/or Brave New World. However I have only tested it while using both expansions. The mod uses only XML, and should be compatible with multiplayer if you can figure out how to get it to work. 
+
+The mod is seperate because i wanted to keep it optional. 
+You can find a link to Middle Earth Civilizations in the collection above. It requires both Gods and Kings and Brave New World. 
+
+This mod is available in English and Italian. Special thanks to vadoalmax for the Italian Translation.
+
+For Vanilla this mod will include 16 City States.
+For Gods and Kings and/or Brave New World this mod includes a total of 26 City States (16 from Vanilla and 10 additional city states)
+
+Some of these are legitimate city states, some are islands or locations that don't necessarily belong to any specific civ, and other's are potential allies or enemies, but not actually a city state. If you disagree with a decision that I have made when choosing these cities, please tell me which one you disagree with and what you would like to see it replaced with. I will not remove any of these just because somebody doesn't like it, but I am willing to replace some of them if needed. I have attempted to keep a balance of the types of city states, and would like to keep it that way.
+
+Military City States:
+Avathar (Home of Ungoliant)
+Kingdom of Rhovanion
+Smaug's Lair
+Dunland
+Paths of the Dead
+Torech Ungol (Aka Shelob's Lair)
+
+Cultured City States:
+Crissaegrim
+Beorn's Hall
+Entwood
+Tom Bombadil's House
+Eagle's Eyrie
+
+Maritime City States:
+Lake Town (Sorry I can't actually make it spawn next to a lake until I do TSL)
+Tol Morwen
+Tol Fuin
+Himling
+Lossoth (The name for the Snowman of the Forochel)
+
+Mercantile City States:
+Bree
+Dale
+Dorwinion (Sorry I can't actually make it spawn next to wine until I do TSL)
+Esgaroth
+Ephel Brandir
+
+Religious City States:
+Rhosgobel (Home of Radagast the Brown)
+Olorin (Aka Gandolf)
+Alatar (One of the Blue Wizards)
+Pallando (The other Blue Wizard)
+Curumo (Aka Saruman)</Description>
+    <Authors>Yenyang</Authors>
+    <SpecialThanks>See MECS Special Thanks</SpecialThanks>
+    <HideSetupGame>0</HideSetupGame>
+    <AffectsSavedGames>1</AffectsSavedGames>
+    <MinCompatibleSaveVersion>0</MinCompatibleSaveVersion>
+    <SupportsSinglePlayer>1</SupportsSinglePlayer>
+    <SupportsMultiplayer>1</SupportsMultiplayer>
+    <SupportsHotSeat>1</SupportsHotSeat>
+    <SupportsMac>1</SupportsMac>
+    <ReloadAudioSystem>0</ReloadAudioSystem>
+    <ReloadLandmarkSystem>0</ReloadLandmarkSystem>
+    <ReloadStrategicViewSystem>0</ReloadStrategicViewSystem>
+    <ReloadUnitSystem>0</ReloadUnitSystem>
+  </Properties>
+  <Dependencies />
+  <References />
+  <Blocks />
+  <Files>
+    <File md5="1E72FDA713D57FFA3A548F204A470C10" import="0">MECS Special Thanks.pdf</File>
+    <File md5="2B821EA40BD7B7987648152A8CEC8986" import="0">XML/MECS_City_States_EXP.xml</File>
+    <File md5="046EF42AD4AA017CE89F985290BAA95C" import="0">XML/MECS_Text.xml</File>
+    <File md5="02C958D7F713DD14CF14B63599BA5D6B" import="0">XML/MECS_City_States_VAN.xml</File>
+    <File md5="2639EC3D004CCC8EA1CADB189B67DFA5" import="0">XML/MECS_Text_IT_IT.xml</File>
+  </Files>
+  <Actions>
+    <OnModActivated>
+      <UpdateDatabase>XML/MECS_Text.xml</UpdateDatabase>
+      <UpdateDatabase>XML/MECS_Text_IT_IT.xml</UpdateDatabase>
+      <UpdateDatabase>XML/MECS_City_States_VAN.xml</UpdateDatabase>
+      <UpdateDatabase>XML/MECS_City_States_EXP.xml</UpdateDatabase>
+    </OnModActivated>
+  </Actions>
+</Mod>

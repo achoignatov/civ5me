@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mod id="65b7def1-337c-4f88-9f84-2fb2213417e6" version="3">
+  <Properties>
+    <Name>Middle Earth Only</Name>
+    <Stability>Beta</Stability>
+    <Teaser>Removes Firaxis Civilizations, City States, etc. Do not use without a mod(s) that add both Civilizations and City States.</Teaser>
+    <Description>Removes the Firaxis Civilizations, City States, and Unique Units from the game so that one can get the best experience while using my other mods Middle Earth Civilizations and Middle Earth City States.
+
+You can find links to my other mods in the collection above. Please note that Middle Earth Civilizations requires both Gods and Kings and Brave New World.
+
+This mod also removes any content that references the deleted material so that no additional errors are produced by utilizing this mod.
+
+Removing the unique units makes it so that Military City States will gift UUs from the mods instead of Firaxis UUs. Note that only UUs from civs not in play can be gifted.
+
+You can use this mod with other mods that add Civilizations and City States as well.</Description>
+    <Authors>Yenyang</Authors>
+    <HideSetupGame>0</HideSetupGame>
+    <AffectsSavedGames>1</AffectsSavedGames>
+    <MinCompatibleSaveVersion>0</MinCompatibleSaveVersion>
+    <SupportsSinglePlayer>1</SupportsSinglePlayer>
+    <SupportsMultiplayer>1</SupportsMultiplayer>
+    <SupportsHotSeat>1</SupportsHotSeat>
+    <SupportsMac>1</SupportsMac>
+    <ReloadAudioSystem>0</ReloadAudioSystem>
+    <ReloadLandmarkSystem>0</ReloadLandmarkSystem>
+    <ReloadStrategicViewSystem>0</ReloadStrategicViewSystem>
+    <ReloadUnitSystem>0</ReloadUnitSystem>
+  </Properties>
+  <Dependencies />
+  <References>
+    <Mod id="85ffdb54-be53-4c4d-8541-bbba4c71d16b" minversion="0" maxversion="999" title="Eras - Medieval Age" />
+    <Mod id="d2f07abe-6db1-4ba0-83fa-f88212eb4d4b" minversion="0" maxversion="999" title="Eras - Renaissance" />
+  </References>
+  <Blocks />
+  <Files>
+    <File md5="2BE4DBBA88E0481B67A84567450EBCE6" import="0">SQL/City States/YRA_Delete_City_States.sql</File>
+    <File md5="4DF253D2F1E941DCCD3D1E7F095CDF7A" import="0">SQL/City States/YRA_Delete_CS_CityNames.sql</File>
+    <File md5="7A4B7CF4BF59AF7736ABCC200AF0B1E0" import="0">SQL/City States/YRA_Delete_CS_Flavors.sql</File>
+    <File md5="0B69DCF1310132E98E831D18BF478D88" import="0">SQL/Civilizations/YRA_Delete_Civilizations.sql</File>
+    <File md5="8ECA791327C1C0DA28C9F3F72E68F652" import="0">SQL/Civilizations/YRA_Delete_BuildingClassOverrides.sql</File>
+    <File md5="92C9F1063546BCB3BFD34A506E85A52F" import="0">SQL/Civilizations/YRA_Delete_CityNames.sql</File>
+    <File md5="DE497DBA71C10579169163C799E07021" import="0">SQL/Civilizations/YRA_Delete_FreeBuildingClasses.sql</File>
+    <File md5="D5A3385896286EB1438445FF817CF4BF" import="0">SQL/Civilizations/YRA_Delete_FreeTechs.sql</File>
+    <File md5="D276920F33C7FB3ABAE986F7F75EBEA8" import="0">SQL/Civilizations/YRA_Delete_FreeUnits.sql</File>
+    <File md5="3FD784460B6E0D6C363F3E02A8A0215C" import="0">SQL/Civilizations/YRA_Delete_Leaders.sql</File>
+    <File md5="FA1B28C5135E12404D8192F013D3B224" import="0">SQL/Civilizations/YRA_Delete_Religions.sql</File>
+    <File md5="B9626BC6E4C7780D794A40857D1FAF04" import="0">SQL/Civilizations/YRA_Delete_Spynames.sql</File>
+    <File md5="8ACBD0CE5884516742EC89147CC5D028" import="0">SQL/Civilizations/YRA_Delete_Start_Along_Ocean.sql</File>
+    <File md5="9C0D3FC920E6024C4C446BE5C6D7B00F" import="0">SQL/Civilizations/YRA_Delete_Start_Place_First_Along_Ocean.sql</File>
+    <File md5="1138F02DEFCEFCB51F20839741CFF033" import="0">SQL/Civilizations/YRA_Delete_Start_Region_Avoid.sql</File>
+    <File md5="BB147A9FD4329B8DA55E74C87949E5D6" import="0">SQL/Civilizations/YRA_Delete_Start_Region_Priority.sql</File>
+    <File md5="13A672D85011B83CEAB84EDF594DEE29" import="0">SQL/Civilizations/YRA_Delete_UnitClassOverrides.sql</File>
+    <File md5="B681BC5F2E3D8D7D5A4FE481C70BD8EA" import="0">SQL/Improvements/YRA_Delete_I_Builds.sql</File>
+    <File md5="34D51009B97875F8AB8AB278A39BBC60" import="0">SQL/Improvements/YRA_Delete_Improvements.sql</File>
+    <File md5="775D332F762A7503A9A9FF20D96FA206" import="0">SQL/Improvements/YRA_Delete_I_AdjacentMountainYieldChanges.sql</File>
+    <File md5="FC81167A5980CEB38ED19464576A217B" import="0">SQL/Improvements/YRA_Delete_I_Build_Features.sql</File>
+    <File md5="D55F79F57135800B433C50BE3F2E5A43" import="0">SQL/Improvements/YRA_Delete_I_NoFreshWaterYieldChanges.sql</File>
+    <File md5="B24DCF4A79A49112FAABE85BAA8C8D41" import="0">SQL/Improvements/YRA_Delete_I_TechFreshWaterYieldChanges.sql</File>
+    <File md5="35437D754CCC970457C9518EF16F2038" import="0">SQL/Improvements/YRA_Delete_I_TechYieldChanges.sql</File>
+    <File md5="BE2804511476C0C98B66F2068B9258B2" import="0">SQL/Improvements/YRA_Delete_I_Traits_CombatBonusImprovement.sql</File>
+    <File md5="AE4169BB53B85595364D7499B3556321" import="0">SQL/Improvements/YRA_Delete_I_ValidFeatures.sql</File>
+    <File md5="02F72CA64C142C7AB73EB8A8F3C12930" import="0">SQL/Improvements/YRA_Delete_I_ValidTerrains.sql</File>
+    <File md5="1CE0667FBB9ECAD722DE197EC5203F18" import="0">SQL/Improvements/YRA_Delete_I_Yields.sql</File>
+    <File md5="DB825091612B486BC015C32FF9916E67" import="0">SQL/Leaders/YRA_Delete_Leaders.sql</File>
+    <File md5="82B4C3AD93081045C57C1816D29D59F8" import="0">SQL/Leaders/YRA_Delete_L_Traits.sql</File>
+    <File md5="D2B04781006D81F2037CE6A67D5B0DDF" import="0">SQL/Resources/YRA_Delete_Resouces.sql</File>
+    <File md5="AE91BF5E30C5CF9F264F6F1997A0C19C" import="0">SQL/Resources/YRA_Delete_R_Flavors.sql</File>
+    <File md5="80C7A9777858D4200881090151B91FE8" import="0">SQL/Resources/YRA_Delete_R_YieldsChanges.sql</File>
+    <File md5="6EF75BED95543471B22AF1076887CC2A" import="0">SQL/UU/YRA_Delete_UU.sql</File>
+    <File md5="802D70B24022D1C6D985815243369FFF" import="0">SQL/UU/YRA_UnitGameplay2DScripts.sql</File>
+    <File md5="D62061C8494E086591664D79E377186C" import="0">SQL/UU/YRA_Unit_Builds.sql</File>
+    <File md5="791A9958AF4A96594AF6CF87D306E93B" import="0">SQL/UU/YRA_Unit_Flavors.sql</File>
+    <File md5="B32ACEC02E7DDAD94339405087106AF8" import="0">SQL/UU/YRA_Unit_ResourceQuantityRequirements.sql</File>
+    <File md5="FA20A1BF48F33E8616A3B837B3580E35" import="0">SQL/UU/YRA_UnitClassUpgrades.sql</File>
+    <File md5="EEBCA9DECE7A42E9394D3151E8F5E76C" import="0">SQL/UU/YRA_Unit_AITypes.sql</File>
+    <File md5="2F3349F803D3EA63716BF21AFBE6EC2B" import="0">SQL/UU/YRA_Unit_FreePromotions.sql</File>
+    <File md5="0C60C38B284EF86E55A6E80285A518FC" import="0">SQL/UU/YRA_Unit_UniqueNames.sql</File>
+    <File md5="4ED0EC7FBD3C919F6C0697B222898ED8" import="0">SQL/UU/YRA_Unit_YieldFromKills.sql</File>
+  </Files>
+  <Actions>
+    <OnModActivated>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_BuildingClassOverrides.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_CityNames.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_FreeBuildingClasses.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_FreeTechs.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_FreeUnits.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Leaders.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Religions.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Spynames.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Start_Along_Ocean.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Start_Place_First_Along_Ocean.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Start_Region_Avoid.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Start_Region_Priority.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_UnitClassOverrides.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Civilizations/YRA_Delete_Civilizations.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/City States/YRA_Delete_CS_CityNames.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/City States/YRA_Delete_CS_Flavors.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/City States/YRA_Delete_City_States.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_AdjacentMountainYieldChanges.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_Build_Features.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_Builds.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_NoFreshWaterYieldChanges.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_TechFreshWaterYieldChanges.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_TechYieldChanges.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_Traits_CombatBonusImprovement.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_ValidFeatures.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_ValidTerrains.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_Yields.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_Improvements.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Resources/YRA_Delete_R_Flavors.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Resources/YRA_Delete_R_YieldsChanges.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Resources/YRA_Delete_Resouces.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Improvements/YRA_Delete_I_ValidTerrains.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Leaders/YRA_Delete_Leaders.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/Leaders/YRA_Delete_L_Traits.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Delete_UU.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Unit_AITypes.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Unit_Builds.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Unit_Flavors.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Unit_FreePromotions.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Unit_ResourceQuantityRequirements.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Unit_UniqueNames.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_Unit_YieldFromKills.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_UnitClassUpgrades.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/UU/YRA_UnitGameplay2DScripts.sql</UpdateDatabase>
+    </OnModActivated>
+  </Actions>
+</Mod>

@@ -1,0 +1,152 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mod id="360bb9a3-07d0-4935-b0e9-a22be98b590f" version="3">
+  <Properties>
+    <Name>Middle Earth Barbarians (GK or BNW)</Name>
+    <Stability>Beta</Stability>
+    <Teaser>Goblin, Orc, and Uruk Barbarians!</Teaser>
+    <Description>The Primary goal of this mod is to provide cosmetic and nominal changes to the barbarian units in Civ 5 to enhance role playing while using my main mod Middle Earth Civilizations.
+
+It is recommended that you use this mod with either Gods and Kings or Brave New World. 
+Vanilla users will have some problems with this mod. I should be able to upload a vanilla version of this mod since it's so simple if somebody wants it.
+
+The mod is seperate because i wanted to keep it optional.
+You can find a link to Middle Earth Civilizations in the collection above. It requires both Gods and Kings and Brave New World.
+
+This mod is available in English and Italian. Special Thanks to vadoalmax for the Italian Translation.
+
+Special Thanks to Nomad or What  for the Unit Models.
+This Mod makes the following changes:
+Barbarian Brute is replaced with the Goblin Warrior 
+Barbarian Archer is replaced with the Goblin Archer
+Barbarian Axman is changed to Dunlending Axman (BNW only)
+Barbarian Composite Bowman is replaced with the Goblin Composite Bowman
+Barbarian Spearman is changed to Rhudaur Spearman
+Barbarian Swordsman is replaced with the Orc Swordsman
+Barbarian Horseman is replaced with Goblin Wolf Riders
+Goblin Warg Rider is added as a Unique Barbarian Knight. (Barbarains cannot build Knights in the regular game)
+Barbarian Longswordsman is replaced with the Uruk Longswordsman
+Barbarian Crossbowman is replaced with the Goblin Crossbowman
+Barbarian Musketman is replaced with the Goblin Musketman
+
+The Orc Spearman model is still included in this mod but due to graphical issues with the unit model it has been 'commented out'. You can restore it by  removing the comments. You may also want to rename it in the text file if you do that.
+
+Since I didn't and cannot make the models for this mod I cannot incorporate user request unless these criteria are met:
+- A working unit model exists and is available to download
+- The unit can directly replace one of the existing units in the game
+
+Request that do not meet these criteria will be ignored.</Description>
+    <Authors>Yenyang</Authors>
+    <SpecialThanks>Nomad or What</SpecialThanks>
+    <HideSetupGame>0</HideSetupGame>
+    <AffectsSavedGames>1</AffectsSavedGames>
+    <MinCompatibleSaveVersion>0</MinCompatibleSaveVersion>
+    <SupportsSinglePlayer>1</SupportsSinglePlayer>
+    <SupportsMultiplayer>1</SupportsMultiplayer>
+    <SupportsHotSeat>1</SupportsHotSeat>
+    <SupportsMac>1</SupportsMac>
+    <ReloadAudioSystem>0</ReloadAudioSystem>
+    <ReloadLandmarkSystem>1</ReloadLandmarkSystem>
+    <ReloadStrategicViewSystem>1</ReloadStrategicViewSystem>
+    <ReloadUnitSystem>1</ReloadUnitSystem>
+  </Properties>
+  <Dependencies />
+  <References />
+  <Blocks>
+    <Mod id="fdc54097-1a86-4942-bd90-26d1436ee07a" minversion="0" maxversion="999" title="Lord of the Rings Civ5" />
+  </Blocks>
+  <Files>
+    <File md5="03A4895C32A188379C4944D2DB5104FE" import="1">Art/Goblin Archer/barbarian_archer_03_diff.dds</File>
+    <File md5="A89C4856DC3A8E6A06365F0ECA1F8861" import="1">Art/Goblin Archer/barbarian_archer_03_sref.dds</File>
+    <File md5="9A0F0B4D893F04F860B16B24B564B744" import="1">Art/Goblin Archer/black_4x4.dds</File>
+    <File md5="F1AF6AF4D09A1543D3398D1880D53B8B" import="1">Art/Goblin Archer/Goblin_Archer.fxsxml</File>
+    <File md5="0ECC54AA4CAE8F221415EB004576293E" import="1">Art/Goblin Archer/Goblin_Archer.gr2</File>
+    <File md5="10D44FF25B8C891220AFEB49E3270949" import="0">Art/Goblin Archer/MEB_Goblin_Archer_Unit_Art.xml</File>
+    <File md5="BF3A3ECCCD44B032F5E92D6C884FC846" import="1">Art/Goblin Bowman/composite_bowman_diff.dds</File>
+    <File md5="6F7F8F68F4E6567A10D4EFDA83A05528" import="1">Art/Goblin Bowman/composite_bowman_sref.dds</File>
+    <File md5="DABDBC48C13C59EB23E120E1D25C962F" import="1">Art/Goblin Bowman/Goblin_Bowman.fxsxml</File>
+    <File md5="8F9CD2F6178DCCB6BD96FDA6BF982E3B" import="1">Art/Goblin Bowman/Goblin_Bowman.gr2</File>
+    <File md5="74B42AEA67A89B56C13B22345C91C002" import="0">Art/Goblin Bowman/MEB_Goblin_Bowman_Unit_Art.xml</File>
+    <File md5="2241EDC05F67B2A6D936AA0700CCE34E" import="1">Art/Goblin Bowman/Goblin_Leather.dds</File>
+    <File md5="C775DACB50C272BA6D005A3207C1C0DD" import="1">Art/Goblin Crossbowman/crossbowman_diff.dds</File>
+    <File md5="13D018771A60D7AC4A216F50A339CE97" import="1">Art/Goblin Crossbowman/crossbowman_sref.dds</File>
+    <File md5="181DC62B6B42B71B3E62DCE35E3F6B83" import="1">Art/Goblin Crossbowman/Goblin_Crossbowman.fxsxml</File>
+    <File md5="C8460FDB1F278925618E5F5C8A26F450" import="1">Art/Goblin Crossbowman/Goblin_Crossbowman.gr2</File>
+    <File md5="5A46F6A1F11A08908A78BB435030C646" import="0">Art/Goblin Crossbowman/MEB_Goblin_Crossbowman_Unit_Art.xml</File>
+    <File md5="D52B5B8B3192DC1CD530927FB2C35B0A" import="1">Art/Goblin Crossbowman/Goblin_Skullcap.dds</File>
+    <File md5="847577423150348B8BC1BAE87588E91E" import="1">Art/Goblin Musketman/Goblin_Arquebusier.fxsxml</File>
+    <File md5="DB2743D57BF5CEB0736719054519D2FC" import="1">Art/Goblin Musketman/Goblin_Arquebusier.gr2</File>
+    <File md5="D6869FE56363785F1A3CD7E2BD4BB558" import="0">Art/Goblin Musketman/MEB_Goblin_Arquebusier_Unit_Art.xml</File>
+    <File md5="405FC4B58203DA02DBAB0FA9E60E906E" import="1">Art/Goblin Musketman/Goblin_Chain.dds</File>
+    <File md5="51D4FAAB21AC4EEC4AAFDCC945A91733" import="1">Art/Goblin Musketman/u_french_musketeer_diff.dds</File>
+    <File md5="5F75B69AFD02477F0057234F5C649F7B" import="1">Art/Goblin Musketman/u_french_musketeer_sref.dds</File>
+    <File md5="7106B4F161B2BA9E0CE14F0BFC9A87DA" import="1">Art/Goblin Warg Rider/Goblin_WargRider.fxsxml</File>
+    <File md5="AE4D4CBAF8942A42F1A36848F2D47624" import="1">Art/Goblin Warg Rider/Goblin_WargRider.gr2</File>
+    <File md5="07F369CC519B7CC73DB089CC236FB68E" import="0">Art/Goblin Warg Rider/MEB_Goblin_WargRider_Unit_Art.xml</File>
+    <File md5="BE139C12BC41B731637092D44E613AB2" import="1">Art/Goblin Warg Rider/u_spanish_conquistador_diff.dds</File>
+    <File md5="3F0A34DC4C8E5F7329093319949ECC01" import="1">Art/Goblin Warg Rider/u_spanish_conquistador_sref.dds</File>
+    <File md5="51727943AA7CF409861E64A9850DF438" import="1">Art/Goblin Warg Rider/Warg_body_d.dds</File>
+    <File md5="ABDC4E894818438D93DD40EF1D8287C7" import="1">Art/Goblin Warg Rider/Warg_head_d.dds</File>
+    <File md5="89C2F1EC1E4DE7190D4C1CC22E7A1318" import="1">Art/Goblin Warg Rider/Warg_limbs_d.dds</File>
+    <File md5="3A22754287FA3D094B9EB0B1DA248B7F" import="1">Art/Goblin Warrior/Goblin_Loincloth.dds</File>
+    <File md5="24268E7763CE15CD43544DBD165D66D4" import="1">Art/Goblin Warrior/Goblin_Warrior.fxsxml</File>
+    <File md5="262E0AA341E17750EF1CC37A2DCF0938" import="1">Art/Goblin Warrior/Goblin_Warrior.gr2</File>
+    <File md5="33A021FFAFF7A53364027A2C563590F3" import="0">Art/Goblin Warrior/MEB_Unit_Goblin_Warrior_Art.xml</File>
+    <File md5="8D6EA8CC5882FAF188112419ADF59F69" import="1">Art/Goblin Wolf Rider/Goblin_Wolfrider.fxsxml</File>
+    <File md5="AF28051D84AC9EC3A37FD83F4F6EDC3D" import="1">Art/Goblin Wolf Rider/Goblin_Wolfrider.gr2</File>
+    <File md5="0F694ED0DE46614DD7451D401DD79599" import="1">Art/Goblin Wolf Rider/horseman_diff.dds</File>
+    <File md5="B51799C235C105B55069A285080CCCE0" import="1">Art/Goblin Wolf Rider/horseman_sref.dds</File>
+    <File md5="90A548C344D1ED339C6A0DB52B34E8A6" import="0">Art/Goblin Wolf Rider/MEB_Unit_Goblin_Wolfrider_Art.xml</File>
+    <File md5="455F6E04DD5D1D375059596721721A37" import="1">Art/Goblin Wolf Rider/wolf.dds</File>
+    <File md5="4FA15CBC850C1E6F5AE32BE4DA4FD962" import="1">Art/Orc Spearman/barbarian_spearman_diff.dds</File>
+    <File md5="4FF24811009AA5752CA9F99DABE53596" import="1">Art/Orc Spearman/barbarian_spearman_sref.dds</File>
+    <File md5="F1AA395B163C4A123AEA9B0A049B7B0A" import="1">Art/Orc Spearman/orcears.dds</File>
+    <File md5="89478371CE22E1A3E7013127292FC2B0" import="1">Art/Orc Spearman/orc_body.dds</File>
+    <File md5="15E70C9BCE2AEAD16103FA8E47621EAF" import="1">Art/Orc Spearman/orc_spearman.fxsxml</File>
+    <File md5="CBB7A0C088D055EEBE3BB1930A2F2869" import="1">Art/Orc Spearman/orc_spearman.gr2</File>
+    <File md5="E1727234C337FA32E5A308DD41BE9526" import="1">Art/Orc Spearman/spikes.dds</File>
+    <File md5="C494AF34DAD6C6BC11277D910D29AAA3" import="0">Art/Orc Spearman/MEB_Units_OrcSpearman_Art.xml</File>
+    <File md5="91063C2212164E9B369CF45B4CDB7F2A" import="1">Art/Orc Swordsman/Orc_Swordsman.fxsxml</File>
+    <File md5="EDEC5C2D30D6885D9A61405876278155" import="1">Art/Orc Swordsman/Orc_Swordsman.gr2</File>
+    <File md5="07E59848C037158506125DCFA101DFFD" import="1">Art/Orc Swordsman/Plate_Armor.dds</File>
+    <File md5="9D1CCFF7C0D3FDB3A0B314C66A0C9A45" import="1">Art/Orc Swordsman/Plate_Armor_sref.dds</File>
+    <File md5="96DF7601DF9B9D70106BEBDE8B85ADD8" import="1">Art/Orc Swordsman/Shield_Sword.dds</File>
+    <File md5="B8B57FEC663E4C6B51115E5C248910D4" import="1">Art/Orc Swordsman/Shield_Sword_sref.dds</File>
+    <File md5="27B7A985DCBD6D760E8070426AC1F338" import="0">Art/Orc Swordsman/MEB_Unit_Orc_Swordsman_Art.xml</File>
+    <File md5="C2AB651217655598A226F7A1CD8DDD46" import="1">Art/Uruk hai Longswordsman/Orc_Chain.dds</File>
+    <File md5="0B807EB2975730F0D22756DFAEE6E0FB" import="1">Art/Uruk hai Longswordsman/Orc_Chain_sref.dds</File>
+    <File md5="412A2A66D9D5E50062D6B3FB450E9DDF" import="1">Art/Uruk hai Longswordsman/Orc_Longsword.dds</File>
+    <File md5="B0E78FE81E12DF547E47068AC34F3BF0" import="1">Art/Uruk hai Longswordsman/Orc_Longswordsman.fxsxml</File>
+    <File md5="231C09295B1423DC8EB881629AA61870" import="1">Art/Uruk hai Longswordsman/Orc_Longswordsman.gr2</File>
+    <File md5="6BB8D6CE36DDECBC32A51A381F8238DA" import="1">Art/Uruk hai Longswordsman/Orc_Longsword_sref.dds</File>
+    <File md5="796D4587D42FD6D2D6B9DE2D5E4C583D" import="1">Art/Uruk hai Longswordsman/Orc_Plate.dds</File>
+    <File md5="50BA8BADFE23B6FFE36AC2AE19FF05CE" import="1">Art/Uruk hai Longswordsman/Orc_Plate_sref.dds</File>
+    <File md5="5202FBCA5711DD5C3B287479F5468535" import="0">Art/Uruk hai Longswordsman/MEB_Unit_Orc_Longswordsman_Art.xml</File>
+    <File md5="1E72FDA713D57FFA3A548F204A470C10" import="0">MEB Special Thanks.pdf</File>
+    <File md5="645FC08FB007D5C76544388CC7CC797A" import="0">SQL/MEB_EX_UBU_BNW.sql</File>
+    <File md5="F8D6893D6845B5687491FDDA06A66E28" import="0">SQL/MEB_SET_NEW_UBU.sql</File>
+    <File md5="A257E06DB9BC89A0587565605317AFD8" import="0">SQL/MEB_EX_UBU_GK.sql</File>
+    <File md5="49EDADD7130EF2C88474577A748E1E26" import="0">XML/MEB_NEW_UBU_EXP.xml</File>
+    <File md5="744C85DDBBB41C15428ED21AB77D816C" import="0">XML/MEB_Text.xml</File>
+    <File md5="051DA95E2DC5840B79E6E655232C6E74" import="0">XML/MEB_Text_IT_IT.xml</File>
+  </Files>
+  <Actions>
+    <OnModActivated>
+      <UpdateDatabase>XML/MEB_Text.xml</UpdateDatabase>
+      <UpdateDatabase>XML/MEB_Text_IT_IT.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Goblin Archer/MEB_Goblin_Archer_Unit_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Goblin Crossbowman/MEB_Goblin_Crossbowman_Unit_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Goblin Musketman/MEB_Goblin_Arquebusier_Unit_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Goblin Bowman/MEB_Goblin_Bowman_Unit_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Orc Swordsman/MEB_Unit_Orc_Swordsman_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Orc Spearman/MEB_Units_OrcSpearman_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Goblin Warg Rider/MEB_Goblin_WargRider_Unit_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Goblin Wolf Rider/MEB_Unit_Goblin_Wolfrider_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Goblin Warrior/MEB_Unit_Goblin_Warrior_Art.xml</UpdateDatabase>
+      <UpdateDatabase>Art/Uruk hai Longswordsman/MEB_Unit_Orc_Longswordsman_Art.xml</UpdateDatabase>
+      <UpdateDatabase>SQL/MEB_EX_UBU_GK.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/MEB_EX_UBU_BNW.sql</UpdateDatabase>
+      <UpdateDatabase>XML/MEB_NEW_UBU_EXP.xml</UpdateDatabase>
+      <UpdateDatabase>SQL/MEB_SET_NEW_UBU.sql</UpdateDatabase>
+    </OnModActivated>
+  </Actions>
+</Mod>

@@ -1,0 +1,24 @@
+# Generated output: everything here can be rebuilt with tools/build.py, tools/build_dlc.py,
+# tools/capitals/pipeline.py, tools/landmarks/build_models.py
+/build/
+/dist/
+
+# Local tool environments (Blender chroot, shims, package caches)
+/.blenderroot/
+/.shim/
+/.apkcache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logs / editor / OS junk
+*.log
+.DS_Store
+*.swp
+.idea/
+.vscode/
+screenshots/
+

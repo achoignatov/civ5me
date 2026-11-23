@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Middle Earth MP pack: fixes invisible cities.
+     These unique buildings referenced building-art IDs that do not exist in the game. When a city built one,
+     the engine could not assemble that city's model and drew nothing (the city stayed functional).
+     Point them at the art of the building they replace. -->
+<GameData>
+	<Buildings>
+		<!-- Goblins: Tunnel replaces the Monument (vanilla Monument art tag is "MONUMENT") -->
+		<Update><Where Type="BUILDING_MEC_TUNNEL"/><Set ArtDefineTag="MONUMENT"/></Update>
+		<!-- Arnor: Barrow replaces the Shrine (vanilla Shrine/Temple art tag is "TEMPLE") -->
+		<Update><Where Type="BUILDING_MEC_BARROW"/><Set ArtDefineTag="TEMPLE"/></Update>
+		<!-- Wood Elves: Hunting Lodge replaces the Granary; ART_DEF_BUILDING_MEC_HUNTING_LODGE was never defined -->
+		<Update><Where Type="BUILDING_MEC_HUNTING_LODGE"/><Set ArtDefineTag="ART_DEF_BUILDING_GRANARY"/></Update>
+	</Buildings>
+</GameData>

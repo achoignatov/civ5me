@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by ModBuddy on 7/6/2014 12:31:48 PM -->
+<GameData>
+	<Language_it_IT>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_ARCHER_GOBLINS">
+			<Text>Arciere Goblin</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_WARRIOR_GOBLINS">
+			<Text>Guerriero Goblin</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_SWORDSMAN_ORCS">
+			<Text>Spadaccino Rhudaur</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_DUNLENDINGS">
+			<Text>Guerriero con ascia Dunlending</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_COMPOSITE_BOWMAN_GOBLINS">
+			<Text>Arciere composito Goblin</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_CROSSBOWMAN_GOBLINS">
+			<Text>Balestriere Goblin</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_MUSKETMAN_GOBLINS">
+			<Text>Soldato con moschetto Goblin</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_KNIGHT_GOBLINS">
+			<Text>Goblin cavalca Warg</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_HORSEMAN_GOBLINS">
+			<Text>Goblin cavalca lupi</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_LONGSWORDSMAN_ORCS">
+			<Text>Guerriero con spada lunga Uruk</Text>
+		</Row>
+		<Row Tag="TXT_KEY_UNIT_BARBARIAN_SPEARMAN_ORCS">
+			<Text>Lanciere Orco</Text>
+		</Row>
+	</Language_it_IT>
+  
+</GameData>

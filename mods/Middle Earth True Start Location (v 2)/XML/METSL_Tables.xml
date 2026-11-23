@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by ModBuddy on 9/12/2014 5:47:27 PM -->
+<GameData>
+	<Table name="Civilizations_TaHugeRndWwStartPosition">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="MinorCiv_TaHugeRndWwStartPosition">
+		<Column name="Type" type="text" reference="MinorCivilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="Civilizations_TaHugeRndNwwStartPosition">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="MinorCiv_TaHugeRndNwwStartPosition">
+		<Column name="Type" type="text" reference="MinorCivilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="Civilizations_TaLrgRndWwStartPosition">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="MinorCiv_TaLrgRndWwStartPosition">
+		<Column name="Type" type="text" reference="MinorCivilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="Civilizations_TaLrgRndNwwStartPosition">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="MinorCiv_TaLrgRndNwwStartPosition">
+		<Column name="Type" type="text" reference="MinorCivilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="Civilizations_TaStdRndWwStartPosition">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="MinorCiv_TaStdRndWwStartPosition">
+		<Column name="Type" type="text" reference="MinorCivilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="Civilizations_TaStdRndNwwStartPosition">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<Table name="MinorCiv_TaStdRndNwwStartPosition">
+		<Column name="Type" type="text" reference="MinorCivilizations(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="AltX" type="integer" default="NULL"/>
+		<Column name="AltY" type="integer" default="NULL"/>
+	</Table>
+	<!-- Civilizations requested resources -->
+	<Table name="Civilizations_TaHugeRndWwRequestedResource">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="Req1" type="text" reference="Resources(Type)"/>
+		<Column name="Yield1" type="integer" default="1"/>
+		<Column name="Req2" type="text" reference="Resources(Type)"/>
+		<Column name="Yield2" type="integer" default="1"/>
+		<Column name="Req3" type="text" reference="Resources(Type)"/>
+		<Column name="Yield3" type="integer" default="1"/>
+		<Column name="Req4" type="text" reference="Resources(Type)"/>
+		<Column name="Yield4" type="integer" default="1"/>
+		<Column name="Req5" type="text" reference="Resources(Type)"/>
+		<Column name="Yield5" type="integer" default="1"/>
+		<Column name="Req6" type="text" reference="Resources(Type)"/>
+		<Column name="Yield6" type="integer" default="1"/>
+	</Table>
+	<Table name="Civilizations_TaLrgRndNwwRequestedResource">
+		<Column name="Type" type="text" reference="Civilizations(Type)"/>
+		<Column name="Req1" type="text" reference="Resources(Type)"/>
+		<Column name="Yield1" type="integer" default="1"/>
+		<Column name="Req2" type="text" reference="Resources(Type)"/>
+		<Column name="Yield2" type="integer" default="1"/>
+		<Column name="Req3" type="text" reference="Resources(Type)"/>
+		<Column name="Yield3" type="integer" default="1"/>
+		<Column name="Req4" type="text" reference="Resources(Type)"/>
+		<Column name="Yield4" type="integer" default="1"/>
+		<Column name="Req5" type="text" reference="Resources(Type)"/>
+		<Column name="Yield5" type="integer" default="1"/>
+		<Column name="Req6" type="text" reference="Resources(Type)"/>
+		<Column name="Yield6" type="integer" default="1"/>
+	</Table>
+	<!-- Regions for resources -->
+
+	<Table name="Resource_TaHugeRndWwRegionPosition">
+		<Column name="Type" type="text" notnull ="true" unique="true" reference="Region(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="Width" type="integer" default="0"/>
+		<Column name="Height" type="integer" default="0"/>
+	</Table>
+	<Table name="Resource_TaHugeRndWwRegionExclude">
+		<Column name="Type" type="text" reference="Region(Type)"/>
+		<Column name="Resource" type="text" reference="Resources(Type)"/>
+	</Table>
+	<Table name="Resource_TaHugeRndWwRegionInclude">
+		<Column name="Type" type="text" reference="Region(Type)"/>
+		<Column name="Resource" type="text" reference="Resources(Type)"/>
+		<Column name="Deposit" type="integer" default="0"/>
+		<Column name="MinYield" type="integer" default="1"/>
+		<Column name="MaxYield" type="integer" default="1"/>
+	</Table>
+
+	<Table name="Resource_TaLrgRndNwwRegionPosition">
+		<Column name="Type" type="text" notnull ="true" unique="true" reference="Region(Type)"/>
+		<Column name="X" type="integer" default="0"/>
+		<Column name="Y" type="integer" default="0"/>
+		<Column name="Width" type="integer" default="0"/>
+		<Column name="Height" type="integer" default="0"/>
+	</Table>
+	<Table name="Resource_TaLrgRndNwwRegionExclude">
+		<Column name="Type" type="text" reference="Region(Type)"/>
+		<Column name="Resource" type="text" reference="Resources(Type)"/>
+	</Table>
+	<Table name="Resource_TaLrgRndNwwRegionInclude">
+		<Column name="Type" type="text" reference="Region(Type)"/>
+		<Column name="Resource" type="text" reference="Resources(Type)"/>
+		<Column name="Deposit" type="integer" default="0"/>
+		<Column name="MinYield" type="integer" default="1"/>
+		<Column name="MaxYield" type="integer" default="1"/>
+	</Table>
+</GameData>

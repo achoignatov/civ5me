@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mod id="9f1a1884-17be-4f9f-bbbf-37143a130eb3" version="2">
+  <Properties>
+    <Name>Middle Earth True Start Location</Name>
+    <Stability>Beta</Stability>
+    <Teaser>Middle Earth Maps with True start locations, Semi-Random Resources, &amp; Dynamic City Naming</Teaser>
+    <Description>Middle Earth True Start Location features two maps that aim to provide the best True Start Location experience possible for the civilizations from my main mod Middle Earth Civilizations. 
+
+This mod would not be possible without Gedemon and FramedArchitecture giving me permission to use elements of their mods Yet (not) another Earth Maps Pack and Accurate Maps.
+
+This mod requires:
+Gods and Kings
+Brave New World
+Middle Earth Civilizations
+Middle Earth City States
+Middle Earth Only
+
+Please see these mods workshop page for additional information.</Description>
+    <Authors>Yenyang</Authors>
+    <SpecialThanks>Gedemon, FramedArchitecture</SpecialThanks>
+    <HideSetupGame>1</HideSetupGame>
+    <AffectsSavedGames>1</AffectsSavedGames>
+    <MinCompatibleSaveVersion>0</MinCompatibleSaveVersion>
+    <SupportsSinglePlayer>1</SupportsSinglePlayer>
+    <SupportsMultiplayer>1</SupportsMultiplayer>
+    <SupportsHotSeat>1</SupportsHotSeat>
+    <SupportsMac>1</SupportsMac>
+    <ReloadAudioSystem>0</ReloadAudioSystem>
+    <ReloadLandmarkSystem>0</ReloadLandmarkSystem>
+    <ReloadStrategicViewSystem>0</ReloadStrategicViewSystem>
+    <ReloadUnitSystem>0</ReloadUnitSystem>
+  </Properties>
+  <Dependencies>
+    <Mod id="46830894-7582-4a69-8c5a-1837e053a9de" minversion="0" maxversion="999" title="Middle Earth City States" />
+    <Mod id="65b7def1-337c-4f88-9f84-2fb2213417e6" minversion="2" maxversion="999" title="Middle Earth Only" />
+  </Dependencies>
+  <References>
+    <Mod id="fdc54097-1a86-4942-bd90-26d1436ee07a" minversion="0" maxversion="999" title="Lord of the Rings Civ5" />
+    <Mod id="8c42df36-e23b-4cf5-9ed2-534ac386cf48" minversion="0" maxversion="999" title="Middle Earth Civilizations" />
+  </References>
+  <Blocks>
+    <Mod id="36e88483-48fe-4545-b85f-bafc50dde315" minversion="0" maxversion="999" title="Yet (not) Another Earth Maps Pack" />
+    <Mod id="d425ef7b-8f85-4ade-abff-bf795978c86b" minversion="0" maxversion="999" title="Middle Earth Map Pack" />
+  </Blocks>
+  <Files>
+    <File md5="EEE0086AA95BB4BE457450ACFFAC230D" import="0">ART/Resources/Icons/FaerunResourceAtlas256.dds</File>
+    <File md5="88001F72F067701BF80C8E8DF1109D5E" import="0">ART/Resources/Icons/FaerunResourceAtlas45.dds</File>
+    <File md5="F49EC4633DD8D0089B0FAF32BA66C332" import="0">ART/Resources/Icons/FaerunResourceAtlas64.dds</File>
+    <File md5="EE80DC1F28B1649241FFE5A2712485DB" import="0">ART/Resources/Icons/FaerunResourceAtlas80.dds</File>
+    <File md5="6B185A888ED87FCC6DC755E1D59AFE1F" import="0">ART/Resources/Icons/Resources-FontIcons.dds</File>
+    <File md5="4113760E1804FFEC6ACA0079FD8C5145" import="0">ART/Resources/Icons/Resources-FontIcons.ggxml</File>
+    <File md5="114A6F8BFC1A9FAFC59C67F41A462232" import="0">ART/Resources/Mithral/SV_Mithral.dds</File>
+    <File md5="78D514FCEBC3D7D9429C5E9333F1699A" import="0">ART/Resources/Mushrooms/hb_plantation_mid_mushrooms.fxsxml</File>
+    <File md5="D18D520D66184599FA0DF0EAF267C56B" import="0">ART/Resources/Mushrooms/hb_plantation_mid_mushrooms.gr2</File>
+    <File md5="7EA7D0B965FCF667E0B8ADC27FF735E2" import="0">ART/Resources/Mushrooms/mushroom_diff.dds</File>
+    <File md5="726E22382D2A2DF52B986B9B0E9D455F" import="0">ART/Resources/Mushrooms/plantation_mid_mushrooms.fxsxml</File>
+    <File md5="C6747C0473D8C419961ED3753F3816EE" import="0">ART/Resources/Mushrooms/plantation_mid_mushrooms.gr2</File>
+    <File md5="B6029A9D5E464E4009AE78C446080AA4" import="0">ART/Resources/Mushrooms/resource_mushrooms.fxsxml</File>
+    <File md5="8CF33FA84B254531A8574D1CD00DA734" import="0">ART/Resources/Mushrooms/resource_mushrooms.gr2</File>
+    <File md5="1FDF334FCE4F6F45F98BBE97B7727E49" import="0">ART/Resources/Mushrooms/SV_Mushrooms.dds</File>
+    <File md5="88A2CD224E009E6766EF72619E58A869" import="0">ART/Resources/Timber/SV_Timber.dds</File>
+    <File md5="134C298535D0F9C7EDE50B3C9CBB1CC8" import="1">ART/Terrain/afri_desert_d.dds</File>
+    <File md5="03704CA09BCA211A3D837A44826141DB" import="1">ART/Terrain/afri_desert_h.dds</File>
+    <File md5="B43AAD2BD5BB574191E5D83C532C3EA9" import="1">ART/Terrain/afri_grassland_d.dds</File>
+    <File md5="C74CC0D876A0F7593C13E6FEE10CE601" import="0">ART/Terrain/afri_grassland_d_backup.dds</File>
+    <File md5="45D134FDFE0164E45AA932B7183DDB3A" import="1">ART/Terrain/afri_marsh_d.dds</File>
+    <File md5="A7C8B569682617160D5685D6375DD7A3" import="1">ART/Terrain/afri_mountain_base_d.dds</File>
+    <File md5="0665C227F94603E4B9B31B553736FB47" import="1">ART/Terrain/afri_mountain_base_h.dds</File>
+    <File md5="B43AAD2BD5BB574191E5D83C532C3EA9" import="1">ART/Terrain/afri_plain_d.dds</File>
+    <File md5="E12F3F3B97B33785F4E4AF8F111FBCBD" import="0">ART/Terrain/afri_plain_d_backup.dds</File>
+    <File md5="6C983748932FBA10BD8EAE73C83BAF99" import="1">ART/Terrain/afri_tundra_d.dds</File>
+    <File md5="9B1876B4857BCBBB2963BF2736B0416B" import="1">ART/Terrain/afri_tundra_hill_d.dds</File>
+    <File md5="6C44F260B8FEFF2D415392F7628C0CBF" import="1">ART/Terrain/amer_desert_d.dds</File>
+    <File md5="7AF40C1DA6ABC50BABD8ED3F3B46C5A2" import="1">ART/Terrain/amer_grassland_d.dds</File>
+    <File md5="551392846AFFE927C38ECCAD2464B5B6" import="1">ART/Terrain/amer_marsh_d.dds</File>
+    <File md5="94FCC96AF8B3BB7FEBA5E486B2C97777" import="1">ART/Terrain/amer_mountain_base_d.dds</File>
+    <File md5="F8FF7AB47BB98CB4242A4B0BE97A6FE6" import="1">ART/Terrain/amer_mountain_base_h.dds</File>
+    <File md5="73A2AC93E48E6C4B09908519B3D6ADF4" import="1">ART/Terrain/amer_plain_d.dds</File>
+    <File md5="B18C336602636A74C48562C64685E925" import="1">ART/Terrain/amer_tundra_d.dds</File>
+    <File md5="562CBF4211374ADAB8AEF787938E75F0" import="1">ART/Terrain/amer_tundra_hill_d.dds</File>
+    <File md5="1A33BD71EF2DB868F0097DEBFA3F9FD3" import="1">ART/Terrain/asia_desert_d.dds</File>
+    <File md5="D9BF734397EC6F94B8492815FBE7F4D9" import="1">ART/Terrain/asia_grassland_d.dds</File>
+    <File md5="1951AD264385AFD53C03BB06E3C64760" import="1">ART/Terrain/asia_marsh_d.dds</File>
+    <File md5="C7A0D81E593E5FB21B0CA9A05F069D79" import="1">ART/Terrain/asia_mountain_base_d.dds</File>
+    <File md5="14E43624DD58F4C807FBE66DE74DE6DF" import="1">ART/Terrain/asia_mountain_base_h.dds</File>
+    <File md5="59E27DACB2B72F7FD46C96816D882828" import="1">ART/Terrain/asia_plain_d.dds</File>
+    <File md5="7A23AFB855761A12B35240A89049744D" import="1">ART/Terrain/asia_tundra_d.dds</File>
+    <File md5="455E4C5B572E2363B1D34FFAF16D99B1" import="1">ART/Terrain/asia_tundra_hill_d.dds</File>
+    <File md5="CBC6227FDB415CF5A4A581D5BD09F5A6" import="1">ART/Terrain/euro_desert_d.dds</File>
+    <File md5="14C4C40C6A65E0B7E8FD7565684EA66B" import="1">ART/Terrain/euro_desert_h.dds</File>
+    <File md5="1292D8836E5CD7C07EB5F6092C87C0FD" import="1">ART/Terrain/euro_grassland_d.dds</File>
+    <File md5="C8DFA9FD4DB54B0671E1D14D74050BB5" import="1">ART/Terrain/euro_grassland_h.dds</File>
+    <File md5="C50CA8F1D2264A4462D2DB49E1E45C1A" import="1">ART/Terrain/euro_mountain_base_d.dds</File>
+    <File md5="3BF1F1F50C825478243074E4E272B7EE" import="1">ART/Terrain/euro_mountain_base_h.dds</File>
+    <File md5="C6165E238495D75BF6196ECD3282631B" import="1">ART/Terrain/euro_mountain_top_d.dds</File>
+    <File md5="22DC3FC6F8EA480C24FD58031E514D27" import="1">ART/Terrain/euro_plain_d.dds</File>
+    <File md5="CF01146F7CE4C246030DC773511C451F" import="1">ART/Terrain/euro_plain_h.dds</File>
+    <File md5="20E05C5AC5D789ED54CB9601F0F26C02" import="1">ART/Terrain/euro_shallow_seas_d.dds</File>
+    <File md5="75433F2A128CBA7D2CD70BB770EE39FF" import="1">ART/Terrain/euro_tundra_d.dds</File>
+    <File md5="9CCDF5AC1BB99327658B52A34558E0A0" import="1">ART/Terrain/euro_tundra_hill_d.dds</File>
+    <File md5="85B1119D6950F1431C123BD4606D3CDA" import="1">ART/Terrain/generic_tundra_h.dds</File>
+    <File md5="3D658F5BBE0B9BE2EE3D05EBC06E117D" import="1">ART/Terrain/generic_tundra_hill_h.dds</File>
+    <File md5="31C364C2E5CAD8FA4858AF3B60311541" import="0">Game Setup/METSL_Setup.lua</File>
+    <File md5="165C345B9ADB7CBC1C334DAC45584F3E" import="0">Game Setup/METSL_Setup.xml</File>
+    <File md5="FD1543BDE9DCBD10EFA85274AF11EE24" import="1">LUA/METSL_CityNames.lua</File>
+    <File md5="F849C4AC2C82AFA7EFB246C2C24DB165" import="1">LUA/MapGenerator.lua</File>
+    <File md5="DB647CE3021226D36FE097DDE28207D6" import="1">LUA/METSL_Defines.lua</File>
+    <File md5="1AEFEF9BC995BF954BBEC882CF21EE56" import="1">LUA/METSL_Functions.lua</File>
+    <File md5="2F92DE33D88953BCD11CC2A20AFDC9BB" import="0">LUA/METSL_InGame.lua</File>
+    <File md5="3D5630D92FFFB34D53FF8B8F198A7B41" import="1">LUA/METSL_Loading.lua</File>
+    <File md5="EE39859B76CB8764408E339672AFC5BB" import="1">LUA/METSL_Utils.lua</File>
+    <File md5="176F3980E3E9812E97DF85DB2457FBDF" import="1">LUA/WorldBuilderRandomItems.lua</File>
+    <File md5="C35526B9433A5DF7CCCD207E2FACA14B" import="1">Maps/METSL_TA_HUGE_RND_NWW.Civ5Map</File>
+    <File md5="02D1985C60CC1C656E20950C2A89E9FB" import="1">Maps/METSL_TA_HUGE_RND_WW.Civ5Map</File>
+    <File md5="9A0B72EE95211F20DC767A02F1B01CF1" import="1">Maps/METSL_TA_LRG_RND_NWW.Civ5Map</File>
+    <File md5="BFF7AE512585D7F43808535D288697F8" import="1">Maps/METSL_TA_LRG_RND_WW.Civ5Map</File>
+    <File md5="E1BD11DB4BC5CD7739EFA594134D1444" import="1">Maps/METSL_TA_STD_RND_NWW.Civ5Map</File>
+    <File md5="9AD494A9E6A9C69348D2B23E6FE25CDC" import="1">Maps/METSL_TA_STD_RND_WW.Civ5Map</File>
+    <File md5="C11D0900B83E3B118BDB94DF5F671CE4" import="0">SQL/METSL_Art.sql</File>
+    <File md5="F743373644822741F4A08C7A8A52ADA2" import="0">SQL/METSL_ResourceRules.sql</File>
+    <File md5="453A023C9C33CB7DD00A05B44FDC75C8" import="0">SQL/METSL_RulesChange.sql</File>
+    <File md5="0EC3089CDE41A2CD802100230715B265" import="0">SQL/METSL_TA_HUGE_WW_CityNames.sql</File>
+    <File md5="54D31EF4E2432DEEFE3DB6A887A0F72A" import="0">SQL/METSL_TA_LRG_NWW_CityNames.sql</File>
+    <File md5="367523E4B2E00C6C661D22DAF42C1DD1" import="0">XML/METSL_Resources_LOTR.xml</File>
+    <File md5="3D3E1708EE411ED04B4F8914B68F25B2" import="0">XML/METSL_CivilizationsRequestedResources.xml</File>
+    <File md5="C16511140D8740F951539AA665EA1F71" import="0">XML/METSL_ResourceRegionInclude.xml</File>
+    <File md5="650C7D81B68C2775AB264BADB5AABCF6" import="0">XML/METSL_Jungle_Fix.xml</File>
+    <File md5="E834AAE85A15B288E95DF6B9EC66935E" import="0">XML/METSL_Mount_Doom.xml</File>
+    <File md5="F8D9760708471E0A5D7D3CECD5824A81" import="0">XML/METSL_Natural_Wonders.xml</File>
+    <File md5="4B35C3B1510BCE1042B80071C8B1232A" import="0">XML/METSL_MinorStartPos.xml</File>
+    <File md5="209D19958B0904D678DA20A2B2814C9C" import="0">XML/METSL_CivilizationStartPos.xml</File>
+    <File md5="AB6DE66E675C87A56B2CE5A311F8D5CC" import="0">XML/METSL_ResourceRegionExclude.xml</File>
+    <File md5="ABE9C472C9F0FF5241DACEA05FD7A97B" import="0">XML/METSL_Resource_Regions.xml</File>
+    <File md5="44F1ADC165E7B45BF237D7D9D16D4962" import="0">XML/METSL_Tables.xml</File>
+  </Files>
+  <Actions>
+    <OnModActivated>
+      <UpdateDatabase>XML/METSL_Tables.xml</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_CivilizationStartPos.xml</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_MinorStartPos.xml</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_Natural_Wonders.xml</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_Jungle_Fix.xml</UpdateDatabase>
+      <UpdateDatabase>SQL/METSL_TA_HUGE_WW_CityNames.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/METSL_RulesChange.sql</UpdateDatabase>
+      <UpdateDatabase>SQL/METSL_ResourceRules.sql</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_Resource_Regions.xml</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_ResourceRegionInclude.xml</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_ResourceRegionExclude.xml</UpdateDatabase>
+      <UpdateDatabase>XML/METSL_CivilizationsRequestedResources.xml</UpdateDatabase>
+      <UpdateDatabase>SQL/METSL_TA_LRG_NWW_CityNames.sql</UpdateDatabase>
+    </OnModActivated>
+  </Actions>
+  <EntryPoints>
+    <EntryPoint type="Custom" file="Game Setup/METSL_Setup.xml">
+      <Name>METSL_Setup</Name>
+      <Description>
+      </Description>
+    </EntryPoint>
+    <EntryPoint type="Map" file="Maps/METSL_TA_HUGE_RND_NWW.Civ5Map">
+      <Name>METSL-HUGE-RND_NWW</Name>
+      <Description>75x80 Huge Middle Earth with Random Resources and No World Wrap (Or Rhun)</Description>
+    </EntryPoint>
+    <EntryPoint type="Map" file="Maps/METSL_TA_HUGE_RND_WW.Civ5Map">
+      <Name>METSL-HUGE-RND-WW</Name>
+      <Description>100x80 Huge ME TA RND RES WW</Description>
+    </EntryPoint>
+    <EntryPoint type="Map" file="Maps/METSL_TA_LRG_RND_NWW.Civ5Map">
+      <Name>METSL-LRG-RND-NWW</Name>
+      <Description>
+      </Description>
+    </EntryPoint>
+    <EntryPoint type="Map" file="Maps/METSL_TA_LRG_RND_WW.Civ5Map">
+      <Name>METSL-LRG-RND-WW</Name>
+      <Description>
+      </Description>
+    </EntryPoint>
+    <EntryPoint type="Map" file="Maps/METSL_TA_STD_RND_NWW.Civ5Map">
+      <Name>METSL-STD-RND-NWW</Name>
+      <Description>
+      </Description>
+    </EntryPoint>
+    <EntryPoint type="Map" file="Maps/METSL_TA_STD_RND_WW.Civ5Map">
+      <Name>METSL-STD-RND-WW</Name>
+      <Description>
+      </Description>
+    </EntryPoint>
+    <EntryPoint type="InGameUIAddin" file="LUA/METSL_InGame.lua">
+      <Name>METSL_InGame</Name>
+      <Description>
+      </Description>
+    </EntryPoint>
+  </EntryPoints>
+</Mod>

@@ -1,0 +1,223 @@
+"""Build the landmark models: Blender modelling -> texture atlas -> .gr2/.fxsxml/.dds (+ preview).
+
+Run:  blender -b --factory-startup -P tools/landmarks/build_models.py -- [module ...] [--no-preview]
+Output: build/landmarks/out/<model>.{gr2,fxsxml}, <model>_DIFF.dds, <model>_SREF.dds
+        build/landmarks/preview/<model>.png
+
+Rendering backbone (see landmarks.ENVELOPE and docs/CITY_MODELS.md):
+  * models are authored in WORLD units (origin = tile centre, ground z = 0, south = -Y = towards the camera);
+  * the build REFUSES a model outside the envelope: every vertex inside the city hexagon, height
+    <= max_height, vertex/triangle counts <= the largest stock wonders;
+  * written vertices are multiplied by 1/fScale, so the WonderArtInfo fScale stays at the proven 0.25;
+  * flat shading only, the stock template's rectangular "Tree cut", 1 building model + tree cut,
+    512x512 DIFF / 256x256 SREF, Wonder_DecisionTree, no effect bones (particles come later).
+The model library (blib, atlas) and the .gr2 writer (civ5model, gr2) live in tools/capitals/.
+"""
+import importlib
+import json
+import math
+import os
+import sys
+import time
+import zlib
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, 'models'))
+sys.path.insert(0, os.path.join(HERE, '..', 'capitals'))
+# numpy for Blender's Python: build/venv (same Python version as Blender)
+sys.path.append(os.path.join(HERE, '..', '..', 'build', 'venv', 'lib', 'python%d.%d' % sys.version_info[:2],
+                             'site-packages'))
+
+import atlas  # noqa: E402
+import blib  # noqa: E402
+import civ5model  # noqa: E402
+import dds  # noqa: E402
+import gr2  # noqa: E402
+import pipeline  # noqa: E402  (reset(), preview(), _shrink())
+import numpy as np  # noqa: E402
+from landmarks import ENVELOPE, LANDMARKS, OUT, PREVIEW, manifest_path  # noqa: E402
+
+GAME_DIFF = 512
+GAME_SREF = 256
+WORK = os.path.join(os.path.dirname(PREVIEW), 'work')
+
+
+def in_hex(x, y, slack=0.05):
+    """Pointy-top city hexagon: flat sides east/west at hex_in, corners north/south at hex_out."""
+    hin = ENVELOPE['hex_in'] + slack
+    for k in range(6):
+        a = math.radians(60 * k)            # outward normals of the 6 sides: 0, 60, ... degrees
+        if x * math.cos(a) + y * math.sin(a) > hin:
+            return False
+    return True
+
+
+def check_envelope(name, verts, tris):
+    errs = []
+    if len(verts) > ENVELOPE['max_verts']:
+        errs.append('%d vertices > %d' % (len(verts), ENVELOPE['max_verts']))
+    if len(tris) > ENVELOPE['max_tris']:
+        errs.append('%d triangles > %d' % (len(tris), ENVELOPE['max_tris']))
+    zs = [v[0][2] for v in verts]
+    if max(zs) > ENVELOPE['max_height']:
+        errs.append('height %.1f > %.1f' % (max(zs), ENVELOPE['max_height']))
+    if min(zs) < ENVELOPE['min_z']:
+        errs.append('lowest point %.1f < %.1f' % (min(zs), ENVELOPE['min_z']))
+    out = [v[0] for v in verts if not in_hex(v[0][0], v[0][1])]
+    if out:
+        far = max(out, key=lambda p: math.hypot(p[0], p[1]))
+        errs.append('%d vertices outside the city hexagon (e.g. %.1f, %.1f)' % (len(out), far[0], far[1]))
+    if errs:
+        raise SystemExit('%s is OUTSIDE the render envelope: %s' % (name, '; '.join(errs)))
+
+
+def _make(mod_fn, seed):
+    """Run a model function into a fresh Builder and texture it (flat shading)."""
+    pipeline.reset()
+    blib.SEG[0] = 1.0
+    blib.FILL[0] = 1.0
+    b = blib.Builder(seed=seed)
+    mod_fn(b)
+    b.fsmooth = [False] * len(b.faces)          # flat shading everywhere (see module docstring)
+    return atlas.process(b)
+
+
+def _textures(res, base, diff_px=GAME_DIFF, sref_px=GAME_SREF):
+    alpha = np.full(res.image.shape[:2] + (1,), 255, np.uint8)
+    diff = np.concatenate([res.image, alpha], -1)
+    dn, sn = base + '_DIFF.dds', base + '_SREF.dds'
+    dds.write_dxt3(os.path.join(OUT, dn), pipeline._shrink(diff, diff_px))
+    dds.write_dxt3(os.path.join(OUT, sn), pipeline._shrink(res.sref, sref_px))
+    return dn, sn
+
+
+def _model_units(verts, k):
+    return [((p[0] * k, p[1] * k, p[2] * k), n, t, bn, uv) for (p, n, t, bn, uv) in verts]
+
+
+def _bbox(verts):
+    zs = [v[0] for v in verts]
+    return [(round(min(p[i] for p in zs), 1), round(max(p[i] for p in zs), 1)) for i in range(3)]
+
+
+def build_one(lm, do_preview=True):
+    t0 = time.time()
+    name = lm['model']
+    mod = importlib.import_module(lm['module'])
+    importlib.reload(mod)
+    seed = zlib.crc32(name.encode()) & 0xffff
+    k = 1.0 / lm['scale']                       # world units -> model units at the WonderArtInfo fScale
+    animated = lm.get('animated') and hasattr(mod, 'build_eye')
+    files = []
+
+    # the whole landmark as ONE static model: the proven form (and the envelope check of everything)
+    res = _make(mod.build, seed)
+    check_envelope(name, res.verts, res.tris)
+    sname = name + '_Static' if animated else name
+    dn, sn = _textures(res, sname)
+    size = civ5model.write_model(OUT, sname, _model_units(res.verts, k), res.tris, dn, sn, fx=(), wonder=True,
+                                 hex_cut=False)
+    files += [sname + '.gr2', dn, sn]
+    print('%-20s tris %6d  verts %6d  gr2 %7d bytes  WORLD bbox %s  fScale %.2f  envelope OK' % (
+        sname, len(res.tris), len(res.verts), size, _bbox(res.verts), lm['scale']))
+    preview_res, preview_dn = res, dn
+    if not animated:
+        files.append(name + '.fxsxml')
+    else:
+        os.remove(os.path.join(OUT, sname + '.fxsxml'))      # the T1 variant gets its own .fxsxml below
+        import beam
+        import lmodel
+        # the tower without the Eye, and the Eye alone (its own small texture)
+        tower = _make(lambda b: mod.build(b, eye=False), seed)
+        tdn, tsn = _textures(tower, name)
+        eye = _make(mod.build_eye, seed)
+        edn, esn = _textures(eye, name + '_Eye', 256, 128)
+        for part, r in (('tower', tower), ('eye', eye)):
+            assert len(r.verts) <= ENVELOPE['max_verts'] and len(r.tris) <= ENVELOPE['max_tris'], (part, len(r.verts))
+        rig = mod.rig()
+        pivot = tuple(c * k for c in mod.EYE_C)
+        bones = [(bn_, parent, tuple(c * k for c in pos)) for bn_, parent, pos, _ in rig]
+        size, bone_list = lmodel.write_building(
+            OUT, name, dict(verts=_model_units(tower.verts, k), tris=tower.tris, diffuse=tdn, sref=tsn),
+            eye=dict(verts=_model_units(eye.verts, k), tris=eye.tris, diffuse=edn, sref=esn),
+            rig=dict(pivot=pivot, bones=bones))
+        idle, curve = lmodel.write_idle(OUT, name, bone_list, mod.GAZE)
+        verify_animation(os.path.join(OUT, idle), name, bone_list, mod.GAZE)
+        # effects
+        from landmarks import EFFECTS, BEAM_TILT
+        fire = [(bn_, EFFECTS[key]['name']) for bn_, _, _, key in rig if key and key != 'EYE_BEAM']
+        beam_trig = [(bn_, EFFECTS[key]['name']) for bn_, _, _, key in rig if key == 'EYE_BEAM']
+        trig_full, trig_fire = 'FX_Triggers_%s.ftsxml' % name, 'FX_Triggers_%s_Fire.ftsxml' % name
+        lmodel.write_triggers(os.path.join(OUT, trig_full), fire + beam_trig)
+        lmodel.write_triggers(os.path.join(OUT, trig_fire), fire)
+        if beam_trig:                       # only the Eye has the beam (it follows that model's GAZE)
+            files += beam.write(OUT, mod.GAZE, BEAM_TILT)
+        ename = name + '_Eye'
+        tex = ['Generic_Grey_8.dds', tdn, tsn, edn, esn]
+        fx_bones = [b_[0] for b_ in rig if b_[3]]
+        fire_bones = [b_[0] for b_ in rig if b_[3] and b_[3] != 'EYE_BEAM']
+        assert len(bone_list) <= 32, 'skinned part: at most 32 bones (SkinBoneCount)'
+        W = lmodel.write_fxsxml
+        W(os.path.join(OUT, name + '.fxsxml'), name + '.gr2', tex, animation=idle, triggers_file=trig_full,
+          trigger_model=ename, bones=fx_bones, decision_tree=lmodel.ANIMATED_DT)                       # full
+        W(os.path.join(OUT, name + '_T1.fxsxml'), sname + '.gr2', ['Generic_Grey_8.dds', dn, sn])      # static
+        W(os.path.join(OUT, name + '_T2.fxsxml'), name + '.gr2', tex, animation=idle,
+          decision_tree=lmodel.ANIMATED_DT)                                                             # + animation
+        W(os.path.join(OUT, name + '_T3.fxsxml'), name + '.gr2', tex, animation=idle, triggers_file=trig_fire,
+          trigger_model=ename, bones=fire_bones, decision_tree=lmodel.ANIMATED_DT)                     # + fire
+        files += [name + '.gr2', idle, tdn, tsn, edn, esn, trig_full, trig_fire,
+                  name + '.fxsxml', name + '_T1.fxsxml', name + '_T2.fxsxml', name + '_T3.fxsxml']
+        print('%-20s animated: tower %d verts, Eye %d verts + %d bones, gaze loop %.1f s, %d effects  (%.1fs)' % (
+            name, len(tower.verts), len(eye.verts), len(bone_list), mod.GAZE['T'], len(fire + beam_trig),
+            time.time() - t0))
+    for f_ in files:
+        assert os.path.exists(os.path.join(OUT, f_)), f_
+    json.dump({'files': sorted(set(files))}, open(manifest_path(lm), 'w'), indent=1)
+    if do_preview:
+        # preview in world units, with the true city hexagon (and its neighbours) drawn on the ground
+        hin, hout = blib.HEX_IN, blib.HEX_OUT
+        pipeline.PREVIEW, pipeline.WORK = PREVIEW, WORK
+        blib.HEX_IN, blib.HEX_OUT = ENVELOPE['hex_in'], ENVELOPE['hex_out']
+        try:
+            pipeline.preview(name, preview_res.verts, preview_res.tris,
+                             dds.decode_dxt3(os.path.join(OUT, preview_dn)), extra=getattr(mod, 'PREVIEW', ()))
+        finally:
+            blib.HEX_IN, blib.HEX_OUT = hin, hout
+
+
+def verify_animation(path, name, bones, gaze):
+    """Read the written idle animation back: track groups = models, tracks = bones (sorted), and the
+    decoded gaze curve follows gaze['fn'] (within 3 degrees; the curve is a smoothed fit)."""
+    import granim
+    r = gr2.read(path).root()
+    tgs = {tg['Name']: tg for tg in r['TrackGroups']}
+    assert set(tgs) == {'Tree cut', name, name + '_Eye'}, set(tgs)
+    tracks = [t['Name'] for t in tgs[name + '_Eye']['TransformTracks']]
+    assert tracks == sorted(b[0] for b in bones), tracks
+    t = [t for t in tgs[name + '_Eye']['TransformTracks'] if t['Name'] == 'eyepivot'][0]
+    v = t['OrientationCurve']['CurveData'].value
+    kc = [x['UInt16'] for x in v['KnotsControls']]
+    knots, quats = granim.decode_curve(kc, v['OneOverKnotScale'], v['ScaleOffsetTableEntries'])
+    degs = [granim.quat_yaw_deg(q) for q in quats]
+    T = gaze['T']
+    worst = max(abs(granim.evaluate(degs, T, T * i / 240) - gaze['fn'](T * i / 240)) for i in range(241))
+    pos = t['PositionCurve']['CurveData'].value['Controls']
+    assert worst < 3.0, 'gaze curve off by %.1f degrees' % worst
+    print('  animation check: %d track groups, eye tracks %s, gaze error max %.2f deg, pivot at %s' % (
+        len(tgs), tracks, worst, [round(x, 1) for x in pos]))
+
+
+def main():
+    argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+    names = [a for a in argv if not a.startswith('--')]
+    for d in (OUT, PREVIEW, WORK):
+        os.makedirs(d, exist_ok=True)
+    for lm in LANDMARKS:
+        if names and lm['module'] not in names:
+            continue
+        build_one(lm, '--no-preview' not in argv)
+
+
+if __name__ == '__main__':
+    main()

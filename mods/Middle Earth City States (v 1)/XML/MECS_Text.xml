@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by ModBuddy on 7/22/2014 6:49:24 PM -->
+<GameData>
+	<Language_en_US>
+		<!-- Military -->
+		<Row tag="TXT_KEY_CITYSTATE_MECS_AVATHAR">
+			<Text>Avathar</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_AVATHAR_ADJ">
+			<Text>Avathar</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_AVATHAR_TEXT">
+			<Text>Avathar was a dark strip of land at the feet of the southern Pelóri mountain range in Aman. Avathar was a wasteland devoid of all life save for the Great Spider Ungoliant whose home was there before she agreed to go with Melkor to Middle-earth. After Melkor left Valinor, the Valar, believing that their foe had fled to Middle-earth to his old hiding places, did not think him still in Aman and did not find him here.</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_KINGDOM_OF_RHOVANION">
+			<Text>Kingdom of Rhovanion</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_KINGDOM_OF_RHOVANION_ADJ">
+			<Text>Kingdom of Rhovanion</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_KINGDOM_OF_RHOVANION_TEXT">
+			<Text>
+				The Kingdom of Rhovanion was a realm of Men in the Middle-earth region of Rhovanion, that isn't given that many specifications in Tolkien's books. A group of Northmen who were led by a ‘Prince of Rhovanion’ founded the Kingdom of Rhovanion before the year TA 490. Rhovanion at this time referred only to the region where he and his people dwelt, a strip of land east of Greenwood the Great and south of Dale and Esgaroth (Laketown). It is possible that Dale and Esgaroth formed part of the Kingdom before Erebor was founded by the dwarves of Durin's Folk. The Men of Rhovanion fought with Gondor against the Easterlings of Rhûn, who threatened their lands, and when these were defeated by the Gondorian King Turambar in circa TA 550 Rhovanion became an ally of Gondor. By TA 1200 the ruler of Rhovanion called himself the King of Rhovanion. In TA 1248 Rómendacil II of Gondor destroyed all camps of the Easterlings even beyond the Sea of Rhûn, and a strong alliance with Rhovanion was forged. Gondor withdrew its borders to the Anduin, and ceded all the lands east of Anduin to Rhovanion. From this time onward, the name Rhovanion referred to all of Wilderland. [NEWLINE][NEWLINE] The King of Rhovanion at this time was Vidugavia, and Prince Valacar of Gondor served in his army. Vidugavia's daughter Vidumavi married Valacar, and their son Vinitharya became King Eldacar of Gondor in TA 1432, which lead to the Kin-strife in TA 1437. Eldacar fled to Rhovanion, and with a Rhovanion army, he reclaimed his Kingdom in TA 1447. In TA 1636 the Great Plague devastated Rhovanion, killing more than half its people. This left Rhovanion weakened, and in TA 1851 the Wainriders overran and enslaved Rhovanion. For 43 years Rhovanion was enslaved, but in TA 1899 Rhovanion revolted, while Gondor attacked the Wainriders from the west. Rhovanion was freed, but left extremely weakened. Many Men of Rhovanion left for Gondor, where they were welcomed as distant relatives. [NEWLINE][NEWLINE] Some of them may have gone north to Dale and Esgaroth after TA 1999, when Erebor was founded. In circa TA 2460 Sauron returned to Dol Guldur in southern Mirkwood, although this was not learned until long after. The land became more dangerous, and Rhovanion was emptied of most its people. Around TA 2510 a new group of Easterlings, the Balchoth, appeared, and they quickly took the old lands of Rhovanion. This was the final end of the Kingdom of Rhovanion after over two thousand years of independence.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_SMAUGS_LAIR">
+			<Text>Smaug's Lair</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_SMAUGS_LAIR_ADJ">
+			<Text>Dragon</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_SMAUGS_LAIR_TEXT">
+			<Text>
+				Smaug was a fire drake of the Third Age, considered to be the last great dragon to exist in Middle Earth. Drawn to the enormous wealth amassed by the dwarves of Erebor in the Lonely Mountain during the reign of King Thror, he laid waste to the neighboring city of Dale and captured Erebor, driving the survivng dwarves into exile. For almost two hundred years, Smaug hoarded Erebor's treasures to himself and ruled within the Lonely Mountain, until a company of dwarves managed to enter Erebor and drive him out of hiding. Correctly believing that the dwarves had received assistance from the men of Lake-town in entering Erebor, Smaug left the mountain to wreak destruction upon Lake-town, nearly decimating it before being slain Bard the Bowman. [NEWLINE][NEWLINE]
+			</Text>
+		</Row>
+		
+		<Row tag="TXT_KEY_CITYSTATE_MECS_DUNLAND">
+			<Text>Dunland</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_DUNLAND_ADJ">
+			<Text>Dunlending</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_DUNLAND_TEXT">
+			<Text>
+				Dunland was the land of the Dunlendings. Dunland means Hill Land in the language of neighbouring Rohan, whose people named it after arriving in nearby Calenardhon in the later Third Age. It is the land of the Wild Men, or Dunlendings. [NEWLINE][NEWLINE] Dunland was inhabited by the Dunlendings, Men who were mostly bearded and had dirty faces, and long matted hair. They also wore clothes of leather and animal skin. The weapons carried by Dunlendings were simple but effective for their purpose. They usually fought with clubs and pitchforks, and at times they carried torches to act as lights at night and to burn buildings by day. The buildings that Dunlendings lived and worked in were crude shacks of wood and animal skin that were often sabotaged by wargs and sometimes the Rohirrim.[NEWLINE][NEWLINE] The ancient ancestors of the Dunlendings inhabited the forested regions of Middle-Earth on either side of the Gwathló in the early Second Age; thus the early Númenóreans called them Gwaithuirim. They spoke a language related to that of the Second House of Men, the Haladin, rather than the vastly different Bëorian-Marachian tongue which stood at the base of Adûnaic, and this lack of mutual understanding led to outright hostility. The Númenóreans greedily harvested Gwaithuirim forests for timber, and after much war and bloodshed, the Gwaithuirim from south of the Gwathló fled east to the Hithaeglir while others scattered to the cape of Eryn Vorn and the White Mountains. At the end of the Second Age, the land north of the Gwathló and south of the Baranduin was named Minhiriath "Land between the Rivers", although the land south of Minhiriath remained unnamed. Its inhabitants were largely ignored despite the fact that the Gondor colonial city of Tharbad grew up on the Gwathló west of the Misty Mountain hillfolk who had been Gwaithuirim long before. It was not until Gondor abandoned this city in TA 2050 that the people and their land were renamed: both became known as Enedwaith "Middle-Folk, Middle Region", because they owed no allegiance to the North or South Kingdom.The Hillfolk of the Hithaeglir kept their hatred of the descendants of Númenor (unlike those of Eryn Vorn and the White Mountains, who nevertheless remained uncooperative). The Dead Men of Dunharrow who betrayed Isildur were descended from Gwaithurim. [NEWLINE][NEWLINE] When Gondor decided to give the depopulated province of Calenardhon to the numerous people of Éothéod in TA 2510, the Hillfolk of the Hithaeglir felt threatened by these Forgoil "Strawheads" (a demeaning reference to the blonde hair of the refugees from Calenardhon). The Hillfolk had slowly colonised Calenardhon during the dwindling of the Dúnedain and had already reclaimed all the land between the Adorn and Isen. Still, open war was not waged until the reign of Helm Hammerhand (TA 2741 - TA 2759). Freca, the lord of the Hillmen (whom the Rohirrim now called Dunlendings) tried to get the throne of Rohan for himself by petitioning for the marriage of his son Wulf to the daughter of Helm. The Hillmen leader Freca was killed and Wulf led the Dunlendings into open war with Rohan. They unsuccessfully besieged the Hornburg during the Long Winter of TA 2758 - TA 2759. Wulf did take Edoras and killed Haleth, the son of Helm, in front of the golden hall of Meduseld. Nonetheless, Helm's nephew Fréalaf held out against the Dunlendings in the refuge of Dunharrow. He recaptured Edoras at the end of the Long Winter and killed Wulf personally. The Dunlendings were driven out of Rohan, and Fréalaf succeeded the deceased Helm Hammerhand. [NEWLINE][NEWLINE] Guarding the Gap of Rohan was the fortress of Isengard, where a hereditary guard watched for Gondor. However, by the time of the Steward of Gondor Beren, these guards had mixed with Dunlendings, and it had become hostile to Gondor. To remedy this situation, Beren gave Saruman the keys to Orthanc to guard Isengard for Gondor. Saruman used the historical hostility against outlanders to tempt the Dunlendings into supporting him during the War of the Ring. In The Two Towers extended edition, the Dunlending warlord is shown giving a blood-oath to Saruman. After the battle at Helm's Deep, the Rohirrim allowed the surviving Dunlendings to return to their homes. The Rohirrim required that all hostilities cease and that the Dunlendings again retreat behind the Isen.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_PATHS_OF_THE_DEAD">
+			<Text>Paths of the Dead</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_PATHS_OF_THE_DEAD_ADJ">
+			<Text>Undead</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_PATHS_OF_THE_DEAD_TEXT">
+			<Text>
+				The Paths of the Dead was a haunted pass through the White Mountains. The paths started at the Dark Door at the end of the long valley of Harrowdale, beyond the Firienfeld and the forest of Dimholt, wedged in between the mountains Irensaga, Starkhorn, and the Dwimorberg. [NEWLINE][NEWLINE] After the Dark Door, the Paths went under the Dwimorberg, past another door where Aragorn and company found the remains of Baldor, son of the second King of Rohan, Brego. The Paths then continued past forgotten cities, emerging at the southern end of the White Mountains in Morthond vale, near the Stone of Erech. In the Second Age, a people related to the Dunlendings had lived in the White Mountains, and they had for a time served the Dark Lord Sauron. They later swore allegiance to Isildur of Gondor and Arnor, but betrayed him during the Last Alliance of Elves and Men and refused to fight on either side. For this reason, Isildur cursed them, proclaiming that, if the Alliance triumphed, they would linger in the mountains until one of his heirs called them again to fight against Sauron. Isildur's curse succeeded: their people dwindled and eventually died out, until only their ghosts remained at the end of the Third Age. When Aragorn and company took the Paths of the Dead and, deep within the mountains, summoned them to the Stone of Erech, their shades followed him. At the Stone at midnight, Aragorn unfurled his banner, declared himself the heir of Isildur, and commanded the dead to aid him; they obeyed, and defeated the armies of the Corsairs of Umbar who were attacking the landings in southern Gondor. (Supposedly, the only weapon that they required was fear, driving their enemies to cast themselves madly into the sea.) When those foes were defeated and Aragorn could claim the black ships of the Corsairs for his own, he declared that the curse was lifted, and the dead departed forever. When the dead had gone, the men of southern Gondor joined Aragorn in the ships and sailed to the aid of Minas Tirith.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_SHELOBS_LAIR">
+			<Text>Torech Ungol</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_SHELOBS_LAIR_ADJ">
+			<Text>Spiderling</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_SHELOBS_LAIR_TEXT">
+			<Text>
+				Shelob's Lair, also known as Torech Ungol, was located in the pass of Cirith Ungol and served as an impassable labyrinth in which to ensnare the enemies of Mordor. It was also home to Shelob, daughter of Ungoliant. [NEWLINE][NEWLINE]The lair itself was at the utmost top of a dangerous staircase, and was shrouded in shadow and darkness. The tunnel walls themselves were smooth, as if worn by immeasurable touching. It was wide enough for Frodo Baggins and Samwise Gamgee to walk side by side with their outstretched hands touching the side walls. Inside were the skeletons and rotting corpses of Shelob's past prey; deeper into the cave could be found sticky, innumberable webs in a vast maze of tunnels. One path led to the Tower of Cirith Ungol, which was blocked by a half-door to keep Shelob out. Other paths led to various other places, most of which were only known by Shelob herself. There is also a foul and evil smell in the air, sensed by Frodo and Sam. [NEWLLINE][NEWLINE]In this place Shelob had free reign to do whatever she wished, including devouring the unwitting inhabitants of the Tower of Cirith Ungol; this freedom is allotted by the Dark Lord Sauron in return for her services. Sam and Frodo, during the quest to destroy the One Ring, were tricked by Gollum to venture here in order to cross into Mordor, and only through use of the Phial of Galadriel are they able to venture out. Shelob, through one of her many tunnels sneaks out and poisons Frodo to eat at a later stage. However Sam finds him and fights of Shelob with the Phial of Galadriel and Sting managing to wound her in the abdomen. She slinks back into her cave, leaving her fate unknown; though Shelob could have died of her injuries.
+			</Text>
+		</Row>
+
+		<!-- Mercantile-->
+		<Row tag="TXT_KEY_CITYSTATE_MECS_BREE">
+			<Text>Bree</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_BREE_ADJ">
+			<Text>Bree</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_BREE_TEXT">
+			<Text>
+				Bree was a village, of Men and some hobbits, in Middle-earth located east of the Shire and south of Fornost Erain in Eriador. Bree was an ancient settlement of men in Eriador by the time of the Third Age of Middle-earth, but after the collapse of the Kingdom of Cardolan, which had claimed it, Bree continued to thrive without any central authority or government for many centuries. Bree had become the most westerly settlement of men in all Middle-earth by the time of the War of the Ring, and became one of only three or four inhabited settlements in all of Eriador. At the time of The Lord of the Rings, Bree-land was the only part of Middle-earth where Men and Hobbits dwelt side by side in peace. Being located on the most important crossroads in the north, on the crossing of the Great East Road and the Greenway, travellers would pass through Bree. The Prancing Pony is equipped with rooms, but the local people do not seem accustomed to many travellers. Hobbits from the Shire would also occasionally visit Bree. The Rangers are also familiar to Bree-folk, though they are suspicious of them. The dwarves dwelling in Blue Mountains (Ered Luin), such as Thorin Oakenshield, would be likely to pass through. Gandalf is a frequent passer-by as well. Thus Bree is the place where, seemingly by accident, Gandalf and Thorin once met. They were both thinking about the same problem: the dragon Smaug at the Lonely Mountain (Erebor). The meeting led to the undertaking of the Quest of Erebor, which resulted in the death of Smaug and the finding of the One Ring by Bilbo Baggins. During the War of the Ring, a day's ride east from the village along the road lay The Forsaken Inn, according to Aragorn, although nothing else is known of that place. Directly west of Bree were the Barrow-downs and the Old Forest. Bree was the chief village of Bree-land, a small wooded region near the intersection of the main north-south and east-west routes through Eriador. The name Bree means hill, according to Tolkien, referring to the fact that the village of Bree and the surrounding Breelands were centered around a large hill. 
+			</Text>
+		</Row>
+		
+		<Row tag="TXT_KEY_CITYSTATE_MECS_DALE">
+			<Text>Dale</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_DALE_ADJ">
+			<Text>Dale</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_DALE_TEXT">
+			<Text>
+				Dale was a city state of Men in north-eastern Rhovanion to the south of the Lonely Mountain in Middle-earth, though it could also be used as the name for the kingdom of Men between the rivers River Running and the Redwater during the Third Age and into the Fourth Age. [NEWLINE][NEWLINE] In The Hobbit, Dale was a city of Men on the River Running between the Lonely Mountain and the Long Lake. It was ruled by Lord Girion until its destruction in TA 2770 by the Dragon Smaug. Situated in the shadow of the Lonely Mountain, it was deserted for many years while the mountain was under the control of Smaug the Dragon. The town was repopulated after the Battle of the Five Armies (featured in The Hobbit) where Bilbo Baggins and his Dwarf companions broke into the dragon's stronghold to claim back the Lonely Mountain. At this point, Smaug in rage flew to Lake-town upon the Long Lake (a nearby town) in an attempt to destroy it. This attempt failed however as Smaug was shot down by Bard, a man of Lake-town. [NEWLINE][NEWLINE]With Lake-town in ruins, the men sought a portion of Thorin's treasure in payment for their help in the overthrowing of the dragon and to rebuild their town, but in his pride Thorin refused. The squabble almost resulted in war between the men (and their wood-elf allies) and Thorin and his soon-to-arrive Dwarven kin in the Iron Hills. Just before they were about fight, Gandalf arrived with a warning that the goblins of the Misty Mountains and their Warg allies sought to destroy them to avenge the death of the Goblin King and claim the treasure. This then became the Battle of the Five Armies with the Dwarves]], the elves and the Men joining forces against the Orcs. When the battle was over, the dwarves restored their kingdom under the Lonely Mountain and men began to settle once more in Dale, with Bard, the man who slew the dragon, becoming their first king. Dale was sacked for a second time during the War of the Ring by invaders from the east. The people of Dale took refuge in the Lonely Mountain with the Dwarves, and it was during the Siege of Erebor that King Dáin II Ironfoot of the Lonely Mountains and King Brand of Dale were slain. However, after the fall of Sauron the siege was broken and Dale rebuilt once more. Gandalf was indirectly responsible for the rebuilding of Dale, in that he set in motion the quest that would result in the slaying of Smaug and provided vital aid to it. Some argue that he saw the upcoming war, and did this in a successful attempt to create one more front for Sauron.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_DORWINION">
+			<Text>Dorwinion</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_DORWINION_ADJ">
+			<Text>Dorwinion</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_DORWINION_TEXT">
+			<Text>
+				Dorwinion, also known as Dor-Winion, was a land in the vales of the Celduin, northwest of the Sea of Rhûn, that was famous for its great gardens and as the home of the finest wines in all of Middle-earth. [NEWLINE][NEWLINE] Its fertile climate, perfect latitudinal positioning, and close proximity to the Sea of Rhûn made Dorwinion an ideal location for an agrarian society. Its people were descendants of the Edain, and they had close ties to the Northmen of Dale in genealogy. The wines of Dorwinion were so high-quality and widely enjoyed that they were imported even by the Elves of the Halls of Thranduil in Mirkwood, the Men of Dale and Esgaroth (Lake-town), and the Dwarves of the Lonely Mountain (Erebor) and of the Iron Hills. Dorwinion comes from the Sindarin dor ("land") and the Westron winion ("of wine").
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_ESGAROTH">
+			<Text>Esgaroth</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_ESGAROTH_ADJ">
+			<Text>Esgaroth</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_ESGAROTH_TEXT">
+			<Text>
+				Esgaroth or "Esgaroth upon the Long Lake", was a small settlement and community of Men in the northeastern part of mapped Middle-earth. The town was constructed entirely of wood and stands upon wooden pillars sunk into the bed of the Long Lake, south of the Lonely Mountain (Erebor) and east of Mirkwood. It seems that the town's prosperity was built on trade between the Men, Elves and Dwarves of northern Middle-earth. [NEWLINE][NEWLINE] As trading people, the Men of Lake-town knew the Common Speech, Westron. However, amongst themselves they spoke an ancient form of it, which was loosely related to but distinct from the also ancient language of the Rohirrim. Tolkien "translated" Westron into English in his text, so to represent its ancient relative that the Rohirrim spoke he substituted Old English. Thus, Tolkien substituted Old Norse for the language of the Men of Esgaroth (in person and place names, etc.) because it is an ancient relative of English that is related to Old English. [NEWLINE][NEWLINE] Lake-town is used to refer to the pre-Smaug town upon the Long Lake, while the rebuilt, larger cousin further down the waterway is referred to as Esgaroth. The inhabitants also learned a crucially important, but painful, lesson bought with the blood of loved ones: the town was built to be less susceptible to flame and its military was expanded. These lessons greatly aided it during the War of the Ring.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_EPHEL_BRANDIR">
+			<Text>Ephel Brandir</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_EPHEL_BRANDIR_ADJ">
+			<Text>Ephel Brandir</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_EPHEL_BRANDIR_TEXT">
+			<Text>
+				Ephel Brandir (also called the Ephel) was a settlement that consisted of the dwellings of the Men of Brethil in the Beleriand in Middle-earth. It lay upon the hill of Amon Obel in the forest of Brethil and is where Túrin was taken when he fell ill. It was ruled by Brandir son of Handir, the sixth Chieftain of the Haladin.
+			</Text>
+		</Row>
+
+		<!-- Cultured -->
+		<Row tag="TXT_KEY_CITYSTATE_MECS_CRISSAEGRIM">
+			<Text>Crissaegrim</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_CRISSAEGRIM_ADJ">
+			<Text>Crissaegrim</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_CRISSAEGRIM_TEXT">
+			<Text>
+				The Crissaegrim were home to the great Eagles of Thorondor. The great Eagles moved to The Crissaegrim after Morgoth 's return to Thangorodrim. The Crissaegrim formed a part of the southern Echoriath, the Encircling Mountains of Gondolin. It was here that Thorondor, the Lord of the Eagles lived, and from here he watched for spies attempting to find the hidden city of Turgon in the vale of the River Sirion. Its name is Sindarin for "cleft mountain peaks", but in Tolkien's stories it is usually referred to as Cirith Thoronath, the "Eagles' Cleft", or "Abode of Eagles" because the peaks were inaccessible from the ground.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_BEORNS_HALL">
+			<Text>Beorn's Hall</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_BEORNS_HALL_ADJ">
+			<Text>Beorn's Hall</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_BEORNS_HALL_TEXT">
+			<Text>
+				Beorn was a Northman, a Shape-shifter, and a Beorning chieftain. The people of Beorn once inhabited the North of the Anduin valley between the Misty Mountains and Mirkwood during the last centuries of the Third Age. They guarded the Ford of Carrock from the Goblins and Wargs.[NEWLINE][NEWLINE] Beorn was a warrior with great strength, who could turn into a great black bear. In human form, he appears as a tall, black-haired man with huge arms and a great beard. Beorn kept many animals at his residence, such as horses and dogs. His animals were all extremely intelligent; his dogs, for instance, could walk on their hind legs while carrying things with their forelegs, set the table, and able to speak. Beorn's horses could also understand what their master said. Beorn was also capable of speaking in the tongue of beasts, as he could communicate with bears. When he spoke to his dogs, his words sounded like barks twisted into some form of speech. Beorn provided shelter to Thorin Oakenshield and his company of dwarves (13 others), Hobbit (Bilbo Baggins), and Wizard (Gandalf), and later helped them fight against an army of Goblins at the Battle of the Five Armies on November 23, 2941. During the Battle of the Five Armies, Beorn arrives in his bear form, and kills the Goblin chieftain Bolg. After the battle, Beorn accompanied Gandalf and Bilbo through their journey home until he reached his house. Before the War of the Ring, Beorn passed away, and his son Grimbeorn eventually took over his duties as chieftain in TA 3018.
+			</Text>
+		</Row>
+
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_ENTWOOD">
+			<Text>Entwood</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_ENTWOOD_ADJ">
+			<Text>Entwood</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_ENTWOOD_TEXT">
+			<Text>
+				Fangorn forest was a forest beneath the southeastern flank of the Misty Mountains. Fangorn Forest was known for being the last habitation of the Ents. It was named after the oldest Ent, Fangorn (Treebeard). It is also called Entwood by the Rohirrim. [NEWLINE][NEWLINE] Fangorn forest was actually just the easternmost survivor of the immense forest that spanned all of Eriador and Calenardhon in the First Age and early Second Age, but which was destroyed by the Númenóreans felling trees to build their mighty ships and Sauron's war on the Elves. Fangorn forest was the oldest part of Treebeard's realm, and to here the Ents retreated. Meriadoc Brandybuck and Peregrin Took pass this forest in the second volume of The Lord of the Rings, The Two Towers. There they meet Fangorn (Treebeard) and persuade him of the danger that Saruman poses to the Ents and their forest. Following the Entmoot, the rest of the Ents finally agree to march against Isengard taking Merry and Pippin with them; they also send Huorns to Helm's Deep to deal with the orcs there. Part of the reason is that Saruman's orcs had been chopping down the trees at the south and west side of the forest, which had angered the Ents. Also in The Two Towers, Aragorn, Gimli and Legolas enter the forest to try and find Merry and Pippin, and encounter a white wizard. At first they believe it to be Saruman before realising that it was Gandalf, who they thought had been killed at Khazad-dum. 
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_TOM_BOMBADILS_HOUSE">
+			<Text>Tom Bombadil's House</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_TOM_BOMBADILS_HOUSE_ADJ">
+			<Text>Bombadil</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_TOM_BOMBADILS_HOUSE_TEXT">
+			<Text>
+				Tom Bombadil in The Lord of the Rings is called by the Elves Iarwain Ben-adar "Oldest and Fatherless" in Sindarin, and dwelt in the valley of the river Withywindle, east of the Shire. [NEWLINE][NEWLINE] He seems to have settled at the edge of the Old Forest, close to the Barrow Downs. He set himself boundaries, but boundaries within which his power was extraordinary. Tom was a creature of contradictions, one moment defeating ancient forces with hardly an effort, the next capering and singing nonsensical songs. He lived with his wife Goldberry, "Daughter of the River", far from any other settlement. Goldberry described him as being "Master of wood, water and hill." There are many theories of his origins, such as him being a maia, man, Iluvatar himself or even the reader, though more on this can be found elsewhere (please see below).  He appeared as an old man, at least in Hobbit eyes, with a wrinkled and ruddy face, bright blue eyes, and a bristling brown beard. He was said to be taller than a typical Hobbit, but too short to be a Man, which would put him somewhere between four and a half and five feet in height. [NEWLINE][NEWLINE]His costume consisted of a blue jacket and yellow boots, and he wore an old and battered hat, surmounted by a feather. He seems to have preferred to wear a swan-feather in his hat, but before he met Frodo and company on the banks of the Withywindle, he had acquired the feather of a kingfisher instead. In his own house, rather than a hat, he wore a crown of autumn leaves, perhaps revealing something of the elemental powers he possessed. In his preface to The Adventures of Tom Bombadil, Tolkien tells us that Tom's name is 'Bucklandish in form', and suggests that it was given to him by the Hobbits of that region. The resemblance of the -dil ending to the common Elvish (n)dil, 'friend', may or may not be coincidental depending on your theory of who/what Tom Bombadil is.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_EAGLES_EYRIE">
+			<Text>Eagles Eyrie</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_EAGLES_EYRIE_ADJ">
+			<Text>Eagle</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_EAGLES_EYRIE_TEXT">
+			<Text>
+				Eagles Eyrie was the principle home of the great Eagles in the Third Age or at the very least its latter half.	It was located at a high point on the eastside of the Misty Mountains facing Rhovanion between the Rushdown and the Old Forest Road. It was approximately thirty-five miles from the Carrock near Beorn's house. Its lord was Gwaihir the Windlord.
+			</Text>
+		</Row>
+
+		<!-- Maritime -->
+		<Row tag="TXT_KEY_CITYSTATE_MECS_LAKE_TOWN">
+			<Text>Lake Town</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_LAKE_TOWN_ADJ">
+			<Text>Lake Town</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_LAKE_TOWN_TEXT">
+			<Text>
+				Lake-town was a small settlement and community of Men in the northeastern part of mapped Middle-earth.  Lake-town is used to refer to the pre-Smaug town upon the Long Lake. The town was constructed entirely of wood and stands upon wooden pillars sunk into the bed of the Long Lake, south of the Lonely Mountain (Erebor) and east of Mirkwood. It seems that the town's prosperity was built on trade between the Men, Elves and Dwarves of northern Middle-earth. It was also known as the final resting place of the Dragon Smaug, whose bones ended up at the bottom of the lake. Uniquely, of all of the towns, settlements, fortresses, and cities of Middle-earth, Lake-town utilized water as its defense. The Long Lake was also surrounded by towering cliffs and high mountains, all helpful natural barriers that had the potential to aid its defenders in a siege (such as the Easterling invasion of the North in TA 3018). While these defenses slowed and diverted Lake-town's human enemies, it did nothing to prepare its inhabitants against Smaug. The villagers would be harassed on a regular basis by Smaug. Smaug would steal an occasional maiden or just burn down their homes. [NEWLINE][NEWLINE] Lake-town was founded sometime during the Third Age and its inhabitants traded extensively with the Elves of Thranduil's Woodland Realm, the Dwarves of the Lonely Mountain and the Iron Hills, their kin in Dale and Dorwinion to the south, and possibly with the Easterlings (in times of peace, of course). The Men of Lake-town traded with Dorwinion (a human realm on the fertile coastal plain on the west shore of the Sea of Rhûn) in a unique way; wine barrels were floated down from Thranduil's caverns in Mirkwood (the Elves were known as copious wine drinkers, as found in the Hobbit) along the Celduin down to Lake-town, where they were redirected to Dorwinion. The wine was then paid for and filled with the necessary goods before being shipped back north, and the cycle of trade resumed once more. These barrels were also quite large, for they could fit a Hobbit or Dwarf (even the extremely fat Bombur).
+			</Text>
+		</Row>
+		
+		<Row tag="TXT_KEY_CITYSTATE_MECS_TOL_MORWEN">
+			<Text>Tol Morwen</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_TOL_MORWEN_ADJ">
+			<Text>Tol Morwen</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_TOL_MORWEN_TEXT">
+			<Text>
+				Tol Morwen was the island located off the northwestern coasts of Middle-earth, after the drowning of Beleriand at the end of the First Age. One of the few locations in Beleriand which was not drowned, it was the site of the Stone of the Hapless and the grave of Morwen Eledhwen, hence its name. Mariners of Númenor and later Arnor visited it on their voyages to pay respect to the hero Túrin Turambar buried there.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_TOL_FUIN">
+			<Text>Tol Fuin</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_TOL_FUIN_ADJ">
+			<Text>Tol Fuin</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_TOL_FUIN_TEXT">
+			<Text>
+				Tol Fuin was one of the few areas of land that escaped the drowning of Beleriand. It originally was the land of Taur-nu-Fuin. When the world was changed, its highest parts survived as the island Tol Fuin (Isle of Night), part of the Western Isles.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_HIMLING">
+			<Text>Himling</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_HIMLING_ADJ">
+			<Text>Himling</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_HIMLING_TEXT">
+			<Text>
+				Himling was a small island about twenty-five miles off the coast of northern Lindon in the northern part of the Great Sea, and about a dozen miles east of the island of Tol Fuin. No one is known to have lived there either in the Second or Third ages or beyond. [NEWLINE][NEWLINE] During the First Age of Middle-earth, Himling was once a hill known as Himring which was the location of the realm of Maedhros, the eldest son of Fëanor. After the sinking of the Beleriand at the end of the War of Wrath, the peak of the hill remained afloat as an island.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_LOSSOTH">
+			<Text>Lossoth</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_LOSSOTH_ADJ">
+			<Text>Lossoth</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_LOSSOTH_TEXT">
+			<Text>
+				Lossoth, or the Snowmen of Forochel, was the name of a race of Men living mainly on the shores of the Ice-Bay of Forochel.The Lossoth were a remnant of the Forodwaith that survived the ravages of the end of the First Age. They dwelt in the far northwest of Middle-earth during the time of the Lord of the Rings, in a land of bitter cold. The Lossoth were described as using bones tied to their feet as ice skates, and were a semi-nomadic people. They were not akin to the Edain, but more like to the Men of Dunland. They appear most prominently in Tolkien's works when they harbor the exiled King Arvedui of Arnor in the year 1975 of the Third Age. Arvedui, the Last King, was forced to flee his home land of Arthedain by the forces of Angmar under the Witch-king. The Lossoth reluctantly helped Arvedui and a few of his men, until Cirdan sent ships to rescue him from Lindon. The chieftain of the Lossoth counseled Arvedui not to go aboard the ships and face the bitter northern winter, but the King refused and went anyway. In payment for his safekeeping, King Arvedui gave to the Lossoth his ring, the Ring of Barahir, and bade them ransom it to his kin when the Lossoth had need. Unfortunately, the chieftain's counsel proved wise, and Arvedui was lost at sea, thus ended the Kings of Arnor, and their line continued as the Chieftains of the Dúnedain of Arnor (Rangers).
+			</Text>
+		</Row>
+
+		<!-- Religious -->
+		<Row tag="TXT_KEY_CITYSTATE_MECS_RHOSGOBEL">
+			<Text>Rhosgobel</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_RHOSGOBEL_ADJ">
+			<Text>Rhosgobel</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_RHOSGOBEL_TEXT">
+			<Text>
+				Rhosgobel was the home of Radagast the Brown. Rhosgobel located somewhere on the southwest borders of Mirkwood. The dates of when Radagast dwelt there are unclear, as is its exact location within the wood. The term Rhogobel originates from the Sindarin words rhosg ("brown") and gobel ("enclosed dwelling, walled house or village"). [NEWLINE][NEWLINE] Radagast the Brown was one of the five wizards, or Istari. He was a good friend of Gandalf, whom he aided occasionally. Radagast was mainly concerned with the well-being of the plant and animal worlds, and thus did not participate heavily in the War of the Ring. [NEWLINE][NEWLINE] Radagast was originally a Maia spirit of Yavanna and was called Aiwendil, meaning "bird-friend". He was chosen as one of the Istari who came to Middle-earth in the year TA 1000. Radagast protects the great forests. He was little concerned with the affairs of Men and Elves but was far more knowledgeable in plants, birds and beasts in the forest. [NEWLINE][NEWLINE] In The Hobbit, Gandalf says that Radagast is his cousin, though this may mean refer to friendship or the fact that they are both Istari, and not actual close kinship, except in that they are both Maiar. [NEWLINE][NEWLINE] Radagast was unwittingly used by Saruman to lure Gandalf to Orthanc, where Gandalf was captured. However, Radagast also unwittingly helped rescue the grey wizard by alerting the eagles of Gandalf's journey there. This was his only real known contribution to the War of the Ring. [NEWLINE][NEWLINE] During the Council of Elrond, Gandalf refers to Radagast as "master of shapes and changes of hue", but the meaning of this is open to question. He at one time dwelt at Rhosgobel, on the western eaves of southern Mirkwood, possibly near the Gladden Fields on the Great River. When messengers from Elrond tried to approach Radagast for his aid in the fight against Sauron, they found his dwellings at Rhosgobel empty. His fate after the War of the Ring is not known.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_MITHRANDIR">
+			<Text>Mithrandir</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_MITHRANDIR_ADJ">
+			<Text>Mithrandir</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_MITHRANDIR_TEXT">
+			<Text>
+				Gandalf the Grey, later known as Gandalf the White, also called Olórin (Quenya; IPA: [oˈloːrin]), Tharkun, and Mithrandir (Sindarin IPA: [miˈθrandir]), was a wizard, or Istar, sent by the West in the Third Age to combat the threat of Sauron. He joined Thorin and his company to reclaim Erebor from Smaug, convoked the Fellowship of the Ring to destroy the One Ring, and led the Free Peoples in the final campaign of the War of the Ring. [NEWLINE][NEWLINE]  Gandalf was the wisest of the Maiar. He was first known as Olórin, and sometimes dwelt in the gardens of Irmo, and was the pupil of Nienna, who taught him wisdom and pity, and of Manwë and Varda. When the Valar decided to send the order of the Istari (also known as Wizards) to Middle-earth, to counsel and assist all those in Middle-earth who opposed the Dark Lord Sauron Manwë and Varda decided to include Olórin among the five who were sent. When he arrived to Middle Earth he received Narya, the ring of fire, from Cirdan the Shipwright. Gandalf (Olorin) spent many centuries walking among the elves as a stranger, learning from them and teaching them. He later revealed himself as one of the Istari, and eventually became known as the wisest of and most powerful of that order. He joined the White Council, which was formed to investigate a dark power in Dol Guldur, of which Galadriel wanted him to become the leader, yet Saruman came to lead the Council instead of him.[1] Although Saruman was at first more powerful, was more knowledgeable about many matters regarding Sauron and the Rings of Power, and was head of the White Council before the War of the Ring, he later grew jealous and afraid of Gandalf, which was the reason of his betrayal.[NEWLINE][NEWLINE]
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_ALATAR">
+			<Text>Alatar</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_ALATAR_ADJ">
+			<Text>Alatar</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_ALATAR_TEXT">
+			<Text>
+				Alatar (Quenya; IPA: [ˈalatar]) also known as Morinehtar (Quenya; [moriˈneçtar]) was an Ainu and an immortal Istar wizard. He travelled to Middle-earth in the Second Age with Rómestámo (Pallando), and they became the Ithryn Luin, or "Blue Wizards". They travelled to the east of Arda, to countries in far eastern Middle-earth such as Rhûn and Khand, where they were sent to stir up rebellions against those serving Sauron. In this, they were successful, and they later returned to Middle-earth in the Third Age and travelled East and South once again, but they never returned to the West after their journey with Saruman. It is possible that they became the founders of secret and magical cults, but their ultimate fate remains unknown.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_PALLANDO">
+			<Text>Pallando</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_PALLANDO_ADJ">
+			<Text>Pallando</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_PALLANDO_TEXT">
+			<Text>
+				Pallando (Quenya; IPA: [palˈlando]), also known as Pallando the Blue and Rómestámo (Quenya; [ˌroːmesˈtaːmo]), was one of the five Istari or Wizards that were sent to Middle-earth to aid the Free Peoples in their struggle against Sauron. [NEWLINE][NEWLINE] Before they came to Middle-earth, Pallando and Alatar were both Maiar spirits who served the Vala Oromë. Pallando was taken to Middle-earth at the bidding of Alatar, another Istar who took him as a friend. Pallando and Alatar (known as the Blue Wizards for their sea-blue robes) traveled to the east of Middle-earth with Curumo (Saruman the White) to aid some men and subdue others, primarily the Easterlings and Southrons who worshiped Sauron, and whose numbers were steadily increasing. Saruman later returned to the West, but Pallando along with Alatar stayed behind. Other than this, not much is positively known about Pallando or Alatar, but it is thought that Pallando most likely failed his mission eventually. However, in Tolkien's later years he provided an alternate name for the wizard, Rómestámo, or "Helper of the East". Here it is thought that rather than fail his mission altogether, Pallando perhaps had the opposite fate, and he and Alatar may have in fact played some crucial role in the War of the Ring and in the victory of the Army of the West, unnoticed but significant.
+			</Text>
+		</Row>
+
+		<Row tag="TXT_KEY_CITYSTATE_MECS_CURUMO">
+			<Text>Curumo</Text>
+		</Row>
+		<Row tag="TXT_KEY_CITYSTATE_MECS_CURUMO_ADJ">
+			<Text>Curumo</Text>
+		</Row>
+		<Row tag="TXT_KEY_CIV5_MECS_CURUMO_TEXT">
+			<Text>
+				Saruman the White, called Curumo (Quenya) or Curunír (Sindarin) by the Elves, was an Istari, or wizard, who lived in Middle-earth during the Third Age. Originally, he was the chief of the wizards and of the White Council that opposed Sauron. His extensive studies of dark magic, however, eventually led him to desire the One Ring for himself. Thinking he could ally himself with Sauron and then betray him, Saruman allied Isengard with Mordor in the War of the Ring, in which he was defeated. [NEWLINE][NEWLINE] Saruman was the first of the five Wizards to arrive in Middle-earth, at the end of the first millennium of the Third Age. He was said to be the eldest of the order, and Gandalf acknowledged him as the chief of the Istari. He was an antagonist of the Free Peoples in the War of the Ring, as recounted in The Lord Of The Rings. Many feared the White Wizard and his compelling voice; even Sauron himself. His dwelling was the fortress of Orthanc in Isengard, below Methedras.[NEWLINE][NEWLINE]He studied deeply the arts of Sauron, the better to oppose him, but he soon became enamored of Sauron's devices, especially the One Ring. He betrayed his mission, and sought the power of the Ring for himself. He initially advocated an alliance with Sauron, but he soon betrayed Sauron as well, as his ultimate goal was to supplant Sauron and rule Middle-earth. But his plans came to nought, and his power was broken in the Battle of the Hornburg and the Battle of Isengard.[NEWLINE][NEWLINE]Saruman, before his fall, was the chief of both the wizards and of the White Council (a league of all those opposed to Sauron). His knowledge and skill, especially of Sauron's devices, was said to be great (the name "Saruman" means "man of skill"). However, his deep study of the One Ring and Sauron's other magic corrupted him, and his overweening lust for power led to his downfall. He is one of the few characters in Middle-earth who is morally "grey" - serving neither good nor evil. He betrays both sides and ultimately works for his own ends.
+			</Text>
+		</Row>
+
+	</Language_en_US>
+  
+</GameData>

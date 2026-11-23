@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by ModBuddy on 9/20/2014 10:31:00 AM -->
+<GameData>
+	<Language_en_US>
+		<!-- Starts next to mordor-->
+		<!-- Consider using but removing natural wonder status and essentially make it fancy mountain-->
+		<!-- Cannot use model without adjacent coast tiles therefore essentially useless.-->
+		<Update>
+			<Set Text="Mount Doom"/>
+			<Where Tag="TXT_KEY_FEATURE_VOLCANO"/>
+		</Update>
+		<Update>
+			<Set Text="Mount Doom, also known as Orodruin and Amon Amarth, was a volcano in Mordor where the One Ring was forged. It was the ultimate destination for Frodo's Quest of the Ring. When Sauron chose the land of Mordor as his dwelling-place in the Second Age, Mount Doom was the reason for his choice. Having been originally a Maiar disciple of Aulë the smith (before he decided to follow the evil Morgoth), he used the fire that welled there from the heart of the earth in his sorceries and his forging. The most famous result of his forging, and in fact the only one we know of for sure, was the One Ring. Mount Doom was much more than just any volcano; Sauron seems to have extended his own power into it, just as his former master Melkor had extended his own power into the flesh of Arda as his means of corrupting the Valar's shaping of the world. In Sauron's case, it was probably due to his use of it as a foundry for the forging of the Ring, as he was able to control its fires. It seems to have lain dormant when Sauron was away from Mordor, and sprung into life when his power grew. With the destruction of the Ring, Mount Doom had a massive eruption, sending massive lava flows down its sides and scattering the area with volcanic debris. The fiery eruption destroyed the Nazgûl and their mounts as they tried to reach Frodo on their Fell Beasts to reclaim the Ring."/>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_KRAKATOA_TEXT"/>
+		</Update>
+		<!-- Starts next to Tol Fuin-->
+		<Update>
+			<Set Text="Echoriath"/>
+			<Where Tag="TXT_KEY_FEATURE_CRATER"/>
+		</Update>
+		<Update>
+			<Set Text="The Echoriath or Encircling Mountains was a range of mountains in the north of Beleriand, next to Dorthonion, during the First Age. The Echoriath formed a natural circle of rock enclosing the valley later called Tumladen, within which lay the Elven city of Gondolin. A hidden ravine provided the only access through the Echoriath a way guarded by seven gates. The Eagles led by Thorondor took residence in a southern part of the mountains called the Crissaegrim and for long kept the spies of Morgoth from discovering the location of Gondolin. Fingolfin, a High King of the Ñoldor, was buried in the Echoriath north of Gondolin in a great cairn, his body having been taken there by the eagle Thorondor after he was slain in his duel with Morgoth."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_BARRINGER_TEXT"/>
+		</Update>
+		<!-- Starts next to Goblins-->
+		<!-- Consider not using-->
+		<Update>
+			<Set Text="Caradhras"/>
+			<Where Tag="TXT_KEY_FEATURE_MT_FUJI"/>
+		</Update>
+		<Update>
+			<Set Text="Caradhras, also called the Redhorn, and Baranzibar was one of the mightiest peaks in the Misty Mountains. On their quest to Mount Doom, the Nine Walkers attempted to cross the Redhorn Pass, lying beneath the slopes of Caradhras, and linking the former Ñoldorin realm of Eregion (Hollin) in the west to the Dimrill Dale and hence the Vale of Anduin in the east. After the fall of Khazad-Dum, this pass was predominantly used by elves travelling between Lothlórien and Rivendell. Caradhras was one of the Mountains of Moria, the three mountains under which the great Dwarf palace of Khazad-dûm was built. Caradhras was also the only site in Middle-earth where Mithril could be mined. But mining ever deeper into the roots of the mountain in search of mithril, the dwarf miners also unwittingly awakened the Balrog of Moria. Caradhras was called the Cruel by the Dwarves and had long had a bad reputation. The Redhorn Pass (also called the Redhorn Gate) was known to be treacherous and was used by hobbits migrating from Gladden Fields into Eriador. Because of its proximity to the Gladden Fields, it is possible that the River-folk may have passed through the Redhorn Pass. And it was here that Celebrian, the wife of Elrond, was captured by orcs, making it doubly significant to the trilogy."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_FUJI_TEXT"/>
+		</Update>
+		<!-- Doesn't start immediately next to any civ (fairly near Hobbits, Arnor, Angmar, Eldar)-->
+		<Update>
+			<Set Text="Amon Súl"/>
+			<Where Tag="TXT_KEY_FEATURE_MESA"/>
+		</Update>
+		<Update>
+			<Set Text="Amon Súl, Known also as Weathertop, was a hill in the Eriador region of Middle-earth, the southernmost and highest summit of the Weather Hills. The watch tower at its top overlooked the Great East Road in central Eriador, east of Bree, about halfway between the Shire and Rivendell. As represented in the The Atlas of Middle-earth, the hill rose a thousand feet (approximately 300 meters) above the relatively level lands round about, and with only the lower Weather Hills stretching away northwards, offered a commanding view in every direction. A path led from the north side of Weathertop northward to the other Weather Hills. The elevation of Weathertop itself above sea level was likely in the order of 1500-2000 feet (around 450-600 meters)"></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_GRANDMESA_TEXT"/>
+		</Update>
+		<!-- Doesn't start immediately next to any civ (fairly near Umbar, Harad, Gondor, Mordor)-->
+		<Update>
+			<Set Text="Tolfalas"/>
+			<Where Tag="TXT_KEY_FEATURE_GIBRALTAR"/>
+		</Update>
+		<Update>
+			<Set Text="Tolfalas was a small, rocky island located in the Bay of Belfalas between the land of Belfalas and Southern Gondor, about twenty-five miles from the Mouths of Anduin. It is unknown whether anyone lived there or not or if it was used as a harbor for Gondor's ships."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_GIBRALTER_TEXT"/>
+		</Update>
+		<!-- Starts next to Dwarves-->
+		<!-- Consider not using -->
+		<Update>
+			<Set Text="Lonely Mountain"/>
+			<Where Tag="TXT_KEY_FEATURE_MT_SINAI"/>
+		</Update>
+		<Update>
+			<Set Text="The Lonely Mountain, or Erebor, was a mountain northeast of Rhovanion. It was also the source of the River Running. For many ages of Middle-earth, it had been inhabited by the Dwarves of Durin's Folk up until the later half of the Third Age and then again in its closing years and into the Fourth Age."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_MT_SINAI_TEXT"/>
+		</Update>
+		<!-- Doesn't start immediately next to any civ (fairly near Gondor, Rohan, Isengard, Umbar maybe)-->
+		<Update>
+			<Set Text="Stone of Erech"/>
+			<Where Tag="TXT_KEY_FEATURE_MT_KAILASH"/>
+		</Update>
+		<Update>
+			<Set Text="The Stone of Erech, also known as Black Stone, was the only standing stone where the king of the mountains swore an oath to Isildur. It was depicted as being large, having possessing some six feet in radius and seemed to be spherical in shape -- half of it was underground at the time of the oath. The other half that was visible/above ground was made out to be as tall as a man. It was located on the Hill of Erech, south of the White Mountains (Ered Nimrais) in Gondor."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_MT_KAILASH_TEXT"/>
+		</Update>
+		<!-- Doesn't start immediately next to any civ (fairly near Gondor, Mordor, Easterlings, Rohan, Isengard, Lorien)-->
+		<Update>
+			<Set Text="Falls of Rauros"/>
+			<Where Tag="TXT_KEY_FEATURE_FOUNTAIN_YOUTH"/>
+		</Update>
+		<Update>
+			<Set Text="Falls of Rauros or Rauros were the great falls of River Anduin beneath Nen Hithoel, where the river fell from Emyn Muil to the wetland of Nindalf. It also describes the area near the falls. At the breaking of the The Fellowship of the Ring, Frodo and Sam paddled a boat from the west bank of the river to the east just above the falls and had to use all their strength to avoid being swept over the falls by the current. Shortly afterward Boromir's body was placed in another boat by Aragorn, Legolas and Gimli who sent it over the falls, but it apparently survived the fall; at any rate, soon afterward it was seen by Faramir upon the lower reaches of the Anduin in what felt to him like a dream yet from which there was no waking, and he retrieved Boromir's cloven horn in truth and not in seeming."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_FOUNTAIN_YOUTH_TEXT"/>
+		</Update>
+		<!-- Starts next to Lake Town/Esgaroth-->
+		<Update>
+			<Set Text="Long Lake"/>
+			<Where Tag="TXT_KEY_FEATURE_LAKE_VICTORIA"/>
+		</Update>
+		<Update>
+			<Set Text="The Long Lake was an oval-shaped lake situated at the confluence of the Forest River and the northern reaches of the River Running south of the Lonely Mountain (Erebor). The lake was about twenty miles from north to south, and about five miles from east to west."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_LAKE_VICTORIA_TEXT"/>
+		</Update>
+		<Update>
+			<Set Text="Long Lake"/>
+			<Where Tag="TXT_KEY_FEATURE_LAKE_VICTORIA"/>
+		</Update>
+		<Update>
+			<Set Text="The Long Lake was an oval-shaped lake situated at the confluence of the Forest River and the northern reaches of the River Running south of the Lonely Mountain (Erebor). The lake was about twenty miles from north to south, and about five miles from east to west."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_LAKE_VICTORIA_TEXT"/>
+		</Update>
+		<Update>
+			<Set Text="Meneltarma"/>
+			<Where Tag="TXT_KEY_FEATURE_MT_SINAI"/>
+		</Update>
+		<Update>
+			<Set Text="Meneltarma, meaning Pillar of the Heavens in the common tongue, was a sacred mountain in the center of Númenor. Its summit was flattened and broad, but able to contain a large multitude during religious ceremonies though no structures were ever erected on it. Silence was required, imposed on any one who climbed the mountain. The tradition was so strong and universal that even foreigners felt bound by it. The King alone was allowed to utter prayers and thanksgivings to Eru Ilúvatar, during the feasts of Erukyermë, Erulaitalë and Eruhantalë. Birds and other animals did not approach the place, only the Eagles of Manwë were seen circling over the summit and were regarded as sacred guardians of the mountain and all the land. The base of the mountain sloped gently and divided itself into five roots reaching to the five divisions of the land. The roots were called Tarmasundar, meaning the Roots of the Pillar. On the southern slopes were located the tombs of Kings and Queens of Númenor, within a valley called Noirinan. After the destruction of Númenor, some amongst the Exiles believed that the summit of the mountain remained as an island in Belegaer. Some Dúnedain, the descendants of the Númenoreans, are even said to have set sail trying to reach the island, from which the legend held that one could catch a glimpse of the unreachable Aman."></Set>
+			<Where Tag="TXT_KEY_CIV5_FEATURES_MT_SINAI_TEXT"/>
+		</Update>
+	</Language_en_US>
+</GameData>

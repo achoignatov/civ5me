@@ -1,0 +1,49 @@
+{
+  "_comment": "Input for scripts/build-payload.mjs, which generates manifest.json, payload/ and originals/ from the project's build output. Paths in 'from'/'originalFrom' are relative to the ui/ folder.",
+  "id": "middleearth",
+  "name": "MiddleEarth MOD",
+  "version": "1",
+  "description": "Yenyang's six Middle-earth mods merged into one multiplayer-ready pack (DLC build attached to the free 'Upgrade 1' package). Every player must use the same build.",
+  "clearGameCache": true,
+  "sources": [
+    {
+      "from": "../dist/DLC_Shared/Shared",
+      "to": "Assets/DLC/Shared"
+    }
+  ],
+  "replaces": {
+    "Assets/DLC/Shared/Upgrade1.Civ5Pkg": {
+      "originalFrom": "../vendor/civ5/Upgrade1_original.Civ5Pkg"
+    }
+  },
+  "build": {
+    "_comment": "Development only (the app running from this repository): run before every install of this mod, so the app installs the working tree as it is now, committed or not. cwd is relative to ui/. Then the app regenerates this mod's payload. Packaged apps never build. (2026-11-23: the 'Landmark models (Blender)' step was removed: custom city models are off, see docs/CITY_MODELS.md; to bring them back, re-add it and pass --landmarks to build_dlc.py.)",
+    "cwd": "..",
+    "steps": [
+      {
+        "name": "Merged mod",
+        "command": [
+          "python3",
+          "tools/build.py"
+        ],
+        "commandWin32": [
+          "py",
+          "-3",
+          "tools/build.py"
+        ]
+      },
+      {
+        "name": "DLC pack",
+        "command": [
+          "python3",
+          "tools/build_dlc.py"
+        ],
+        "commandWin32": [
+          "py",
+          "-3",
+          "tools/build_dlc.py"
+        ]
+      }
+    ]
+  }
+}
