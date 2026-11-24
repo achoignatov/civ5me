@@ -141,7 +141,7 @@ def look_at(cam, target):
     cam.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
 
 
-def preview(name, verts, tris, img_top_first, size=(900, 640), extra=(), fx=()):
+def preview(name, verts, tris, img_top_first, size=(900, 640), extra=(), fx=(), overlays=()):
     """Rebuild the model from the exported arrays + decoded DDS and render it (validates the export)."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
     me = bpy.data.meshes.new('pv')
@@ -222,6 +222,42 @@ def preview(name, verts, tris, img_top_first, size=(900, 640), extra=(), fx=()):
         e.inputs['Strength'].default_value = 6.0
         nt2.links.new(e.outputs[0], nt2.nodes['Material Output'].inputs[0])
         mk.data.materials.append(em)
+    # additive overlays (model effects such as glow.py's): [(positions, faces, uvs top-first, rgba uint8 image)],
+    # drawn as the game's FX shader does: colour x alpha added to what is behind
+    for oi, (opos, ofaces, ouvs, oimg) in enumerate(overlays):
+        ome = bpy.data.meshes.new('ov%d' % oi)
+        ome.from_pydata(list(opos), [], list(ofaces))
+        ome.update()
+        ouv = ome.uv_layers.new()
+        for poly in ome.polygons:
+            for li in poly.loop_indices:
+                u, v = ouvs[ome.loops[li].vertex_index]
+                ouv.data[li].uv = (u, 1.0 - v)
+        oh, ow = oimg.shape[:2]
+        oim = bpy.data.images.new('ovtex%d' % oi, ow, oh, alpha=True)
+        oim.pixels.foreach_set((np.flipud(oimg).astype(np.float32) / 255.0).ravel())
+        om = bpy.data.materials.new('ovm%d' % oi)
+        om.use_nodes = True
+        ont = om.node_tree
+        ont.nodes.remove(ont.nodes['Principled BSDF'])
+        otn = ont.nodes.new('ShaderNodeTexImage')
+        otn.image = oim
+        mul = ont.nodes.new('ShaderNodeMix'); mul.data_type = 'RGBA'; mul.blend_type = 'MULTIPLY'
+        mul.inputs['Factor'].default_value = 1.0
+        ont.links.new(otn.outputs['Color'], mul.inputs['A'])
+        ont.links.new(otn.outputs['Alpha'], mul.inputs['B'])
+        em_ = ont.nodes.new('ShaderNodeEmission')
+        em_.inputs['Strength'].default_value = 1.6
+        ont.links.new(mul.outputs['Result'], em_.inputs['Color'])
+        tr = ont.nodes.new('ShaderNodeBsdfTransparent')
+        add = ont.nodes.new('ShaderNodeAddShader')
+        ont.links.new(tr.outputs[0], add.inputs[0])
+        ont.links.new(em_.outputs[0], add.inputs[1])
+        ont.links.new(add.outputs[0], ont.nodes['Material Output'].inputs[0])
+        ome.materials.append(om)
+        oob = bpy.data.objects.new('ov%d' % oi, ome)
+        oob.visible_shadow = False
+        bpy.context.scene.collection.objects.link(oob)
     sun = bpy.data.objects.new('sun', bpy.data.lights.new('sun', 'SUN'))
     sun.data.energy = 4.0
     sun.rotation_euler = (math.radians(50), math.radians(-25), math.radians(-30))

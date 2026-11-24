@@ -9,10 +9,10 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | City | Landmark | Art |
 |---|---|---|
 | Barad-dûr (Mordor's capital) | The Dark Tower as in the films, with the living Eye of Sauron: 242 units high, about two hexes wide | `vendor/landmarks/BaradDur5` (model `tools/landmarks/models/barad_dur_v5.py`) |
-| Moria (the Goblins' capital) | The West-gate of Moria: the Doors of Durin, the cliffs, the Watcher's lake | `vendor/landmarks/Moria` (model `tools/landmarks/models/moria.py`) |
+| Moria (the Goblins' capital) | v4 (first draft, awaiting the in-game test): the Walls of Moria under Caradhras, Celebdil and Fanuidhol; the Doors of Durin with a real additive ithildin glow; holly trees, the lake, the Watcher's swaying tentacles | `vendor/landmarks/Moria4` (model `tools/landmarks/models/moria_v4.py`) |
 | Every other city and city-state | Stock art | |
 
-**Next:** a better Moria, then the other 12 capitals one at a time (§6).
+**Next:** the user's in-game verdict on Moria v4, then the other 12 capitals one at a time (§7).
 
 ## 1. How it works
 
@@ -96,6 +96,17 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
 
 **Not yet tried:** more than 242 high, more than one 32k part per model, several games in one game process.
 
+**New in Moria v4 (untested in game until the user's test):**
+- *The skinned part as a second 32k budget.* Its vertices can sit on two bones: `eyepivot` (moves) or `eyeroot`
+  (never moves); a model module's `PIVOT_MATS` names the materials that move, the rest go on `eyeroot`
+  (`bake.process` returns each vertex's material, `lmodel.write_building(eye=dict(still=...))`). Moria puts the
+  massif in the static part and the doors, trees, lake and rocks in the skinned part; only the tentacles move.
+- *A still, additive glowing picture* (`tools/landmarks/glow.py`): the lighthouse-beam FX material on our own quads,
+  the picture in the texture's alpha, all tracks still. A rig bone with key `DOOR_GLOW` makes `build_models.py`
+  write it; the preview draws it additively. Its quads are in the model's file units, so its VisEffect `Scale` is 1.0.
+- *Bake options* (palette entries, opt-in): `tints` (regional colour discs), `snow` (z range + flatness),
+  `cavity` (Cycles pointiness), and `b.ao_distance`.
+
 ## 5. Making a model
 
 **Authoring rules:** in-game units, Z up, origin at the hex centre, ground at z = 0, −Y = south = towards the
@@ -142,7 +153,7 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 | Civ | Capital (name key) | Model | Status |
 |---|---|---|---|
 | Mordor | Barad-dûr (`MEC_BARAD_DUR`) | `barad_dur_v5.py`, `Scale` 0.5 | **Done** |
-| Goblins | Moria (`MEC_MORIA`) | `moria.py` (v3; written for the old wonder scale, so its `Scale` is 0.094) | **Done**; to be improved next |
+| Goblins | Moria (`MEC_MORIA`) | `moria_v4.py`, `Scale` 0.134 = fits its own hex (v3 `moria.py` kept in `vendor/landmarks/Moria`) | **v4 approved**, size final (2026-11-25); doors redesigned for legibility, awaiting test |
 | Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | draft `tools/capitals/models/gondor.py` | To build |
 | Dwarves | Erebor (`MEC_EREBOR`) | draft `dwarves.py` | To build |
 | Hobbits | The Shire (`MEC_THE_SHIRE`) | draft `hobbits.py` (Bag End) | To build |

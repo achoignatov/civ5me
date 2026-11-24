@@ -112,6 +112,13 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=36.0, hex_out=36.0 / 0.8660254, max_height=130.0, min_z=-3.0, max_verts=31900,
                        max_tris=40000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-25: Moria v4, the West-gate for the IMPROVEMENT path (models/moria_v4.py): in-game units, written x4
+    # (scale 0.25); the massif spills into the neighbouring hexes; a skinned part (the Watcher's tentacles) carries
+    # the bone of the additive ithildin glow (DOOR_GLOW, tools/landmarks/glow.py). Shipped from vendor/landmarks/Moria4.
+    dict(key='MORIA4', title='Moria (v4)', module='moria_v4', model='MEC_LM_Moria4', scale=0.25,
+         envelope=dict(hex_in=68.0, hex_out=68.0 / 0.8660254, max_height=82.0, min_z=-3.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
@@ -188,6 +195,9 @@ EFFECTS = {
                          scale=1.0, rotation=(90.0, 0.0, 0.0)),      # the blaze behind it
     'TOWER_FIRE': dict(name='ART_DEF_VEFFECT_MEC_TOWER_FIRE', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
                        scale=0.6, rotation=(90.0, 0.0, 0.0)),        # braziers on Barad-dur v5's flanges
+    # Moria v4: the ithildin of the Doors of Durin, an additive model effect (glow.py), drawn in file units
+    'DOOR_GLOW': dict(name='ART_DEF_VEFFECT_MEC_DOOR_GLOW', model='ART_DEF_MEFFECT_MEC_DOOR_GLOW',
+                      file='MEC_DurinGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'EYE_BEAM': dict(name='ART_DEF_VEFFECT_MEC_EYE_BEAM', model='ART_DEF_MEFFECT_MEC_EYE_BEAM',
                      file='MEC_EyeBeam.fxsxml', scale=13.0, rotation=(0.0, 0.0, 0.0)),   # ~80 units of light
     # Mount Doom. The eruption is the stock Krakatoa's own particle system (ART_DEF_VEFFECT_VOLCANIC_ERUPTION:

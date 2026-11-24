@@ -41,12 +41,24 @@ BARAD_V5 = dict(dir='BaradDur5', gr2='MEC_LM_BaradDur5.gr2',
                 trigger=('FX_Triggers_MEC_LM_BaradDur5.ftsxml', 'MEC_LM_BaradDur5_Eye'))
 
 IMPROVEMENTS = [
-    # Moria v3 (tools/landmarks/models/moria.py): baked, 16.4k vertices, static. File +-391 x (-268..+435) x 471;
-    # Scale 0.094 -> ~+-37 x (-25..+41), ~44 high. Drew on every city and city-state (test 2, 2026-11-24).
-    dict(key='MORIA', title='Moria', dir='Moria',
-         gr2='MEC_LM_Moria.gr2',
-         textures=['Generic_Grey_8.dds', 'MEC_LM_Moria_DIFF.dds', 'MEC_LM_Moria_SREF.dds'],
-         scale=0.094,
+    # Moria v4, the West-gate (tools/landmarks/models/moria_v4.py, 2026-11-25): the Walls of Moria round a bay under
+    # the three Mountains of Moria (Caradhras, Celebdil, Fanuidhol), ridged relief at stock-mountain density, snow;
+    # the Doors of Durin in ithildin with a real additive glow (model effect MEC_DurinGlow on bone fxglow), holly
+    # trees, the lake and the Watcher's tentacles (skinned, a slow 6 s sway). Static part 29.3k vertices (the massif),
+    # skinned part 22.9k (doors, trees, lake, rocks on the still bone eyeroot; tentacles on eyepivot); 2 x 2048 baked.
+    # Authored in in-game units, written x4: Scale 0.25 = 1:1, about +-54 x (-35..+56), 76 high.
+    # 2026-11-25 (user, after the first test: "overwhelming next to the stock mountains"): fit its own tile, no
+    # overlap with the neighbours. Everything above ground reaches 61.3 in the hex's own measure (centre -> flat side
+    # = 34), so x0.536: Scale 0.134 -> about +-29 x (-19..+30), 41 high; the glow and the tentacles scale with it.
+    # (v3, test 2 of 2026-11-24, is kept in vendor/landmarks/Moria but no longer packed.)
+    dict(key='MORIA', title='Moria', dir='Moria4',
+         gr2='MEC_LM_Moria4.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Moria4_DIFF.dds', 'MEC_LM_Moria4_SREF.dds',
+                   'MEC_LM_Moria4_Eye_DIFF.dds', 'MEC_LM_Moria4_Eye_SREF.dds'],
+         animation=('MEC_LM_Moria4_Idle.gr2', 'Idle'),
+         bones=['fxglow'],
+         trigger=('FX_Triggers_MEC_LM_Moria4.ftsxml', 'MEC_LM_Moria4_Eye'),
+         scale=0.134,
          name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
          aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
     # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
@@ -74,8 +86,11 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_EYE_BLAZE', 90.0, 2.5, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
     ('ART_DEF_VEFFECT_MEC_TOWER_FIRE', 90.0, 0.6, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
     ('ART_DEF_VEFFECT_MEC_EYE_BEAM', 0.0, 29.0, None, 'ART_DEF_MEFFECT_MEC_EYE_BEAM'),
+    # Moria v4: the ithildin glow; its quads are written in the model's file units, so Scale 1.0
+    ('ART_DEF_VEFFECT_MEC_DOOR_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_DOOR_GLOW'),
 ]
-VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml')]     # file in vendor/landmarks/BaradDur5
+VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
+              ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml')]   # file in vendor/landmarks/Moria4
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).

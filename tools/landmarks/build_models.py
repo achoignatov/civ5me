@@ -128,6 +128,7 @@ def build_one(lm, do_preview=True):
     env = envelope(lm)
     sname = name + '_Static' if animated else name
     cut = lm.get('tree_cut')
+    glow_fx = None
     if res is not None:     # the whole landmark as one static model (skipped for baked animated models: their
         check_envelope(name, res.verts, res.tris, env)          # tower and Eye are baked and checked below)
         dn, sn = _textures(res, sname, *((BAKED_DIFF, BAKED_SREF) if baked else (GAME_DIFF, GAME_SREF)))
@@ -157,8 +158,11 @@ def build_one(lm, do_preview=True):
             blib.SEG[0] = blib.FILL[0] = 1.0
             be = blib.Builder(seed=seed)
             mod.build_eye(be)
-            eye = bake.process(be, px=512, ao_samples=4)
-            edn, esn = _textures(eye, name + '_Eye', 512, 256)
+            epx = getattr(mod, 'EYE_PX', 512)          # Moria v4: the skinned part holds most of the model: 2048
+            eye = bake.process(be, px=epx, ao_samples=getattr(mod, 'EYE_AO', 4))
+            edn, esn = _textures(eye, name + '_Eye', epx, epx // 2)
+            if hasattr(mod, 'PIVOT_MATS'):          # only these materials move with eyepivot; the rest stays still
+                eye.still = [m_ not in mod.PIVOT_MATS for m_ in eye.vmat]
         else:
             tower = _make(lambda b: mod.build(b, eye=False), seed)
             tdn, tsn = _textures(tower, name)
@@ -178,7 +182,8 @@ def build_one(lm, do_preview=True):
         bones = [(bn_, parent, tuple(c * k for c in pos)) for bn_, parent, pos, _ in rig]
         size, bone_list = lmodel.write_building(
             OUT, name, dict(verts=_model_units(tower.verts, k), tris=tower.tris, diffuse=tdn, sref=tsn),
-            eye=dict(verts=_model_units(eye.verts, k), tris=eye.tris, diffuse=edn, sref=esn),
+            eye=dict(verts=_model_units(eye.verts, k), tris=eye.tris, diffuse=edn, sref=esn,
+                     still=getattr(eye, 'still', None)),
             rig=dict(pivot=pivot, bones=bones))
         idle, curve = lmodel.write_idle(OUT, name, bone_list, mod.GAZE)
         verify_animation(os.path.join(OUT, idle), name, bone_list, mod.GAZE)
@@ -191,6 +196,11 @@ def build_one(lm, do_preview=True):
         lmodel.write_triggers(os.path.join(OUT, trig_fire), fire)
         if beam_trig:                       # only the Eye has the beam (it follows that model's GAZE)
             files += beam.write(OUT, mod.GAZE, getattr(mod, 'BEAM_TILT', BEAM_TILT))
+        glow_fx = None
+        if any(key == 'DOOR_GLOW' for _, _, _, key in rig):     # a still, additive glowing picture (glow.py)
+            import glow
+            glow_fx = mod.glow_effect(k)
+            files += glow.write(OUT, **glow_fx)
         ename = name + '_Eye'
         tex = ['Generic_Grey_8.dds', tdn, tsn, edn, esn]
         fx_bones = [b_[0] for b_ in rig if b_[3]]
@@ -220,8 +230,24 @@ def build_one(lm, do_preview=True):
         pipeline.PREVIEW, pipeline.WORK = PREVIEW, WORK
         blib.HEX_IN, blib.HEX_OUT = env['hex_in'], env['hex_out']
         try:
-            pipeline.preview(name, preview_res.verts, preview_res.tris,
-                             dds.decode_dxt3(os.path.join(OUT, preview_dn)), extra=getattr(mod, 'PREVIEW', ()))
+            overlays = []
+            if animated and glow_fx:        # the additive glow, at its bone, in in-game units
+                gpos = next(pos for bn_, _, pos, key in mod.rig() if key == 'DOOR_GLOW')
+                for (x0, x1, z0, z1, y) in glow_fx['quads']:
+                    P = [(gpos[0] + x / k, gpos[1] + y / k, gpos[2] + z / k) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
+                    overlays.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)],
+                                     dds.decode_dxt3(os.path.join(OUT, glow_fx['name'] + '_DIFF.dds'))))
+            pv, pt, pimg = preview_res.verts, preview_res.tris, dds.decode_dxt3(os.path.join(OUT, preview_dn))
+            if animated and baked and hasattr(mod, 'PIVOT_MATS'):
+                # the skinned part holds half the landmark: show both parts together (textures side by side)
+                eimg = dds.decode_dxt3(os.path.join(OUT, edn))
+                if eimg.shape == pimg.shape:
+                    pv = [(v[0], v[1], v[2], v[3], (v[4][0] / 2, v[4][1])) for v in tower.verts] + \
+                         [(v[0], v[1], v[2], v[3], (0.5 + v[4][0] / 2, v[4][1])) for v in eye.verts]
+                    nt_ = len(tower.verts)
+                    pt = list(tower.tris) + [(a + nt_, b + nt_, c + nt_) for a, b, c in eye.tris]
+                    pimg = np.concatenate([pimg, eimg], axis=1)
+            pipeline.preview(name, pv, pt, pimg, extra=getattr(mod, 'PREVIEW', ()), overlays=overlays)
             if animated and baked:      # the Eye on its own (its own texture), seen from the game's angle
                 pipeline.preview(name + '_Eye', eye.verts, eye.tris, dds.decode_dxt3(os.path.join(OUT, edn)),
                                  extra=getattr(mod, 'PREVIEW_EYE', ()))

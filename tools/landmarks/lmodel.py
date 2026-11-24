@@ -145,8 +145,9 @@ def write_building(out_dir, name, static, eye=None, rig=None):
         ev, et = eye['verts'], eye['tris']
         assert len(ev) < MAX_PART_VERTS
         vb = bytearray()
-        for p, n, t, b, uv in ev:          # every vertex fully on mesh bone binding 0 = eyepivot
-            vb += struct.pack('<3f4B4B12f', *p, 255, 0, 0, 0, 0, 0, 0, 0, *n, *t, *b, uv[0], uv[1], 0.0)
+        still = eye.get('still') or [False] * len(ev)     # True: on binding 1 = eyeroot (never moves)
+        for (p, n, t, b, uv), st in zip(ev, still):     # else fully on mesh bone binding 0 = eyepivot
+            vb += struct.pack('<3f4B4B12f', *p, 255, 0, 0, 0, 1 if st else 0, 0, 0, 0, *n, *t, *b, uv[0], uv[1], 0.0)
         e_mat = building_material(b_tmpl, ename, eye['diffuse'], eye['sref'], skinned=True)
         e_vd = {'Vertices': gr2.Variant(smembers, bytes(vb)),
                 'VertexComponentNames': [{'String': m.name} for m in smembers], 'VertexAnnotationSets': []}
@@ -156,6 +157,9 @@ def write_building(out_dir, name, static, eye=None, rig=None):
                   'MaterialBindings': [{'Material': e_mat}],
                   'BoneBindings': [{'BoneName': 'eyepivot', 'OBBMin': lo, 'OBBMax': hi, 'TriangleIndices': []}],
                   'ExtendedData': None}
+        if any(still):
+            slo, shi = obb([v[0] for v, st in zip(ev, still) if st])                       # eyeroot = origin
+            e_mesh['BoneBindings'].append({'BoneName': 'eyeroot', 'OBBMin': slo, 'OBBMax': shi, 'TriangleIndices': []})
         e_model = dict(tc_model)
         e_model.update({'Name': ename, 'Skeleton': e_skel, 'MeshBindings': [{'Mesh': e_mesh}]})
         mats.append(e_mat); skels.append(e_skel); vds.append(e_vd); topos.append(e_topo)

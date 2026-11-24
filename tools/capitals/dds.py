@@ -83,8 +83,10 @@ def _encode_level(img):
     return out.tobytes()
 
 
-def write_dxt3(path, img):
-    """img: HxWx4 uint8, top row first, power-of-two size."""
+def write_dxt3(path, img, alpha_keep=0.0):
+    """img: HxWx4 uint8, top row first, power-of-two size.
+    alpha_keep 0..1: smaller mip levels keep that share of the BRIGHTEST alpha of each 2x2 block instead of the mean,
+    so thin glowing lines stay lines in the distance instead of fading into a haze (glow.py)."""
     h, w = img.shape[:2]
     levels = []
     cur = img.astype(np.float32)
@@ -94,7 +96,10 @@ def write_dxt3(path, img):
             break
         hh, ww = max(1, cur.shape[0] // 2), max(1, cur.shape[1] // 2)
         cur = cur[:hh * 2 if cur.shape[0] > 1 else 1, :ww * 2 if cur.shape[1] > 1 else 1]
-        cur = cur.reshape(hh, cur.shape[0] // hh, ww, cur.shape[1] // ww, 4).mean((1, 3))
+        blk = cur.reshape(hh, cur.shape[0] // hh, ww, cur.shape[1] // ww, 4)
+        cur = blk.mean((1, 3))
+        if alpha_keep:
+            cur[..., 3] += alpha_keep * (blk[..., 3].max((1, 3)) - cur[..., 3])
     hdr = struct.pack('<4sIIIIIII44x', b'DDS ', 124, 0x1 | 0x2 | 0x4 | 0x1000 | 0x20000 | 0x80000,
                       h, w, len(levels[0]), 0, len(levels))
     pf = struct.pack('<II4sIIIII', 32, 0x4, b'DXT3', 0, 0, 0, 0, 0)

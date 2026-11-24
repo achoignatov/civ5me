@@ -22,6 +22,7 @@ import numpy as np
 from mathutils import Vector
 
 import blib
+from blib import hexcol as h_
 
 
 class Result:
@@ -136,6 +137,32 @@ def _material(name, glow=None):
         sc = _lin(p['slope_color'])
         rock = mix(sc, tuple(x * 0.7 for x in sc[:3]) + (1.0,), maprange(fine, 0.3, 0.7))
         col = mix(col, rock, steep)
+    if p.get('tints'):
+        # regional colour (e.g. Caradhras the Redhorn): [(x, y, radius, colour, strength)], a soft disc in plan view,
+        # its edge broken up by the large noise
+        for (tx, ty, tr, tcol, ts) in p['tints']:
+            dx = N.new('ShaderNodeMath'); dx.operation = 'SUBTRACT'
+            Lk.new(sep.outputs['X'], dx.inputs[0]); dx.inputs[1].default_value = tx
+            dy = N.new('ShaderNodeMath'); dy.operation = 'SUBTRACT'
+            Lk.new(sep.outputs['Y'], dy.inputs[0]); dy.inputs[1].default_value = ty
+            vec = N.new('ShaderNodeCombineXYZ')
+            Lk.new(dx.outputs[0], vec.inputs[0]); Lk.new(dy.outputs[0], vec.inputs[1])
+            ln = N.new('ShaderNodeVectorMath'); ln.operation = 'LENGTH'
+            Lk.new(vec.outputs[0], ln.inputs[0])
+            jit = N.new('ShaderNodeMath'); jit.operation = 'MULTIPLY_ADD'
+            Lk.new(big, jit.inputs[0]); jit.inputs[1].default_value = tr * 0.5; Lk.new(ln.outputs['Value'], jit.inputs[2])
+            fac = maprange(jit.outputs[0], tr, tr * 0.45, 0.0, ts)
+            tc_ = _lin(tcol)
+            col = mix(col, mix(tc_, tuple(x * 0.72 for x in tc_[:3]) + (1.0,), maprange(fine, 0.3, 0.7)), fac)
+    if p.get('cavity'):
+        # crevices darker, crests a little lighter (Cycles' pointiness: the mesh's own curvature)
+        geo4 = N.new('ShaderNodeNewGeometry')
+        c_ = p['cavity']
+        cv = maprange(geo4.outputs['Pointiness'], 0.47, 0.53, 1.0 - c_, 1.0 + 0.35 * c_)
+        cc = N.new('ShaderNodeCombineColor')
+        for i in range(3):
+            Lk.new(cv, cc.inputs[i])
+        col = mix(col, cc.outputs[0], 1.0, 'MULTIPLY')
     if p.get('cracks'):
         # dark cracks and crevices: the edges of large Voronoi cells, distorted by noise
         vor = N.new('ShaderNodeTexVoronoi')
@@ -186,6 +213,22 @@ def _material(name, glow=None):
         Lk.new(tc.outputs['Object'], wave.inputs['Vector'])
         lo = 1.0 - p.get('strata_amp', 0.12)
         col = mix(col, mix((lo, lo, lo, 1), (1.03, 1.03, 1.03, 1), wave.outputs['Fac']), 1.0, 'MULTIPLY')
+    if p.get('snow'):
+        # snow lying where it can: above a ragged snow line, on faces flatter than a slope limit; sheer rock stays bare
+        sz0, sz1, sflat = p['snow']
+        geo3 = N.new('ShaderNodeNewGeometry')
+        nz3 = N.new('ShaderNodeSeparateXYZ')
+        Lk.new(geo3.outputs['Normal'], nz3.inputs[0])
+        zj = N.new('ShaderNodeMath'); zj.operation = 'MULTIPLY_ADD'
+        Lk.new(big, zj.inputs[0]); zj.inputs[1].default_value = (sz1 - sz0) * 1.6; Lk.new(sep.outputs['Z'], zj.inputs[2])
+        high = maprange(zj.outputs[0], sz0 + (sz1 - sz0) * 0.8, sz0 + (sz1 - sz0) * 0.95)
+        nj = N.new('ShaderNodeMath'); nj.operation = 'MULTIPLY_ADD'
+        Lk.new(fine, nj.inputs[0]); nj.inputs[1].default_value = 0.25; Lk.new(nz3.outputs['Z'], nj.inputs[2])
+        flat = maprange(nj.outputs[0], sflat + 0.12, sflat + 0.17)
+        sm = N.new('ShaderNodeMath'); sm.operation = 'MULTIPLY'
+        Lk.new(high, sm.inputs[0]); Lk.new(flat, sm.inputs[1])
+        snowc = mix(_lin(h_('eef3f8')), _lin(h_('c9d5e2')), maprange(fine, 0.35, 0.75))
+        col = mix(col, snowc, sm.outputs[0])
     if p.get('glow') and glow is not None:
         img, (X0, X1, Z0, Z1) = glow
         comb = N.new('ShaderNodeCombineXYZ')
@@ -302,7 +345,7 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     ob = _object(b, glow)
     me = ob.data
     bpy.context.scene.world = bpy.data.worlds.new('W')
-    bpy.context.scene.world.light_settings.distance = 3.0
+    bpy.context.scene.world.light_settings.distance = getattr(b, 'ao_distance', 3.0)
     diff = _bake(ob, 'DIFFUSE', px, 'Linear Rec.709')       # linear albedo
     ao = _bake(ob, 'AO', px, 'Non-Color', samples=ao_samples)[..., 0:1]
     emit = _bake(ob, 'EMIT', px, 'Non-Color')
@@ -386,7 +429,7 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     me.calc_loop_triangles()
     cn = me.corner_normals
     uvl = me.uv_layers.active.data
-    out, index, tris = [], {}, []
+    out, index, tris, vmat = [], {}, [], []
     for lt in me.loop_triangles:
         ids = []
         for li in lt.loops:
@@ -397,12 +440,14 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
             if key not in index:
                 index[key] = len(out)
                 out.append([tuple(me.vertices[vi].co), tuple(n), None, None, (u, 1.0 - v)])
+                vmat.append(b.mat_names[lt.material_index])     # the material of (one of) its faces
             ids.append(index[key])
         tris.append(tuple(ids))
     _tangents(out, tris)
     res = Result()
     res.verts = [tuple(v) for v in out]
     res.tris = tris
+    res.vmat = vmat
     res.image = np.rint(srgb * 255).astype(np.uint8)
     res.sref = np.concatenate([np.rint(np.clip(srgb * spec, 0, 1) * 255),
                                np.rint(np.clip(refl, 0, 1) * 255)], -1).astype(np.uint8)
