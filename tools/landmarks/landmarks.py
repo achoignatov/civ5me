@@ -99,6 +99,13 @@ ALL_LANDMARKS = [
          tree_cut=10.5,
          name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
          aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
+    # 2026-11-24 night: Barad-dur v5, the film's tower, built for the IMPROVEMENT path (docs/LANDMARKS.md): authored
+    # in in-game units, written x4 (scale 0.25), shipped from vendor/landmarks/BaradDur5. Only this file's build
+    # matters (tools/landmarks/improvements.py places it); the city-art envelope does not apply.
+    dict(key='BARAD_DUR5', title='Barad-dûr (v5)', module='barad_dur_v5', model='MEC_LM_BaradDur5', scale=0.25,
+         envelope=dict(hex_in=36.0, hex_out=36.0 / 0.8660254, max_height=130.0, min_z=-3.0, max_verts=31900,
+                       max_tris=40000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
@@ -173,6 +180,8 @@ EFFECTS = {
                      scale=0.4, rotation=(90.0, 0.0, 0.0)),          # flames round the rim of the Eye
     'EYE_FIRE_BIG': dict(name='ART_DEF_VEFFECT_MEC_EYE_BLAZE', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
                          scale=1.0, rotation=(90.0, 0.0, 0.0)),      # the blaze behind it
+    'TOWER_FIRE': dict(name='ART_DEF_VEFFECT_MEC_TOWER_FIRE', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
+                       scale=0.6, rotation=(90.0, 0.0, 0.0)),        # braziers on Barad-dur v5's flanges
     'EYE_BEAM': dict(name='ART_DEF_VEFFECT_MEC_EYE_BEAM', model='ART_DEF_MEFFECT_MEC_EYE_BEAM',
                      file='MEC_EyeBeam.fxsxml', scale=13.0, rotation=(0.0, 0.0, 0.0)),   # ~80 units of light
     # Mount Doom. The eruption is the stock Krakatoa's own particle system (ART_DEF_VEFFECT_VOLCANIC_ERUPTION:

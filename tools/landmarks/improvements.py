@@ -33,6 +33,13 @@ LUA = 'MEC_LandmarkImprovements.lua'
 #   animation  -> (file, name) of an idle loop: played by the stock LandmarkDecisionTree (like the stock oil rig)
 #   trigger    -> (ftsxml, model) TimedTrigger for effects on bones; bones = BoneUsage
 #   name_keys / aliases -> which cities get it
+BARAD_V5 = dict(dir='BaradDur5', gr2='MEC_LM_BaradDur5.gr2',
+                textures=['Generic_Grey_8.dds', 'MEC_LM_BaradDur5_DIFF.dds', 'MEC_LM_BaradDur5_SREF.dds',
+                          'MEC_LM_BaradDur5_Eye_DIFF.dds', 'MEC_LM_BaradDur5_Eye_SREF.dds'],
+                animation=('MEC_LM_BaradDur5_Idle.gr2', 'Idle'),
+                bones=['fxfire%d' % i for i in range(8)] + ['fxcore', 'fxbeam'] + ['fxtower%d' % i for i in range(6)],
+                trigger=('FX_Triggers_MEC_LM_BaradDur5.ftsxml', 'MEC_LM_BaradDur5_Eye'))
+
 IMPROVEMENTS = [
     # Moria v3 (tools/landmarks/models/moria.py): baked, 16.4k vertices, static. File +-391 x (-268..+435) x 471;
     # Scale 0.094 -> ~+-37 x (-25..+41), ~44 high. Drew on every city and city-state (test 2, 2026-11-24).
@@ -42,41 +49,46 @@ IMPROVEMENTS = [
          scale=0.094,
          name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
          aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
-    # Barad-dur v3, the Eye of Sauron (models/barad_dur.py at commit 384416f): fortress + tower (static) and a skinned
-    # Eye that looks around (6 s idle loop), 8 fires around the Eye + a blaze in it (stock Great Lighthouse fire)
-    # and a searchlight beam (our model effect, MEC_EyeBeam). File +-94 x +-109 x 188 (made for wonder fScale 0.25,
-    # where the effect sizes were tuned). Scale 0.3 -> ~+-28 x +-33, ~56 high (inside the proven 57).
-    dict(key='BARAD_DUR', title='Barad-dûr', dir='BaradDur',
-         gr2='MEC_LM_BaradDur.gr2',
-         textures=['Generic_Grey_8.dds', 'MEC_LM_BaradDur_DIFF.dds', 'MEC_LM_BaradDur_SREF.dds',
-                   'MEC_LM_BaradDur_Eye_DIFF.dds', 'MEC_LM_BaradDur_Eye_SREF.dds'],
-         animation=('MEC_LM_BaradDur_Idle.gr2', 'Idle'),
-         bones=['fxfire%d' % i for i in range(8)] + ['fxcore', 'fxbeam'],
-         trigger=('FX_Triggers_MEC_LM_BaradDur.ftsxml', 'MEC_LM_BaradDur_Eye'),
-         scale=0.3,
+    # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
+    # spire with clinging turrets + the two-pronged crown, baked 2048, 30.5k vertices; a skinned Eye (6.3k vertices)
+    # with the 6 s look-around loop, a ring of fire + a blaze round it, the searching beam, six braziers on the
+    # tower. Authored in in-game units and written x4, so Scale 0.25 = 1:1 (about +-33 x +-37, 121 high).
+    # PRODUCTION SIZE x2 (user, 2026-11-24, after the size-ladder test drew every size on every city): Scale 0.5,
+    # about +-66 x +-74 (two hexes), 242 high; the fires and beam grow with it.
+    # (v3, the Eye of the first release, is kept in vendor/landmarks/BaradDur but no longer packed.)
+    dict(BARAD_V5, key='BARAD_DUR', title='Barad-dûr', scale=0.5,
          name_keys=['TXT_KEY_CITY_NAME_MEC_BARAD_DUR'],
          aliases=['Barad Dur', 'Barad-dur', 'Barad-dûr', 'Barad Dûr', 'Baraddur']),
+    # The size-ladder test rows (x0.5 / x1.5 / x2 on every other city, 2026-11-24) are described in docs/LANDMARKS.md
+    # (all drew); add rows like dict(BARAD_V5, key='BARAD_X150', title=..., scale=0.375, name_keys=[], aliases=[])
+    # and list them in TEST_LADDER to repeat it.
 ]
 
 # Effects used by the triggers above (VisEffectInfoDefines / VisEffectModelDefines in the DLC package).
 # Values as tuned for Barad-dur v3 in the old city-art path (tools/landmarks/landmarks.py EFFECTS, 2026-11-22).
 VIS_EFFECTS = [
     # (name, rotation x, scale, particle effect or None, model effect or None)
-    ('ART_DEF_VEFFECT_MEC_EYE_FIRE', 90.0, 0.4, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
-    ('ART_DEF_VEFFECT_MEC_EYE_BLAZE', 90.0, 1.0, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
-    ('ART_DEF_VEFFECT_MEC_EYE_BEAM', 0.0, 13.0, None, 'ART_DEF_MEFFECT_MEC_EYE_BEAM'),
+    # v5: the Eye is 2.56x v3's (EX 3.2 vs 1.25), so its fires are 2.5x; the beam reaches the land from z 110 at
+    # 38 degrees (~180 units: the stock beam is ~6.2 units per scale unit); braziers on the tower flanges.
+    ('ART_DEF_VEFFECT_MEC_EYE_FIRE', 90.0, 1.0, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
+    ('ART_DEF_VEFFECT_MEC_EYE_BLAZE', 90.0, 2.5, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
+    ('ART_DEF_VEFFECT_MEC_TOWER_FIRE', 90.0, 0.6, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
+    ('ART_DEF_VEFFECT_MEC_EYE_BEAM', 0.0, 29.0, None, 'ART_DEF_MEFFECT_MEC_EYE_BEAM'),
 ]
-VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml')]     # file in vendor/landmarks/BaradDur
+VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml')]     # file in vendor/landmarks/BaradDur5
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).
 ALL_CITIES = None
+# Keys of IMPROVEMENTS: every city WITHOUT a landmark of its own gets one of them, picked by its map position
+# ((5 x + 3 y) mod count, see MEC_LandmarkImprovements.lua; logged per city). [] = off.
+TEST_LADDER = []
 # Control plots next to the anchor capital: (letter, key). Test 1 used A Barad-dur / B Elven Battle Tower /
 # C stock citadel art (all drew); those rows were removed after the test.
 CONTROLS = []
 ANCHOR_CIV = 'CIVILIZATION_MEC_MORDOR'      # fallback: the first human player's capital
 # Fog of war off for human teams.
-REVEAL_MAP = True                           # ON for the user's check of this build; False for the release commit
+REVEAL_MAP = False                          # True for render tests; False for a release
 
 
 def improvement(row):
@@ -204,6 +216,7 @@ def lua_table():
     all_cities = next((improvement(r) for r in IMPROVEMENTS if r['key'] == ALL_CITIES), None)
     return ('g_LandmarkDefs = { %s }\n' % defs
             + 'g_AllCities = %s\n' % s(all_cities)
+            + 'g_Ladder = { %s }\n' % ', '.join('"IMPROVEMENT_MEC_LM_%s"' % k for k in TEST_LADDER)
             + 'g_Controls = { %s }\n' % ', '.join('{ "%s", "IMPROVEMENT_MEC_LM_%s" }' % (c, k) for c, k in CONTROLS)
             + 'g_AnchorCiv = %s\n' % s(ANCHOR_CIV)
             + 'g_RevealMap = %s' % ('true' if REVEAL_MAP else 'false'))

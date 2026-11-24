@@ -54,8 +54,13 @@ end
 local function LandmarkFor(city)
 	if g_AllCities then return g_ID[g_AllCities] end
 	local key = city:GetNameKey()
-	if not key then return nil end
-	return g_ByName[key] or g_ByName[string.lower(key)]
+	local own = key and (g_ByName[key] or g_ByName[string.lower(key)])
+	if own then return own end
+	-- size-ladder render test (improvements.TEST_LADDER): every other city gets a variant by its map position
+	if #g_Ladder > 0 then
+		return g_ID[g_Ladder[(5 * city:GetX() + 3 * city:GetY()) % #g_Ladder + 1]]
+	end
+	return nil
 end
 
 local function SyncCity(city)
@@ -131,6 +136,7 @@ GameEvents.PlayerDoTurn.Add(function(playerID) SyncAll() end)
 SyncAll()     -- loaded games, and cities that exist before this script runs
 print("MEC_LMI: active, " .. #g_LandmarkDefs .. " landmark(s)"
 	.. (g_AllCities and (", TEST: every city gets " .. g_AllCities) or ", matched by city name")
+	.. (#g_Ladder > 0 and (", TEST ladder on the other cities: " .. table.concat(g_Ladder, " / ")) or "")
 	.. ", controls " .. #g_Controls .. ", anchor " .. tostring(g_AnchorCiv) .. (g_CivID and "" or " (not in the database)"))
 
 -- g_RevealMap: render test without fog of war; every plot revealed and kept visible for every human team

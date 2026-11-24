@@ -36,7 +36,7 @@ import dds  # noqa: E402
 import gr2  # noqa: E402
 import pipeline  # noqa: E402  (reset(), preview(), _shrink())
 import numpy as np  # noqa: E402
-from landmarks import ENVELOPE, LANDMARKS, OUT, PREVIEW, envelope, manifest_path  # noqa: E402
+from landmarks import ALL_LANDMARKS, ENVELOPE, LANDMARKS, OUT, PREVIEW, envelope, manifest_path  # noqa: E402
 
 GAME_DIFF = 512
 GAME_SREF = 256
@@ -122,31 +122,56 @@ def build_one(lm, do_preview=True):
     # the whole landmark as ONE static model: the proven form (and the envelope check of everything)
     args = lm.get('build_args', {})          # e.g. Moria's size variants (landmarks.py)
     baked = getattr(mod, 'BAKE', False)
-    res = _make(lambda b: mod.build(b, **args), seed, baked)
+    bake_px = getattr(mod, 'BAKE_PX', BAKED_DIFF)             # module override (Barad-dur v5: 2048)
+    res = _make(lambda b: mod.build(b, **args), seed, baked) if not (animated and baked) else None
     env = envelope(lm)
-    check_envelope(name, res.verts, res.tris, env)
     sname = name + '_Static' if animated else name
-    dn, sn = _textures(res, sname, *((BAKED_DIFF, BAKED_SREF) if baked else (GAME_DIFF, GAME_SREF)))
     cut = lm.get('tree_cut')
-    size = civ5model.write_model(OUT, sname, _model_units(res.verts, k), res.tris, dn, sn, fx=(), wonder=True,
-                                 hex_cut=False, tree_cut=cut * k if cut else None)
-    files += [sname + '.gr2', dn, sn]
-    print('%-20s tris %6d  verts %6d  gr2 %7d bytes  WORLD bbox %s  fScale %.2f  envelope OK' % (
-        sname, len(res.tris), len(res.verts), size, _bbox(res.verts), lm['scale']))
-    preview_res, preview_dn = res, dn
+    if res is not None:     # the whole landmark as one static model (skipped for baked animated models: their
+        check_envelope(name, res.verts, res.tris, env)          # tower and Eye are baked and checked below)
+        dn, sn = _textures(res, sname, *((BAKED_DIFF, BAKED_SREF) if baked else (GAME_DIFF, GAME_SREF)))
+        size = civ5model.write_model(OUT, sname, _model_units(res.verts, k), res.tris, dn, sn, fx=(), wonder=True,
+                                     hex_cut=False, tree_cut=cut * k if cut else None)
+        files += [sname + '.gr2', dn, sn]
+        print('%-20s tris %6d  verts %6d  gr2 %7d bytes  WORLD bbox %s  fScale %.2f  envelope OK' % (
+            sname, len(res.tris), len(res.verts), size, _bbox(res.verts), lm['scale']))
+        preview_res, preview_dn = res, dn
     if not animated:
         files.append(name + '.fxsxml')
     else:
-        os.remove(os.path.join(OUT, sname + '.fxsxml'))      # the T1 variant gets its own .fxsxml below
+        if res is not None:
+            os.remove(os.path.join(OUT, sname + '.fxsxml'))  # the T1 variant gets its own .fxsxml below
         import beam
         import lmodel
-        # the tower without the Eye, and the Eye alone (its own small texture)
-        tower = _make(lambda b: mod.build(b, eye=False), seed)
-        tdn, tsn = _textures(tower, name)
-        eye = _make(mod.build_eye, seed)
-        edn, esn = _textures(eye, name + '_Eye', 256, 128)
+        # the tower without the Eye, and the Eye alone (its own small texture); baked models bake both
+        if baked:
+            import bake
+            pipeline.reset()
+            blib.SEG[0] = blib.FILL[0] = 1.0
+            bt = blib.Builder(seed=seed)
+            mod.build(bt, eye=False)
+            tower = bake.process(bt, px=bake_px)
+            tdn, tsn = _textures(tower, name, bake_px, bake_px // 2)
+            pipeline.reset()
+            blib.SEG[0] = blib.FILL[0] = 1.0
+            be = blib.Builder(seed=seed)
+            mod.build_eye(be)
+            eye = bake.process(be, px=512, ao_samples=4)
+            edn, esn = _textures(eye, name + '_Eye', 512, 256)
+        else:
+            tower = _make(lambda b: mod.build(b, eye=False), seed)
+            tdn, tsn = _textures(tower, name)
+            eye = _make(mod.build_eye, seed)
+            edn, esn = _textures(eye, name + '_Eye', 256, 128)
         for part, r in (('tower', tower), ('eye', eye)):
-            assert len(r.verts) <= ENVELOPE['max_verts'] and len(r.tris) <= ENVELOPE['max_tris'], (part, len(r.verts))
+            assert len(r.verts) <= env['max_verts'] and len(r.tris) <= env['max_tris'], (part, len(r.verts))
+        check_envelope(name + ' (tower)', tower.verts, tower.tris, env)
+        check_envelope(name + ' (eye)', eye.verts, eye.tris, env)
+        print('%-20s baked tower: %d verts %d tris %spx, Eye: %d verts, WORLD bbox %s' % (
+            name, len(tower.verts), len(tower.tris), bake_px if baked else GAME_DIFF, len(eye.verts),
+            _bbox(tower.verts + eye.verts)))
+        if res is None:
+            preview_res, preview_dn = tower, tdn
         rig = mod.rig()
         pivot = tuple(c * k for c in mod.EYE_C)
         bones = [(bn_, parent, tuple(c * k for c in pos)) for bn_, parent, pos, _ in rig]
@@ -164,7 +189,7 @@ def build_one(lm, do_preview=True):
         lmodel.write_triggers(os.path.join(OUT, trig_full), fire + beam_trig)
         lmodel.write_triggers(os.path.join(OUT, trig_fire), fire)
         if beam_trig:                       # only the Eye has the beam (it follows that model's GAZE)
-            files += beam.write(OUT, mod.GAZE, BEAM_TILT)
+            files += beam.write(OUT, mod.GAZE, getattr(mod, 'BEAM_TILT', BEAM_TILT))
         ename = name + '_Eye'
         tex = ['Generic_Grey_8.dds', tdn, tsn, edn, esn]
         fx_bones = [b_[0] for b_ in rig if b_[3]]
@@ -173,13 +198,15 @@ def build_one(lm, do_preview=True):
         W = lmodel.write_fxsxml
         W(os.path.join(OUT, name + '.fxsxml'), name + '.gr2', tex, animation=idle, triggers_file=trig_full,
           trigger_model=ename, bones=fx_bones, decision_tree=lmodel.ANIMATED_DT)                       # full
-        W(os.path.join(OUT, name + '_T1.fxsxml'), sname + '.gr2', ['Generic_Grey_8.dds', dn, sn])      # static
+        if res is not None:
+            W(os.path.join(OUT, name + '_T1.fxsxml'), sname + '.gr2', ['Generic_Grey_8.dds', dn, sn])  # static
         W(os.path.join(OUT, name + '_T2.fxsxml'), name + '.gr2', tex, animation=idle,
           decision_tree=lmodel.ANIMATED_DT)                                                             # + animation
         W(os.path.join(OUT, name + '_T3.fxsxml'), name + '.gr2', tex, animation=idle, triggers_file=trig_fire,
           trigger_model=ename, bones=fire_bones, decision_tree=lmodel.ANIMATED_DT)                     # + fire
         files += [name + '.gr2', idle, tdn, tsn, edn, esn, trig_full, trig_fire,
-                  name + '.fxsxml', name + '_T1.fxsxml', name + '_T2.fxsxml', name + '_T3.fxsxml']
+                  name + '.fxsxml', name + '_T2.fxsxml', name + '_T3.fxsxml'] + (
+                     [name + '_T1.fxsxml'] if res is not None else [])
         print('%-20s animated: tower %d verts, Eye %d verts + %d bones, gaze loop %.1f s, %d effects  (%.1fs)' % (
             name, len(tower.verts), len(eye.verts), len(bone_list), mod.GAZE['T'], len(fire + beam_trig),
             time.time() - t0))
@@ -194,6 +221,9 @@ def build_one(lm, do_preview=True):
         try:
             pipeline.preview(name, preview_res.verts, preview_res.tris,
                              dds.decode_dxt3(os.path.join(OUT, preview_dn)), extra=getattr(mod, 'PREVIEW', ()))
+            if animated and baked:      # the Eye on its own (its own texture), seen from the game's angle
+                pipeline.preview(name + '_Eye', eye.verts, eye.tris, dds.decode_dxt3(os.path.join(OUT, edn)),
+                                 extra=getattr(mod, 'PREVIEW_EYE', ()))
         finally:
             blib.HEX_IN, blib.HEX_OUT = hin, hout
 
@@ -225,7 +255,7 @@ def main():
     names = [a for a in argv if not a.startswith('--')]
     for d in (OUT, PREVIEW, WORK):
         os.makedirs(d, exist_ok=True)
-    for lm in LANDMARKS:
+    for lm in (ALL_LANDMARKS if names else LANDMARKS):      # named modules: also rows not enabled
         if names and lm['module'] not in names:
             continue
         if lm.get('art_of'):                    # shows another row's files: nothing of its own to build

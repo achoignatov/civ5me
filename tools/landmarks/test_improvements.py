@@ -126,13 +126,15 @@ def main():
     lua.execute('Found(1, 5, 5, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
     lua.execute('Found(2, 8, 2, "TXT_KEY_CITY_NAME_MEC_MORIA")')
     assert imp(5, 5) == ids['BARAD_DUR'] and imp(8, 2) == ids['MORIA'], (imp(5, 5), imp(8, 2))
-    # every other city and city-state keeps stock art
+    # every other city and city-state keeps stock art (or, in the size-ladder test, gets its variant)
+    lad = improvements.TEST_LADDER
+    other = lambda x, y: ids[lad[(5 * x + 3 * y) % len(lad)]] if lad else -1
     lua.execute('Found(0, 2, 2, "TXT_KEY_CITY_NAME_MEC_MINAS_TIRITH")')
     lua.execute('Found(3, 9, 9, "TXT_KEY_CITY_NAME_MEC_DALE")')
-    assert imp(2, 2) == -1 and imp(9, 9) == -1
-    # no control plots: nothing else on the map was touched
+    assert imp(2, 2) == other(2, 2) and imp(9, 9) == other(9, 9), (imp(2, 2), imp(9, 9))
+    # no control plots: nothing but city plots was touched
     touched = [(x, y) for x in range(12) for y in range(12) if imp(x, y) != -1]
-    assert sorted(touched) == [(5, 5), (8, 2)], touched
+    assert sorted(touched) == sorted([(5, 5), (8, 2)] + ([(2, 2), (9, 9)] if lad else [])), touched
     # capture clears the plot (CvCity::init); the event puts the landmark back (the name stays)
     lua.execute('Capture(Players[2].cities[1], 0)')
     assert imp(8, 2) == ids['MORIA']
@@ -142,7 +144,7 @@ def main():
     # renamed away: the next turn removes the landmark
     lua.execute('Map.GetPlot(3, 9).city.key = "Lugburz"')
     lua.execute('Fire("PlayerDoTurn", 0)')
-    assert imp(3, 9) == -1
+    assert imp(3, 9) == other(3, 9)
     # idempotent: another turn changes nothing
     n = g.SetCalls
     lua.execute('Fire("PlayerDoTurn", 1)')

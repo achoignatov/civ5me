@@ -1,0 +1,27 @@
+<trigger_system type="FGrannyTimedTriggerSystem">
+  <event_tracks>
+    <event_track ec="1000">
+      <track id="1" name="Sound" />
+      <track id="2" name="Effect" />
+      <track id="3" name="Transfer" />
+    </event_track>
+  </event_tracks>
+  <triggers>
+    <trigger type="FTimedTriggerEffect" id="1" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire0" />
+    <trigger type="FTimedTriggerEffect" id="2" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire1" />
+    <trigger type="FTimedTriggerEffect" id="3" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire2" />
+    <trigger type="FTimedTriggerEffect" id="4" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire3" />
+    <trigger type="FTimedTriggerEffect" id="5" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire4" />
+    <trigger type="FTimedTriggerEffect" id="6" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire5" />
+    <trigger type="FTimedTriggerEffect" id="7" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire6" />
+    <trigger type="FTimedTriggerEffect" id="8" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_FIRE" bone="fxfire7" />
+    <trigger type="FTimedTriggerEffect" id="9" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_BLAZE" bone="fxcore" />
+    <trigger type="FTimedTriggerEffect" id="10" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_TOWER_FIRE" bone="fxtower0" />
+    <trigger type="FTimedTriggerEffect" id="11" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_TOWER_FIRE" bone="fxtower1" />
+    <trigger type="FTimedTriggerEffect" id="12" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_TOWER_FIRE" bone="fxtower2" />
+    <trigger type="FTimedTriggerEffect" id="13" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_TOWER_FIRE" bone="fxtower3" />
+    <trigger type="FTimedTriggerEffect" id="14" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_TOWER_FIRE" bone="fxtower4" />
+    <trigger type="FTimedTriggerEffect" id="15" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_TOWER_FIRE" bone="fxtower5" />
+    <trigger type="FTimedTriggerEffect" id="16" time="0" duration="10" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_EYE_BEAM" bone="fxbeam" />
+  </triggers>
+</trigger_system>

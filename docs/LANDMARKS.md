@@ -1,18 +1,27 @@
 # Capital landmarks: how they work and how to add one
 
-**Status 2026-11-24 night: the improvement approach works, and the first release is being checked.** Two render
-tests drew a custom model on **every major capital and every city-state** in one game: Barad-dûr (static v4), then
-Moria. This is now the project's only rendering path for custom city models.
+**Status 2026-11-24, end of session: production build installed.**
 
-**Release under test (installed 2026-11-24 22:27):** Moria (the Goblins' capital) shows our Moria model; Barad-dûr
-(Mordor's capital) shows the Eye of Sauron with its animation, fires and beam; every other city and city-state shows
-stock art. Fog of war is still off so both capitals can be checked; it goes back on in the release commit. Research and evidence:
-[`CITY_ARCHITECTURE_RESEARCH.md`](CITY_ARCHITECTURE_RESEARCH.md). History of the old approach:
-[`CITY_MODELS.md`](CITY_MODELS.md).
+| City | Shows | Model |
+|---|---|---|
+| Barad-dûr (Mordor's capital) | The film's Dark Tower with the living Eye, at **×2**: about ±66 × ±74 (two hexes), **242 units high** | v5, `vendor/landmarks/BaradDur5` |
+| Moria (the Goblins' capital) | The West-gate of Moria, about ±37, 44 high | v3, `vendor/landmarks/Moria` |
+| Every other city and city-state | Stock art | |
 
-**Goal:** a custom 3D landmark for every Middle-earth capital (14 civs), later special cities and city-states.
-**Out of scope (decided 2026-11-24):** models that change as the population grows. The native houses still grow
-by themselves; the landmark never changes with population.
+Fog of war is on and no test switches are set. Next: the other 12 capitals (§6), one at a time.
+
+**What the tests of this session proved (all in game, 2026-11-24):**
+
+1. Barad-dûr v4 (static) on every city and city-state, plus control tiles (Elven Battle Tower, stock citadel art):
+   all drew. The game draws improvements on city tiles.
+2. Moria on every city and city-state: all drew.
+3. Release build: Moria and the animated Barad-dûr v3 on their own capitals only, everything else stock: placed
+   correctly.
+4. **Boundary test**: Barad-dûr v5 (tower 30.5k vertices with a 2048² baked texture; skinned Eye 6.3k vertices,
+   18 bones, 6 s look-around loop; 8 Eye fires, a blaze, 6 tower braziers, the searching beam) at ×0.5, ×1, ×1.5 and
+   ×2 (61 / 121 / 182 / 242 units high, up to two hexes wide) spread over 30 cities and city-states in one game:
+   **every size drew on every city, with animation and effects.** No limit was reached; the user chose ×2 for
+   production. (Log: `~/civ5-backup-20261121-capitals/production-barad-x2-*/Logs-ladder-test`.)
 
 ## 1. How it works
 
@@ -89,24 +98,27 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
 | Coexistence | Houses and city buildings draw with it | The landmark covers part of the houses |
 | Community art | Elven Battle Tower (Nexus Buddy 2 export) and stock citadel art also drew | |
 
-**Being tested now (release build):** animation (the Eye's idle loop through `LandmarkDecisionTree`), particle
-effects (fires) and the beam on an improvement, and two different landmarks in one game. Barad-dûr v3 is placed at
-`Scale` 0.3 (about ±28 × ±33, 56 tall); its effect sizes were tuned for the old wonder `fScale` 0.25, so if the fires or
-the beam look too big or too small, adjust `VIS_EFFECTS` in `improvements.py` (no model rebuild).
-**Not yet proven:** repeat launches (several games in a row and in one process), models taller than 57.
+| Size, largest | Barad-dûr v5 at `Scale` 0.5: about ±66 × ±74, **242 high** (two hexes wide) | Drew on 7 of 7 cities in the ladder test; production size |
+| Detail | 30.5k vertices in one part (the writer's limit is 32k, 16-bit indices), 2048² DIFF + 1024² SREF | Drew |
+| Animation, effects | Skinned Eye (18 bones) with an idle loop via the stock `LandmarkDecisionTree`; particle fires and a model-effect beam via `TimedTrigger` | Drew; the effects scale with the improvement's `Scale` |
+| Several landmark types | Moria + Barad-dûr (and 4 Barad-dûr sizes) in one game | Drew |
 
-**Authoring rules:** Z-up, origin at the hex centre, ground at z = 0. Keep the footprint inside the hex (aim for
-≤ ±40 in-game units, i.e. file size × `Scale`), keep vertices ≤ 22k per model, textures 512–1024². Leave room in the
+**Not yet proven:** sizes beyond ×2 / 242 high, more than one 32k part per model, repeat launches in one
+process. No limit has been hit yet.
+
+**Authoring rules:** Z-up, origin at the hex centre, ground at z = 0. The footprint may spill over the
+neighbouring hexes (Barad-dûr ×2 is two hexes wide); keep vertices < 32k per part, textures up to 2048². Leave room in the
 middle of the tile, or put the landmark on one side, so the houses stay visible. The old ±16/±20 city-art limits and
 the `ENVELOPE` in `landmarks.py` do **not** apply to improvements.
 
 ## 5. Switches (`tools/landmarks/improvements.py`)
 
-| Switch | Installed now (release under test) | Release commit | Use |
+| Switch | Installed now (production) | Release | Use |
 |---|---|---|---|
 | `ALL_CITIES` | `None` | `None` | A landmark key: EVERY city and city-state gets it (render test of a new model) |
+| `TEST_LADDER` | `[]` | `[]` | Variants spread over every city without its own landmark, by map position `(5x + 3y) mod n` (boundary test) |
 | `CONTROLS` | `[]` | `[]` | Control plots next to Mordor's capital (test 1 only) |
-| `REVEAL_MAP` | `True` (fog off) | `False` | Lets you check every capital in one game |
+| `REVEAL_MAP` | `False` | `False` | `True` removes the fog for human players (render tests) |
 
 ## 6. The capital models
 
@@ -117,7 +129,10 @@ city renamed away loses it on the next turn.
 
 **Adding a capital (one at a time):**
 
-1. Build the model in Blender (`tools/landmarks/models/<name>.py`, `tools/landmarks/build_models.py`), within §4.
+1. Build the model in Blender: a module in `tools/landmarks/models/` plus a row in `tools/landmarks/landmarks.py`
+   (`ALL_LANDMARKS`, like `BARAD_DUR5`: in-game units, `scale` 0.25, its own `envelope`, `enabled=False`), then
+   `blender -b --factory-startup -P tools/landmarks/build_models.py -- <module>`. Set `BAKE = True` (and
+   `BAKE_PX = 2048`) for the baked look; previews land in `build/landmarks/preview/`.
 2. Convert the `.gr2` like the others (stock section layout, zeroed OBBs) and copy the files to
    `vendor/landmarks/<Model>/`.
 3. Add a row to `IMPROVEMENTS` (key, title, dir, gr2, textures, scale, name_keys, aliases; animation, bones and
@@ -127,8 +142,8 @@ city renamed away loses it on the next turn.
 
 | Civ | Capital (name key) | Model | Status |
 |---|---|---|---|
-| Mordor | Barad-dûr (`MEC_BARAD_DUR`) | Barad-dûr v3, the animated Eye (`vendor/landmarks/BaradDur`) | Release under test |
-| Goblins | Moria (`MEC_MORIA`) | Moria v3 (`vendor/landmarks/Moria`) | Drew everywhere (test 2); release under test |
+| Mordor | Barad-dûr (`MEC_BARAD_DUR`) | v5, the film's tower at ×2 (`vendor/landmarks/BaradDur5`, model `barad_dur_v5.py`); v3 kept in `vendor/landmarks/BaradDur` | **Done** (production) |
+| Goblins | Moria (`MEC_MORIA`) | Moria v3 (`vendor/landmarks/Moria`) | **Done** (production) |
 | Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | `tools/capitals/models/gondor.py` (first generation) | To rebuild |
 | Dwarves | Erebor (`MEC_EREBOR`) | `tools/capitals/models/dwarves.py` | To rebuild |
 | Hobbits | The Shire (`MEC_THE_SHIRE`) | `tools/capitals/models/hobbits.py` (Bag End) | To rebuild |
