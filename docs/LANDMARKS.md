@@ -10,9 +10,15 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 |---|---|---|
 | Barad-dûr (Mordor's capital) | The Dark Tower as in the films, with the living Eye of Sauron: 242 units high, about two hexes wide | `vendor/landmarks/BaradDur5` (model `tools/landmarks/models/barad_dur_v5.py`) |
 | Moria (the Goblins' capital) | v4 (first draft, awaiting the in-game test): the Walls of Moria under Caradhras, Celebdil and Fanuidhol; the Doors of Durin with a real additive ithildin glow; holly trees, the lake, the Watcher's swaying tentacles | `vendor/landmarks/Moria4` (model `tools/landmarks/models/moria_v4.py`) |
+| Minas Tirith (Gondor's capital) | The seven circles cut into Mount Mindolluin, the prow, ~350 houses, the Citadel with the Tower of Ecthelion, the Court of the Fountain with the White Tree in blossom, the King's banner swinging in the wind; fits its own hex | `vendor/landmarks/MinasTirith` (model `tools/landmarks/models/minas_tirith.py`) |
 | Every other city and city-state | Stock art | |
 
-**Next:** the user's in-game verdict on Moria v4, then the other 12 capitals one at a time (§7).
+**Next:** the user's in-game verdict on Minas Tirith, then the other 11 capitals one at a time (§7).
+
+**Size rule (user, 2026-11-25):** a landmark fits its OWN hex and does not overlap the neighbouring tiles (Moria v4
+at ±54 looked overwhelming next to stock mountains; at `Scale` 0.134 it is "perfect"). New models are authored 1:1
+in in-game units (`Scale` 0.25) with the row's `envelope` `hex_in` ≈ 33.6, so the build refuses anything outside the
+hex. (Barad-dûr v5 still spans two hexes; it predates the rule.)
 
 ## 1. How it works
 
@@ -105,7 +111,12 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   the picture in the texture's alpha, all tracks still. A rig bone with key `DOOR_GLOW` makes `build_models.py`
   write it; the preview draws it additively. Its quads are in the model's file units, so its VisEffect `Scale` is 1.0.
 - *Bake options* (palette entries, opt-in): `tints` (regional colour discs), `snow` (z range + flatness),
-  `cavity` (Cycles pointiness), and `b.ao_distance`.
+  `cavity` (Cycles pointiness), `windows` (rows of dark windows on flat vertical walls, laid out along each wall
+  from its normal; Minas Tirith's houses), and `b.ao_distance`.
+- *Glow textures keep their lines in the distance:* `dds.write_dxt3(alpha_keep=...)` makes smaller mip levels keep
+  part of the brightest alpha instead of the mean (Moria's doors read as a "glowing circle" without it).
+- *A skinned part with no effects* is fine: `rig()` may return `[]` (Minas Tirith: only its banner moves); the
+  improvement row then has an animation but no `bones`/`trigger`, and its `FX_Triggers_*` file is not vendored.
 
 ## 5. Making a model
 
@@ -154,7 +165,7 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 |---|---|---|---|
 | Mordor | Barad-dûr (`MEC_BARAD_DUR`) | `barad_dur_v5.py`, `Scale` 0.5 | **Done** |
 | Goblins | Moria (`MEC_MORIA`) | `moria_v4.py`, `Scale` 0.134 = fits its own hex (v3 `moria.py` kept in `vendor/landmarks/Moria`) | **v4 approved**, size final (2026-11-25); doors redesigned for legibility, awaiting test |
-| Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | draft `tools/capitals/models/gondor.py` | To build |
+| Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | `minas_tirith.py`, `Scale` 0.25, fits its hex (started from the draft `tools/capitals/models/gondor.py`) | **Installed**, awaiting test |
 | Dwarves | Erebor (`MEC_EREBOR`) | draft `dwarves.py` | To build |
 | Hobbits | The Shire (`MEC_THE_SHIRE`) | draft `hobbits.py` (Bag End) | To build |
 | High Elves | Rivendell (`MEC_RIVENDELL`) | draft `high_elves.py` | To build |

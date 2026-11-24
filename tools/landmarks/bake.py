@@ -213,6 +213,44 @@ def _material(name, glow=None):
         Lk.new(tc.outputs['Object'], wave.inputs['Vector'])
         lo = 1.0 - p.get('strata_amp', 0.12)
         col = mix(col, mix((lo, lo, lo, 1), (1.03, 1.03, 1.03, 1), wave.outputs['Fac']), 1.0, 'MULTIPLY')
+    if p.get('windows'):
+        # rows of dark windows on vertical faces: dict(fx=per unit along the wall, fz=per unit up, w=(u0, u1) and
+        # h=(v0, v1) the window inside each cell, color, z0=lowest sill). "Along the wall" = position . (-ny, nx),
+        # so each flat wall gets its own regular grid whatever way it faces (flat-shaded walls only)
+        wdw = p['windows']
+        geo5 = N.new('ShaderNodeNewGeometry')
+        nsep = N.new('ShaderNodeSeparateXYZ')
+        Lk.new(geo5.outputs['Normal'], nsep.inputs[0])
+        neg = N.new('ShaderNodeMath'); neg.operation = 'MULTIPLY'
+        Lk.new(nsep.outputs['Y'], neg.inputs[0]); neg.inputs[1].default_value = -1.0
+        tvec = N.new('ShaderNodeCombineXYZ')
+        Lk.new(neg.outputs[0], tvec.inputs[0]); Lk.new(nsep.outputs['X'], tvec.inputs[1])
+        dot = N.new('ShaderNodeVectorMath'); dot.operation = 'DOT_PRODUCT'
+        Lk.new(tvec.outputs[0], dot.inputs[0]); Lk.new(tc.outputs['Object'], dot.inputs[1])
+
+        def band(src, freq, lo, hi):
+            m_ = N.new('ShaderNodeMath'); m_.operation = 'MULTIPLY'
+            Lk.new(src, m_.inputs[0]); m_.inputs[1].default_value = freq
+            fr = N.new('ShaderNodeMath'); fr.operation = 'FRACT'
+            Lk.new(m_.outputs[0], fr.inputs[0])
+            a_ = N.new('ShaderNodeMath'); a_.operation = 'GREATER_THAN'
+            Lk.new(fr.outputs[0], a_.inputs[0]); a_.inputs[1].default_value = lo
+            b2 = N.new('ShaderNodeMath'); b2.operation = 'LESS_THAN'
+            Lk.new(fr.outputs[0], b2.inputs[0]); b2.inputs[1].default_value = hi
+            mm = N.new('ShaderNodeMath'); mm.operation = 'MULTIPLY'
+            Lk.new(a_.outputs[0], mm.inputs[0]); Lk.new(b2.outputs[0], mm.inputs[1])
+            return mm.outputs[0]
+        wu = band(dot.outputs['Value'], wdw['fx'], *wdw['w'])
+        wz = band(sep.outputs['Z'], wdw['fz'], *wdw['h'])
+        vert = maprange(nsep.outputs['Z'], 0.35, 0.15)          # only on (nearly) vertical faces
+        lowz = maprange(sep.outputs['Z'], wdw.get('z0', -1e3), wdw.get('z0', -1e3) + 0.01)
+        m1 = N.new('ShaderNodeMath'); m1.operation = 'MULTIPLY'
+        Lk.new(wu, m1.inputs[0]); Lk.new(wz, m1.inputs[1])
+        m2 = N.new('ShaderNodeMath'); m2.operation = 'MULTIPLY'
+        Lk.new(m1.outputs[0], m2.inputs[0]); Lk.new(vert, m2.inputs[1])
+        m3 = N.new('ShaderNodeMath'); m3.operation = 'MULTIPLY'
+        Lk.new(m2.outputs[0], m3.inputs[0]); Lk.new(lowz, m3.inputs[1])
+        col = mix(col, _lin(wdw.get('color', h_('2e2b29'))), m3.outputs[0])
     if p.get('snow'):
         # snow lying where it can: above a ragged snow line, on faces flatter than a slope limit; sheer rock stays bare
         sz0, sz1, sflat = p['snow']

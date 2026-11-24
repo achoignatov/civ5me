@@ -61,6 +61,20 @@ IMPROVEMENTS = [
          scale=0.134,
          name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
          aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
+    # Minas Tirith (tools/landmarks/models/minas_tirith.py, 2026-11-25): Gondor's capital, fitting its own hex: the seven
+    # walled circles cut into Mount Mindolluin, the prow, ~350 houses, bastions and staggered gates, the Citadel with
+    # the Tower of Ecthelion and its silver spire, the Court of the Fountain with the White Tree in blossom, and the
+    # King's banner swinging on its pole (the only moving part). Static part 28.1k vertices (mountain + the city's
+    # stone), skinned part 25.7k (everything built on it, on the still bone eyeroot); 2 x 2048 baked. Authored 1:1 in
+    # in-game units: about +-32.5 x (-36..+38) (inside the hex), 62 high with the banner.
+    dict(key='MINAS_TIRITH', title='Minas Tirith', dir='MinasTirith',
+         gr2='MEC_LM_MinasTirith.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_MinasTirith_DIFF.dds', 'MEC_LM_MinasTirith_SREF.dds',
+                   'MEC_LM_MinasTirith_Eye_DIFF.dds', 'MEC_LM_MinasTirith_Eye_SREF.dds'],
+         animation=('MEC_LM_MinasTirith_Idle.gr2', 'Idle'),
+         scale=0.25,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_MINAS_TIRITH'],
+         aliases=['Minas Tirith', 'MinasTirith', 'Minas Anor']),
     # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
     # spire with clinging turrets + the two-pronged crown, baked 2048, 30.5k vertices; a skinned Eye (6.3k vertices)
     # with the 6 s look-around loop, a ring of fire + a blaze round it, the searching beam, six braziers on the

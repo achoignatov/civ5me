@@ -119,6 +119,13 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=68.0, hex_out=68.0 / 0.8660254, max_height=82.0, min_z=-3.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-25: Minas Tirith (models/minas_tirith.py), Gondor's capital: fits its own hex (user's rule since Moria),
+    # in-game units written x4 (scale 0.25); static part = Mindolluin + the city's stone, skinned part = houses,
+    # Citadel, White Tree (still bone) + the King's banner (swings). Shipped from vendor/landmarks/MinasTirith.
+    dict(key='MINAS_TIRITH', title='Minas Tirith', module='minas_tirith', model='MEC_LM_MinasTirith', scale=0.25,
+         envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=62.0, min_z=-3.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
