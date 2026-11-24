@@ -1,5 +1,11 @@
 # Custom city models: what the game supports and the plan
 
+> **SUPERSEDED (2026-11-24 night).** Landmarks are no longer city art (dummy buildings + `WonderDefines`). They are
+> tile improvements placed on the city plot by Lua, and that drew on every capital and city-state in the first test.
+> Read [`LANDMARKS.md`](LANDMARKS.md) (current system) and [`CITY_ARCHITECTURE_RESEARCH.md`](CITY_ARCHITECTURE_RESEARCH.md)
+> (why). This file is kept as history: the measurements in §12–§18 explain why the old path failed. The old path
+> still builds with `tools/build_dlc.py --landmark-buildings`.
+
 > **CURRENT STATE (2026-11-24 evening): Moria works. Read §15 first.**
 > The only landmark is Moria (Goblins' capital): our own high-fidelity Blender model (v3, §14), given when the city is
 > founded. Size limits found in game (§12): footprint +-20 world units in major civ cities, +-16 in city-states, height

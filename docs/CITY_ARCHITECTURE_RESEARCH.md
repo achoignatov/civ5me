@@ -2,6 +2,16 @@
 
 2026-11-24 · Exported from the Claude Doc https://claude.ai/artifact/Emn6PzanPSx4g57gPuEaSy (the online copy has the drawn diagram and comments).
 
+> **OUTCOME (2026-11-24 evening): confirmed in game.** Prototype step 1 answered Q1: the game **does** draw an
+> improvement on a city plot. Barad-dûr (our own v4 file, `Scale` 0.12, about ±41 units, 57 tall) drew on every
+> major capital and every city-state in one game, and all three controls drew (Barad-dûr on a plain tile, the Elven
+> Battle Tower, stock citadel art). Approach C is adopted; the D1 adjacent-tile fallback is not needed.
+>
+> **Decisions since:** population-based evolution is **dropped** (the user: landmarks won't change as cities grow),
+> so the population tiers in §8 and prototype step 4 no longer apply. Next goal: a custom landmark for every capital.
+> The working doc is now [`LANDMARKS.md`](LANDMARKS.md) (how it works, files, model rules, capital roadmap, and why
+> this path works when the old one failed). The rest of this file is the research as written before the test.
+
 ## Answer in one paragraph
 
 Starting over, I would not put landmarks into the city's own art at all. I would draw them as **tile improvements**, placed and swapped by synced Lua. Improvement art is plain database rows that a normal mod can ship. The engine draws it for every revealed plot. Stock improvements routinely fill the whole hex (±45 to ±78 units), and the Lua call `Plot:SetImprovementType` exists and is MP-safe from `GameEvents`. City art (Approach A) is the one place where we have measured hard limits: ±16 to ±20 footprints and roughly 1 empty tile in 10 even inside them.

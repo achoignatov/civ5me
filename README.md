@@ -89,7 +89,7 @@ Everything except True Start Location (TSL) is plain database/art content. TSL w
 - With "Extra Starting Settler" on, every civ has two Settlers on turn 0.
 - Several turns pass without a desync.
 
-Known issue: cities sometimes don't draw (city missing at founding, or vanishing when it grows). The six original mods had the same sporadic problem; see [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §8.
+Known issue: cities sometimes don't draw (city missing at founding, or vanishing when it grows). The six original mods had the same sporadic problem; see [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §8. Our landmarks no longer use the city's own art, so they are not affected ([`docs/LANDMARKS.md`](docs/LANDMARKS.md) §7).
 
 ## If something doesn't work
 
@@ -122,4 +122,4 @@ ui/                   the mod manager app (Electron), see ui/README.md
 build/, dist/         generated (not in git): venv, Blender output, temp DBs / built mod + DLC + zips
 ```
 
-Custom city landmarks are **on** (2026-11-24): a city named Moria (the Goblins' capital) gets our own Blender model of the West-gate of Moria (the Doors of Durin with their ithildin glow, the cliffs of the Misty Mountains, the Watcher's lake) in its centre as soon as it's founded. Barad-dûr and Mount Doom are off for now. Size limit found in game: a landmark's footprint must stay within +-20 world units (+-16 for city-states), height up to ~24-29. **Fog of war is switched off** while models are being tested (`REVEAL_MAP` in `tools/landmarks/landmarks.py`; set it to `False` before sharing the pack). Build the model with `blender -b --factory-startup -P tools/landmarks/build_models.py -- moria` (output in `build/landmarks/out`, needed by `build_dlc.py`); `python3 tools/build_dlc.py --no-landmarks` builds the pack without landmarks. Details and findings: [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §12-15.
+Custom city landmarks (2026-11-24 night) are **tile improvements** that a script places on the city's tile; the city's own art is never touched. This drew on every capital and city-state in the first test. **Current test build:** every city and city-state shows Barad-dûr, three control tiles sit next to Mordor's capital, and **fog of war is off** (switches in `tools/landmarks/improvements.py`; reset them before sharing the pack). Next goal: one custom landmark per capital. `python3 tools/build_dlc.py --no-landmarks` builds the pack without landmarks. How it works, how to add a model, and why the old approach failed: [`docs/LANDMARKS.md`](docs/LANDMARKS.md). Research: [`docs/CITY_ARCHITECTURE_RESEARCH.md`](docs/CITY_ARCHITECTURE_RESEARCH.md). The old city-art approach (history): [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md).

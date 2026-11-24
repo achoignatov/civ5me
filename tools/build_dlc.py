@@ -42,6 +42,12 @@ SKIP_TABLES_PREFIX = ('Language_', 'Audio_')
 # --landmark-tests: add the diagnostic variants ("Barad Test 1..3", animated landmarks only).
 # --landmark-stock-art shows the stock Polynesian palace instead (diagnostic).
 LANDMARKS_ON = '--no-landmarks' not in sys.argv
+# 2026-11-24 architecture reset (docs/CITY_ARCHITECTURE_RESEARCH.md): landmarks are tile IMPROVEMENTS placed by
+# MEC_LandmarkImprovements.lua (tools/landmarks/improvements.py). The old city-art path (dummy buildings +
+# WonderDefines, tools/landmarks/landmarks.py) is kept behind --landmark-buildings.
+LANDMARK_BUILDINGS = LANDMARKS_ON and '--landmark-buildings' in sys.argv
+LANDMARK_IMPROVEMENTS = LANDMARKS_ON and not LANDMARK_BUILDINGS
+import improvements
 
 
 def q(v):
@@ -274,8 +280,10 @@ def build_lua():
     hook = (anchor + '\n-- Middle-earth DLC: in-game scripts (loaded like mod InGameUIAddins)\n'
             'table.insert(g_uiAddins, ContextPtr:LoadNewContext("METSL_InGame"));\n'
             'table.insert(g_uiAddins, ContextPtr:LoadNewContext("Wood_Elves_Units_Promotions"));\n')
-    if LANDMARKS_ON:
+    if LANDMARK_BUILDINGS:
         hook += 'table.insert(g_uiAddins, ContextPtr:LoadNewContext("MEC_Landmarks"));\n'
+    if LANDMARK_IMPROVEMENTS:
+        hook += 'table.insert(g_uiAddins, ContextPtr:LoadNewContext("%s"));\n' % improvements.LUA[:-4]
     if '--redraw-button' in sys.argv:    # opt-in debug buttons (empty-tile bug, docs/CITY_MODELS.md §8)
         for ext in ('.lua', '.xml'):
             shutil.copy2(os.path.join(HERE, 'landmarks', 'MEC_RedrawCities' + ext), ui)
@@ -381,6 +389,100 @@ def build_landmarks():
     return landmarks.GAMEDATA_XML, landmarks.TEXT_XML, landmarks.WONDER_XML, vfx, vmodels
 
 
+GAME = os.path.expanduser("~/.local/share/Steam/steamapps/common/Sid Meier's Civilization V")
+
+
+def stock_file_names():
+    """Lower-cased names of every file in the game's .fpk packs (only the file tables are read)."""
+    import struct, glob
+    names = set()
+    for path in glob.glob(os.path.join(GAME, 'Resource', '*', '*.fpk')) + \
+            glob.glob(os.path.join(GAME, 'Assets', 'DLC', '*', '*.fpk')):
+        with open(path, 'rb') as f:
+            head = f.read(8 << 20)
+        if head[4:8] != b'FPK_':
+            continue
+        (count,) = struct.unpack_from('<I', head, 10)
+        p = 14
+        for _ in range(count):
+            (n,) = struct.unpack_from('<I', head, p); p += 4
+            names.add(head[p:p + n].decode('latin1').lower()); p += n
+            p += (4 - n % 4) % 4 + 16
+    if not names:
+        sys.exit('no stock .fpk files found under ' + GAME)
+    return names
+
+
+def build_landmark_improvements():
+    """Landmark improvements (docs/CITY_ARCHITECTURE_RESEARCH.md): art rows + improvements + in-game script.
+    Returns (gamedata, text) file names."""
+    rows = improvements.IMPROVEMENTS
+    need = sorted({f for r in rows for f in improvements.asset_files(r)})
+    missing = [f for f in need if not os.path.exists(os.path.join(improvements.OUT, f))]
+    if missing:
+        sys.exit('landmark models missing from %s: %s' % (improvements.OUT, missing))
+    art = os.path.join(OUT, 'Art', 'Landmarks')
+    os.makedirs(art, exist_ok=True)
+    import probes
+    for f in need:
+        if f.endswith('.gr2'):      # the same stock-like section layout the city-art builds used
+            probes.to_stock_sections(os.path.join(improvements.OUT, f), os.path.join(art, f), zero_obb=landmarks.ZERO_OBB)
+        else:
+            shutil.copy2(os.path.join(improvements.OUT, f), art)
+    for r in rows:
+        if improvements.own_fxsxml(r):
+            open(os.path.join(art, improvements.own_fxsxml(r)), 'w', encoding='utf-8', newline='\r\n').write(
+                improvements.fxsxml_text(r))
+    # every .fxsxml a row points at must be in the pack, and every file it names must exist (ours or the game's)
+    packed = {f.lower(): os.path.join(dp, f) for dp, _, fs in os.walk(os.path.join(OUT, 'Art')) for f in fs}
+    stock_tex = stock_file_names()
+    for r in rows:
+        if r.get('art_tag'):
+            continue
+        for fx in (r.get('fxsxml') or (improvements.own_fxsxml(r),)):
+            assert fx.lower() in packed, fx
+            for ref in re.findall(r'file="([^"]+)"', open(packed[fx.lower()], encoding='utf-8', errors='replace').read()):
+                if not ref.lower().endswith('.ddtxml'):
+                    assert ref.lower() in packed or ref.lower() in stock_tex, (fx, ref)
+    gd = os.path.join(OUT, 'Gameplay', 'XML', improvements.GAMEDATA_XML)
+    open(gd, 'w', encoding='utf-8', newline='\r\n').write(improvements.gamedata())
+    tx = os.path.join(OUT, 'Gameplay', 'XML', 'Text', improvements.TEXT_XML)
+    open(tx, 'w', encoding='utf-8', newline='\r\n').write(improvements.text())
+    ET.parse(gd), ET.parse(tx)
+    src = open(os.path.join(HERE, 'landmarks', improvements.LUA), encoding='utf-8').read()
+    assert src.count('-- @@LANDMARK_TABLE@@') == 1
+    src = re.sub(r'^-- @@LANDMARK_TABLE@@.*$', lambda m: improvements.lua_table(), src, count=1, flags=re.M)
+    open(os.path.join(OUT, 'UI', improvements.LUA), 'w', encoding='utf-8').write(src)
+
+    # database check: the rows load on top of the final modded database and only ADD rows to the 4 tables
+    test = os.path.join(TMP, 'landmark_improvements_check.db')
+    shutil.copy(os.path.join(TMP, 'final.db'), test)
+    db = sqlite3.connect(test)
+    tables = [t for (t,) in db.execute("select name from sqlite_master where type='table'").fetchall()]
+    before = {t: db.execute('select count(*) from "%s"' % t).fetchone()[0] for t in tables}
+    errs = []
+    dbreplay.load_xml(db, gd, errs)
+    db.commit()
+    assert not errs, errs
+    own = [r for r in rows if not r.get('art_tag')]
+    added = {'Improvements': len(rows), 'ArtDefine_LandmarkTypes': len(own), 'ArtDefine_StrategicView': len(own),
+             'ArtDefine_Landmarks': 2 * len(own)}
+    for t, n in before.items():
+        now = db.execute('select count(*) from "%s"' % t).fetchone()[0]
+        assert now == n + added.get(t, 0), (t, n, now)
+    for r in rows:
+        tag = db.execute('select ArtDefineTag from Improvements where Type=?', (improvements.improvement(r),)).fetchone()
+        assert tag and tag[0] == improvements.art_tag(r), (r['key'], tag)
+        assert db.execute('select count(*) from ArtDefine_Landmarks where ImprovementType=?', (tag[0],)).fetchone()[0] >= 2
+        assert not db.execute('select count(*) from Builds where ImprovementType=?',
+                              (improvements.improvement(r),)).fetchone()[0]
+    db.close()
+    print('landmark improvements: %s; every city -> %s; controls %s' % (
+        ', '.join(improvements.improvement(r) for r in rows), improvements.ALL_CITIES,
+        ', '.join('%s=%s' % c for c in improvements.CONTROLS)))
+    return improvements.GAMEDATA_XML, improvements.TEXT_XML
+
+
 # --------------------------------------------------------------------------- assets
 def copy_assets(modinfo_text):
     n = 0
@@ -422,7 +524,8 @@ def main():
     build_lua()
     nart = copy_assets(mi)
     shutil.copy2(os.path.join(ROOT, 'README.md'), os.path.join(OUT, 'README.md'))
-    lmk = build_landmarks() if LANDMARKS_ON else None
+    lmk = build_landmarks() if LANDMARK_BUILDINGS else None
+    lmi = build_landmark_improvements() if LANDMARK_IMPROVEMENTS else None
 
     P = ['<?xml version="1.0" encoding="utf-8"?>', '<Civ5Package>',
          '\t<GUID>%s</GUID>' % DLC_GUID,
@@ -441,6 +544,9 @@ def main():
         P.append('\t<WonderDefines>%s</WonderDefines>' % lmk[2])
         P += ['\t<VisEffectInfoDefines>%s</VisEffectInfoDefines>' % x for x in lmk[3]]
         P += ['\t<VisEffectModelDefines>%s</VisEffectModelDefines>' % x for x in lmk[4]]
+    if lmi:
+        P.append('\t<TextData>%s</TextData>' % lmi[1])
+        P.append('\t<GameData>%s</GameData>' % lmi[0])
     P += ['\t<AudioDefines>MEDLC_AudioDefines.xml</AudioDefines>',
           '\t<AudioScripts2D>MEDLC_Audio2DScripts.xml</AudioScripts2D>',
           '\t<AudioScripts3D>MEDLC_Audio3DScripts.xml</AudioScripts3D>',
