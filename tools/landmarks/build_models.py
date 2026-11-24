@@ -36,16 +36,18 @@ import dds  # noqa: E402
 import gr2  # noqa: E402
 import pipeline  # noqa: E402  (reset(), preview(), _shrink())
 import numpy as np  # noqa: E402
-from landmarks import ENVELOPE, LANDMARKS, OUT, PREVIEW, manifest_path  # noqa: E402
+from landmarks import ENVELOPE, LANDMARKS, OUT, PREVIEW, envelope, manifest_path  # noqa: E402
 
 GAME_DIFF = 512
 GAME_SREF = 256
+BAKED_DIFF = 1024        # baked models (module BAKE = True): 1024 DIFF / 512 SREF, like the larger stock wonders
+BAKED_SREF = 512
 WORK = os.path.join(os.path.dirname(PREVIEW), 'work')
 
 
-def in_hex(x, y, slack=0.05):
+def in_hex(x, y, slack=0.05, env=ENVELOPE):
     """Pointy-top city hexagon: flat sides east/west at hex_in, corners north/south at hex_out."""
-    hin = ENVELOPE['hex_in'] + slack
+    hin = env['hex_in'] + slack
     for k in range(6):
         a = math.radians(60 * k)            # outward normals of the 6 sides: 0, 60, ... degrees
         if x * math.cos(a) + y * math.sin(a) > hin:
@@ -53,7 +55,8 @@ def in_hex(x, y, slack=0.05):
     return True
 
 
-def check_envelope(name, verts, tris):
+def check_envelope(name, verts, tris, env=ENVELOPE):
+    ENVELOPE = env          # noqa: N806  (this landmark's envelope, see landmarks.envelope)
     errs = []
     if len(verts) > ENVELOPE['max_verts']:
         errs.append('%d vertices > %d' % (len(verts), ENVELOPE['max_verts']))
@@ -64,7 +67,7 @@ def check_envelope(name, verts, tris):
         errs.append('height %.1f > %.1f' % (max(zs), ENVELOPE['max_height']))
     if min(zs) < ENVELOPE['min_z']:
         errs.append('lowest point %.1f < %.1f' % (min(zs), ENVELOPE['min_z']))
-    out = [v[0] for v in verts if not in_hex(v[0][0], v[0][1])]
+    out = [v[0] for v in verts if not in_hex(v[0][0], v[0][1], env=env)]
     if out:
         far = max(out, key=lambda p: math.hypot(p[0], p[1]))
         errs.append('%d vertices outside the city hexagon (e.g. %.1f, %.1f)' % (len(out), far[0], far[1]))
@@ -72,13 +75,18 @@ def check_envelope(name, verts, tris):
         raise SystemExit('%s is OUTSIDE the render envelope: %s' % (name, '; '.join(errs)))
 
 
-def _make(mod_fn, seed):
-    """Run a model function into a fresh Builder and texture it (flat shading)."""
+def _make(mod_fn, seed, baked=False):
+    """Run a model function into a fresh Builder and texture it.
+    baked=False: flat shading + the swatch atlas (tools/capitals/atlas.py);
+    baked=True: the model's own smooth shading + a real unwrap and baked textures (bake.py, high fidelity)."""
     pipeline.reset()
     blib.SEG[0] = 1.0
     blib.FILL[0] = 1.0
     b = blib.Builder(seed=seed)
     mod_fn(b)
+    if baked:
+        import bake
+        return bake.process(b, px=BAKED_DIFF)
     b.fsmooth = [False] * len(b.faces)          # flat shading everywhere (see module docstring)
     return atlas.process(b)
 
@@ -112,12 +120,16 @@ def build_one(lm, do_preview=True):
     files = []
 
     # the whole landmark as ONE static model: the proven form (and the envelope check of everything)
-    res = _make(mod.build, seed)
-    check_envelope(name, res.verts, res.tris)
+    args = lm.get('build_args', {})          # e.g. Moria's size variants (landmarks.py)
+    baked = getattr(mod, 'BAKE', False)
+    res = _make(lambda b: mod.build(b, **args), seed, baked)
+    env = envelope(lm)
+    check_envelope(name, res.verts, res.tris, env)
     sname = name + '_Static' if animated else name
-    dn, sn = _textures(res, sname)
+    dn, sn = _textures(res, sname, *((BAKED_DIFF, BAKED_SREF) if baked else (GAME_DIFF, GAME_SREF)))
+    cut = lm.get('tree_cut')
     size = civ5model.write_model(OUT, sname, _model_units(res.verts, k), res.tris, dn, sn, fx=(), wonder=True,
-                                 hex_cut=False)
+                                 hex_cut=False, tree_cut=cut * k if cut else None)
     files += [sname + '.gr2', dn, sn]
     print('%-20s tris %6d  verts %6d  gr2 %7d bytes  WORLD bbox %s  fScale %.2f  envelope OK' % (
         sname, len(res.tris), len(res.verts), size, _bbox(res.verts), lm['scale']))
@@ -178,7 +190,7 @@ def build_one(lm, do_preview=True):
         # preview in world units, with the true city hexagon (and its neighbours) drawn on the ground
         hin, hout = blib.HEX_IN, blib.HEX_OUT
         pipeline.PREVIEW, pipeline.WORK = PREVIEW, WORK
-        blib.HEX_IN, blib.HEX_OUT = ENVELOPE['hex_in'], ENVELOPE['hex_out']
+        blib.HEX_IN, blib.HEX_OUT = env['hex_in'], env['hex_out']
         try:
             pipeline.preview(name, preview_res.verts, preview_res.tris,
                              dds.decode_dxt3(os.path.join(OUT, preview_dn)), extra=getattr(mod, 'PREVIEW', ()))
@@ -215,6 +227,8 @@ def main():
         os.makedirs(d, exist_ok=True)
     for lm in LANDMARKS:
         if names and lm['module'] not in names:
+            continue
+        if lm.get('art_of'):                    # shows another row's files: nothing of its own to build
             continue
         build_one(lm, '--no-preview' not in argv)
 

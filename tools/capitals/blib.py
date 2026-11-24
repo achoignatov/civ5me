@@ -417,7 +417,8 @@ def terrain(b, height, x0, x1, y0, y1, nx, ny, matfn, keep=None, smooth=True, sk
         for (di, dj, a, c) in ((0, -1, (i, j), (i + 1, j)), (1, 0, (i + 1, j), (i + 1, j + 1)),
                                (0, 1, (i + 1, j + 1), (i, j + 1)), (-1, 0, (i, j + 1), (i, j))):
             if (i + di, j + dj) not in quads:
-                sk.append((V(*a), V(*c), V(c[0], c[1], skirt), V(a[0], a[1], skirt)))
+                # wound so the skirt faces OUT of the height field (2026-11-24: it faced inwards = back faces)
+                sk.append((V(*c), V(*a), V(a[0], a[1], skirt), V(c[0], c[1], skirt)))
     base = len(b.verts)
     b.verts.extend(verts)
     for m, fs in groups.items():

@@ -38,7 +38,16 @@ DISPLAY_POSITION = 32
 ENVELOPE = dict(max_height=48.0, min_z=-4.0, hex_in=24.0, hex_out=24.0 / 0.8660254, max_verts=22000,
                 max_tris=20000)
 
-LANDMARKS = [
+
+def envelope(lm):
+    """The render envelope of one landmark: ENVELOPE, tightened by the row's own 'envelope' (compact models)."""
+    return dict(ENVELOPE, **lm.get('envelope', {}))
+
+
+MORIA_FULL = 24.0 / 10.5          # growth from Moria's compact size to the whole tile
+MORIA_COMPACT = dict(hex_in=10.5, hex_out=10.5 / 0.8660254, max_height=14.0, max_verts=9000, max_tris=8000)
+
+ALL_LANDMARKS = [
     dict(key='BARAD_DUR',                      # BUILDING_MEC_LM_<key>, art tag MEC_LM_<key>
          title='Barad-dûr',
          module='barad_dur',                   # tools/landmarks/models/<module>.py
@@ -49,7 +58,11 @@ LANDMARKS = [
          aliases=['Barad Dur', 'Barad-dur', 'Barad-dûr', 'Barad Dûr', 'Baraddur'],
          # the module has build_eye()/rig()/GAZE: the Eye is a separate skinned, animated part with effects
          animated=True,
-         test_prefix='Barad'),                 # diagnostic cities "Barad Test 1..3" (DIAGNOSTICS)
+         test_prefix='Barad',                  # diagnostic cities "Barad Test 1..3" (DIAGNOSTICS)
+         # 2026-11-24: OFF while Moria is tested alone. This model (47 tall, +-24 wide, 21k verts) made the whole
+         # city tile vanish in some games, and a bad state then sticks for the rest of the game process, which would
+         # spoil Moria's test too. Turn back on once compact models are proven (or rebuild it compact).
+         enabled=False),
     dict(key='MOUNT_DOOM',
          title='Mount Doom',
          module='mount_doom',                  # a new volcano (not the stock Krakatoa) in Barad-dur's style
@@ -65,20 +78,26 @@ LANDMARKS = [
          test_prefix='Doom',                   # diagnostic cities "Doom Test 1..3"
          # 2026-11-23 empty-tile hunt: show Barad-dur's art (the same files) so both cities use ONE asset.
          # Remove this line to bring back the volcano (models/mount_doom.py is unchanged).
-         art_of='BARAD_DUR'),
+         art_of='BARAD_DUR',
+         enabled=False),
+    dict(key='MORIA',
+         title='Moria',
+         module='moria',                       # tools/landmarks/models/moria.py (v2: no ground plate)
+         model='MEC_LM_Moria',
+         # v2 (2026-11-24 ~18:50): the size limit found in game (docs/CITY_MODELS.md §12): footprint +-20 in major civ
+         # cities (Moria always is one), so the model fills exactly the "+-20" test model's box: +-20 x +-23.1,
+         # 24.2 high. fScale 0.05 (written vertices x20). Tree cut kept at the +-10.5 of every passing test.
+         scale=0.05,
+         # v3 (~19:30, high fidelity): smooth, finely subdivided, baked 1024 textures; up to the largest stock wonder
+         # meshes (22k vertices / 20k triangles).
+         envelope=dict(hex_in=20.0, hex_out=20.0 / 0.8660254, max_height=24.3, max_verts=22000, max_tris=20000),
+         tree_cut=10.5,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
+         aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
 ]
 
-# 2026-11-23 experiment (docs/CITY_MODELS.md §8, "one registration"): the second city has never drawn, while
-# the capital usually does. Test whether the SECOND building / WonderArtInfo registration is the problem:
-# Mount Doom's names go onto Barad-dur's row, so both cities get BUILDING_MEC_LM_BARAD_DUR and the pack has
-# only ONE landmark building and ONE WonderArtInfo. Set to False to restore the separate Mount Doom row.
-ONE_REGISTRATION = True
-if ONE_REGISTRATION:
-    _doom = [x for x in LANDMARKS if x['key'] == 'MOUNT_DOOM'][0]
-    _barad = [x for x in LANDMARKS if x['key'] == 'BARAD_DUR'][0]
-    _barad['name_keys'] = _barad['name_keys'] + _doom['name_keys']
-    _barad['aliases'] = _barad['aliases'] + _doom['aliases']
-    LANDMARKS.remove(_doom)
+# Only the enabled rows are built (2026-11-24: Moria alone).
+LANDMARKS = [lm for lm in ALL_LANDMARKS if lm.get('enabled', True)]
 
 # 2026-11-23 experiment "capital 100%": which variant the real landmark shows. None = the full model (Eye animation,
 # fire, beam). 'T1' = static fortress + tower only (no skinned Eye, no animation, no effects): an empty-tile launch
@@ -95,27 +114,40 @@ BUILDABLE = False
 # 2026-11-23 (user): no building to choose. Lua gives the landmark on the owner's first turn AFTER the city was
 # founded (PlayerDoTurn), never in the founding event itself, so the art is added to a city whose art already exists.
 # True = old behaviour (given in PlayerCityFounded / CityCaptureComplete).
-GIVE_AT_FOUNDING = False
+# 2026-11-24 (user): back to True: the model is added when the city is founded (compact Moria renders reliably).
+GIVE_AT_FOUNDING = True
+
+# 2026-11-24 RENDER TEST (user): EVERY city (major civs and city-states) gets the first enabled landmark (Moria's
+# model), whatever its name, so one game shows whether dozens of copies all draw. False = only cities named like a
+# landmark. (The first version, capitals + city-states only, gave it to Moria alone: see docs/CITY_MODELS.md §12.)
+ALL_CITIES_TEST = False     # 2026-11-24 ~19:40: tests done (docs/CITY_MODELS.md §12-14): only Moria gets its model
+
+
+# Which landmarks ALL_CITIES_TEST hands out: the size-test rows (A/B/C), each city getting one of them by its map
+# position, ((A x + B y) mod M) mod count (TEST_HASH, used by MEC_Landmarks.lua), picked by searching the test map's
+# real positions (TaHugeRndWw, fixed starts): step 7-8 (14, 12, 17) split all 31 cities 11/10/11; step 9 (9, 5, 17)
+# splits the 19 city-states 6/7/6 and spreads the 7 that failed in step 8 over all three sizes.
+TEST_HASH = (9, 5, 17)
+
+# Which cities ALL_CITIES_TEST covers: 'all', 'minors' (city-states only, step 9) or 'majors' (major civ cities only,
+# step 10: the final Moria in every major civ city; city-states keep stock art). The others follow the name rules.
+TEST_SCOPE = 'majors'
+
+
+def test_buildings():
+    rows = [lm for lm in LANDMARKS if lm.get('size_test')] or LANDMARKS[:1]
+    return [building(lm) for lm in rows]
+
+
+
+# 2026-11-24 RENDER TEST (user): no fog of war: every plot is revealed and kept visible for every human player, so all
+# cities can be checked by eye. False = normal fog of war.
+REVEAL_MAP = True           # KEPT ON (user, 2026-11-24) for testing the next models; set False before sharing the pack
 
 # 2026-11-23: every stock .gr2 leaves the BoneBinding OBBMin/OBBMax at zero; ours had real boxes. If the engine uses
 # them for the city group's bounds, a wrong box could stop the whole tile (houses too) from drawing. Never validly
 # tested before (the T1Z probe went through the broken Cycle button). True = written zeroed like stock.
 ZERO_OBB = True
-
-# DEFAULT since 2026-11-24 (docs/CITY_MODELS.md §10): the landmark shows a known-good model that is NOT made by us
-# (not Blender, not our .gr2 writer): vendor/landmarks/BaradDur/MEC_LM_BaradDur_Base.gr2 (source in SOURCE.md there),
-# copied byte-identical. Our own models (build/landmarks/out) made the whole city tile vanish in some games; this one
-# drew 5/5 through the same mechanism. None = our Blender model again (needs build_models.py output).
-EXTERNAL_ART = dict(dir=os.path.join(ROOT, 'vendor', 'landmarks', 'BaradDur'), model='MEC_LM_BaradDur_Base', scale=0.05,
-                    textures=['HBHagiaSophia_DIFF.dds', 'HBHagiaSophia_SREF.dds', 'Hagia_Sophia_DIFF.dds',
-                              'Hagia_Sophia_SREF.dds', 'Generic_Grey_8.dds'])
-
-
-def external_fxsxml():
-    x = EXTERNAL_ART
-    return ('<Asset>\n\t<Mesh file="%s.gr2"/>\n' % x['model']
-            + ''.join('\t<Texture file="%s"/>\n' % t for t in x['textures'])
-            + '\t<DecisionTree file="Wonder_DecisionTree.ddtxml" source="Tool"/>\n</Asset>\n')
 
 # ---------------------------------------------------------------------------------------------
 # Effects on the animated part's bones (rig() in the model module names the key per bone).
@@ -205,7 +237,7 @@ LUA = 'MEC_Landmarks.lua'
 def art_model(lm):
     """Asset base name this landmark shows: its own model, or another landmark's (art_of)."""
     if lm.get('art_of'):
-        return [x for x in LANDMARKS if x['key'] == lm['art_of']][0]['model']
+        return [x for x in ALL_LANDMARKS if x['key'] == lm['art_of']][0]['model']
     return lm['model']
 
 
@@ -223,10 +255,11 @@ def entries(with_diagnostics=True):
     for lm in LANDMARKS:
         main = art_model(lm) + ('_%s' % SHOW_VARIANT if SHOW_VARIANT and lm.get('animated') else '') + '.fxsxml'
         scale = lm['scale']
-        if EXTERNAL_ART:
-            main, scale = EXTERNAL_ART['model'] + '.fxsxml', EXTERNAL_ART['scale']
+        copy_from = None
+        if lm.get('own_fxsxml'):
+            main, copy_from = lm['own_fxsxml'], main
         out.append(dict(building=building(lm), tag=art_tag(lm), title=lm['title'], fxsxml=main,
-                        scale=scale, keys=lm['name_keys'], aliases=lm['aliases']))
+                        scale=scale, keys=lm['name_keys'], aliases=lm['aliases'], copy_from=copy_from))
         if lm.get('animated') and with_diagnostics:
             first = lm.get('test_prefix') or lm['aliases'][0].split()[0]     # "Barad Test 1", "Doom Test 1" ...
             for suffix, label, _ in DIAGNOSTICS:
@@ -367,4 +400,9 @@ def lua_table(with_diagnostics=True):
     L.append('}')
     L.append('g_Buildable = %s' % ('true' if BUILDABLE else 'false'))
     L.append('g_GiveAtFounding = %s' % ('true' if GIVE_AT_FOUNDING else 'false'))
+    L.append('g_AllCitiesTest = %s' % ('true' if ALL_CITIES_TEST else 'false'))
+    L.append('g_AllCitiesBuildings = { %s }' % ', '.join(lstr(b) for b in test_buildings()))
+    L.append('g_TestHash = { %d, %d, %d }' % TEST_HASH)
+    L.append('g_TestScope = %s' % lstr(TEST_SCOPE))
+    L.append('g_RevealMap = %s' % ('true' if REVEAL_MAP else 'false'))
     return '\n'.join(L)

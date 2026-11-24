@@ -34,7 +34,26 @@ for _, def in ipairs(g_LandmarkDefs) do
 end
 table.sort(g_AllIDs)
 
+-- g_AllCitiesTest (landmarks.ALL_CITIES_TEST): render test. EVERY city (major civs and city-states) gets one of the
+-- test landmarks (g_AllCitiesBuildings), whatever its name, picked by map position: ((A x + B y) mod M) mod #list with
+-- g_TestHash = { A, B, M } (chosen per test so the cities of the fixed-start test map split evenly, see landmarks.py).
+-- g_TestScope: "all", "minors" (city-states only) or "majors" (major civ cities only); the others follow the name rules.
+-- Synchronised data only (plot coordinates), so every client picks the same one.
+local g_TestIDs = {}
+if g_AllCitiesTest then
+	for _, b in ipairs(g_AllCitiesBuildings) do
+		if g_BuildingID[b] then table.insert(g_TestIDs, g_BuildingID[b]) else print("MEC_Landmarks: test building " .. b .. " missing") end
+	end
+end
+local g_TestID = g_TestIDs[1]
+
 local function LandmarkFor(city)
+	local owner = Players[city:GetOwner()]
+	local minor = owner ~= nil and owner:IsMinorCiv()
+	if g_TestID and (g_TestScope == "all" or (g_TestScope == "minors" and minor) or (g_TestScope == "majors" and not minor)) then
+		local h = (g_TestHash[1] * city:GetX() + g_TestHash[2] * city:GetY()) % g_TestHash[3]
+		return g_TestIDs[h % #g_TestIDs + 1]
+	end
 	local key = city:GetNameKey()
 	if not key then return nil end
 	return g_ByName[key] or g_ByName[string.lower(key)]
@@ -90,9 +109,32 @@ if #g_AllIDs > 0 then
 	-- registered after METSL_InGame (loaded first), so a Dynamic City Naming rename has already happened
 	GameEvents.PlayerCityFounded.Add(function(playerID, x, y) SyncAt(x, y) end)
 	GameEvents.CityCaptureComplete.Add(function(oldOwner, isCapital, x, y, newOwner) SyncAt(x, y) end)
-	-- catches renames (and anything missed) once per turn
-	GameEvents.PlayerDoTurn.Add(function(playerID) SyncPlayer(playerID) end)
+	-- catches renames (and anything missed): every player's turn re-checks EVERY city (2026-11-24: in the all-capitals
+	-- test only Moria was ever given its landmark here, so this no longer relies on the owner's own turn)
+	GameEvents.PlayerDoTurn.Add(function(playerID) SyncAll() end)
 	-- loaded games, and cities that exist before this script runs
 	SyncAll()
-	print("MEC_Landmarks: active, " .. #g_AllIDs .. " landmark(s)")
+	print("MEC_Landmarks: active, " .. #g_AllIDs .. " landmark(s)"
+		.. (g_TestID and (", TEST (" .. g_TestScope .. "): each city gets one of "
+			.. table.concat(g_AllCitiesBuildings, " / ")) or "")
+		.. (g_GiveAtFounding and ", given at founding" or ", given on the next turn"))
+end
+
+-- g_RevealMap (landmarks.REVEAL_MAP): render test without fog of war. Every plot is revealed to and kept visible
+-- for every human player's team (the same for every client, so it also works in multiplayer).
+if g_RevealMap then
+	local teams, n = {}, 0
+	for playerID = 0, GameDefines.MAX_MAJOR_CIVS - 1 do
+		local player = Players[playerID]
+		if player and player:IsAlive() and player:IsHuman() then teams[player:GetTeam()] = true end
+	end
+	for team in pairs(teams) do
+		for i = 0, Map.GetNumPlots() - 1 do
+			local plot = Map.GetPlotByIndex(i)
+			plot:SetRevealed(team, true)
+			plot:ChangeVisibilityCount(team, 1, -1, true, true)
+		end
+		n = n + 1
+	end
+	print("MEC_Landmarks: TEST: fog of war removed for " .. n .. " human team(s), " .. Map.GetNumPlots() .. " plots")
 end

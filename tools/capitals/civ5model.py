@@ -60,10 +60,12 @@ def _hex_tree_cut(vd, topo):
     topo['Groups'][0]['TriCount'] = 6
 
 
-def write_model(out_dir, name, verts, tris, diffuse, sref, fx=(), wonder=True, hex_cut=True):
+def write_model(out_dir, name, verts, tris, diffuse, sref, fx=(), wonder=True, hex_cut=True, tree_cut=None):
     """verts: list of (pos3, normal3, tangent3, binormal3, uv2); tris: list of index triples.
     Writes <name>.gr2 and <name>.fxsxml into out_dir.
-    hex_cut=False keeps the template's own (stock) "Tree cut" stencil untouched."""
+    hex_cut=False keeps the template's own (stock) "Tree cut" stencil untouched.
+    tree_cut=h (model units): the template's rectangular stencil stretched to a +-h square, like the stock
+    wonders' own (e.g. Hagia Sophia's TreeCut is about +-212 model units = +-10.6 world at fScale 0.05)."""
     f = gr2.read(TEMPLATE)
     root = f.root()
     tc_mat, b_tmpl = root['Materials'][0], root['Materials'][1]
@@ -79,6 +81,10 @@ def write_model(out_dir, name, verts, tris, diffuse, sref, fx=(), wonder=True, h
     tc_vd['VertexComponentNames'][4]['String'] = 'TextureCoordinates0'
     if wonder and hex_cut:
         _hex_tree_cut(tc_vd, root['TriTopologies'][0])
+    elif wonder and tree_cut:
+        for v in tc_vd['Vertices'].value:
+            p = v['Position']
+            v['Position'] = [math.copysign(tree_cut, p[0]), math.copysign(tree_cut, p[1]), p[2]]
 
     # ---- building material: copy of the stock BuildingShader material
     mat = copy.deepcopy(b_tmpl)

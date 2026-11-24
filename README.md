@@ -117,10 +117,9 @@ tools/testmatrix.py / determinism.py / ingametest.py / dlctest.py   test runs
 tools/landmarks/, tools/capitals/, tools/rendertest/   custom city models (see below)
 src/                  new and replaced files (map scripts, METSL Lua, fixed Wood Elves script, art fixes)
 vendor/civ5/          files copied from the stock game (vanilla DB, InGame.lua, Upgrade1.Civ5Pkg, palace .gr2 template)
-vendor/landmarks/     third-party landmark models (Barad-dûr's base model, see its SOURCE.md)
 mods/                 the untouched original mods
 ui/                   the mod manager app (Electron), see ui/README.md
 build/, dist/         generated (not in git): venv, Blender output, temp DBs / built mod + DLC + zips
 ```
 
-Custom city landmarks are **on** (2026-11-24): a city named Barad-dûr (Mordor's capital) or Mount Doom gets a landmark model in its centre, added the turn after it's founded. For now it's a known-good base model that we didn't make (a reworked Hagia Sophia from a community mod, `vendor/landmarks/BaradDur/`), because our own Blender-made models made the whole city tile vanish in some games. `python3 tools/build_dlc.py --no-landmarks` builds the pack without landmarks. Details, findings and next steps: [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §10. Preview our own model as a GIF without the game: `blender -b --factory-startup -P tools/landmarks/render_gif.py -- barad_dur`.
+Custom city landmarks are **on** (2026-11-24): a city named Moria (the Goblins' capital) gets our own Blender model of the West-gate of Moria (the Doors of Durin with their ithildin glow, the cliffs of the Misty Mountains, the Watcher's lake) in its centre as soon as it's founded. Barad-dûr and Mount Doom are off for now. Size limit found in game: a landmark's footprint must stay within +-20 world units (+-16 for city-states), height up to ~24-29. **Fog of war is switched off** while models are being tested (`REVEAL_MAP` in `tools/landmarks/landmarks.py`; set it to `False` before sharing the pack). Build the model with `blender -b --factory-startup -P tools/landmarks/build_models.py -- moria` (output in `build/landmarks/out`, needed by `build_dlc.py`); `python3 tools/build_dlc.py --no-landmarks` builds the pack without landmarks. Details and findings: [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §12-15.

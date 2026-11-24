@@ -10,22 +10,14 @@ import sys
 from lupa.lua51 import LuaRuntime  # Civ 5 uses Lua 5.1
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import landmarks  # noqa: E402
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 SCRIPT = os.path.join(ROOT, 'dist', 'DLC', 'MiddleEarth', 'UI', 'MEC_Landmarks.lua')
 
 MOCK = r'''
-GameDefines = { MAX_PLAYERS = 4 }
-local buildings = {
-  { ID = 0, Type = "BUILDING_PALACE" },
-  { ID = 7, Type = "BUILDING_MEC_LM_BARAD_DUR" },
-  { ID = 8, Type = "BUILDING_MEC_LM_BARAD_DUR_T1" },
-  { ID = 9, Type = "BUILDING_MEC_LM_BARAD_DUR_T2" },
-  { ID = 10, Type = "BUILDING_MEC_LM_BARAD_DUR_T3" },
-  { ID = 11, Type = "BUILDING_MEC_LM_MOUNT_DOOM" },
-  { ID = 12, Type = "BUILDING_MEC_LM_MOUNT_DOOM_T1" },
-  { ID = 13, Type = "BUILDING_MEC_LM_MOUNT_DOOM_T2" },
-  { ID = 14, Type = "BUILDING_MEC_LM_MOUNT_DOOM_T3" },
-}
+GameDefines = { MAX_PLAYERS = 4, MAX_MAJOR_CIVS = 3 }
+local buildings = { { ID = 0, Type = "BUILDING_PALACE" }, @@BUILDINGS@@ }
 -- strict: only iteration (GameInfo.Buildings()) is allowed; direct indexing returned wrong rows in game
 GameInfo = { Buildings = setmetatable({}, {
   __call = function() local i = 0; return function() i = i + 1; return buildings[i] end end,
@@ -43,6 +35,9 @@ Players = {}
 for i = 0, 3 do
   local p = { id = i, cities = {} }
   function p:IsAlive() return true end
+  function p:IsHuman() return self.id == 0 end
+  function p:IsMinorCiv() return self.id == 3 end     -- player 3 = a city-state
+  function p:GetTeam() return self.id end
   function p:Cities() local i2 = 0; return function() i2 = i2 + 1; return self.cities[i2] end end
   function p:GetCityByID(id) for _, c in ipairs(self.cities) do if c.id == id then return c end end end
   Players[i] = p
@@ -51,6 +46,8 @@ function NewCity(owner, x, y, key)
   NextCityID = (NextCityID or 100) + 1
   local c = { owner = owner, x = x, y = y, key = key, b = {}, id = NextCityID }
   function c:GetNameKey() return self.key end
+  function c:GetOwner() return self.owner end
+  function c:IsCapital() return Players[self.owner].cities[1] == self end
   function c:SetName(k) self.key = k end
   function c:GetX() return self.x end
   function c:GetY() return self.y end
@@ -67,6 +64,19 @@ function MoveCity(c, newOwner)
   table.insert(Players[newOwner].cities, c)
 end
 Map = { GetPlot = function(x, y) local c = plots[x .. "," .. y]; return { GetPlotCity = function() return c end } end }
+-- 10 plots for the fog-of-war reveal; record what was done per team
+Revealed, Visible, NextCityID = {}, {}, 100
+local mapPlots = {}
+for i = 0, 9 do
+  local pl = {}
+  function pl:SetRevealed(team, b) Revealed[team] = (Revealed[team] or 0) + (b and 1 or 0) end
+  function pl:ChangeVisibilityCount(team, n, inv, a, b) Visible[team] = (Visible[team] or 0) + n end
+  mapPlots[i] = pl
+end
+Map.GetNumPlots = function() return 10 end
+Map.GetPlotByIndex = function(i) return mapPlots[i] end
+-- strict globals: an API the mock doesn't define is an error, not a silent nil
+setmetatable(_G, { __index = function(_, k) error("unknown global " .. tostring(k), 2) end })
 '''
 
 
@@ -99,10 +109,12 @@ def buildable_tests(lua, pre, LM, n, check, fails):
     print('all checks passed (buildable mode)')
 
 
-def delayed_tests(lua, pre, LM, n, check, fails):
-    """landmarks.GIVE_AT_FOUNDING = False: given on the owner's next PlayerDoTurn, never in the founding event."""
-    check('existing Barad-dur on load gets the landmark', n(pre), 1)
-    cap = lua.eval('NewCity(1, 5, 5, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
+def delayed_tests(lua, pre, LM, n, check, fails, lm):
+    """landmarks.GIVE_AT_FOUNDING = False: given on the owner's next PlayerDoTurn, never in the founding event.
+    Runs for the first enabled landmark (lm); the Mount Doom part only while Barad-dur / Mount Doom are enabled."""
+    t = lm['title']
+    check('existing %s on load gets the landmark' % t, n(pre), 1)
+    cap = lua.eval('NewCity(1, 5, 5, "%s")' % lm['name_keys'][0])
     lua.eval('Fire("PlayerCityFounded", 1, 5, 5)')
     check('founding turn: nothing yet (stock art)', n(cap), 0)
     lua.eval('Fire("PlayerDoTurn", 0)')
@@ -115,15 +127,22 @@ def delayed_tests(lua, pre, LM, n, check, fails):
     check('other city stays stock', n(other), 0)
     lua.eval('MoveCity')(cap, 0)
     lua.eval('Fire("CityCaptureComplete", 1, true, 5, 5, 0, 3, true)')
-    check('captured Barad-dur keeps it', n(cap), 1)
+    check('captured %s keeps it' % t, n(cap), 1)
     cap.SetName(cap, 'Dark Tower')
     lua.eval('Fire("CityCaptureComplete", 1, true, 5, 5, 0, 3, true)')
     check('capture event removes it after a rename', n(cap), 0)
     lua.eval('Fire("PlayerDoTurn", 0)')
     check('renamed away: stays removed', n(cap), 0)
-    other.SetName(other, 'barad-dûr')
+    typed = lm['aliases'][-1].lower()
+    other.SetName(other, typed)
     lua.eval('Fire("PlayerDoTurn", 1)')
-    check('player-typed "barad-dûr": given on the next turn', n(other), 1)
+    check('player-typed "%s": given on the next turn' % typed, n(other), 1)
+    check('no other building set', sorted(k for k in other.b.keys()), [LM])
+    if lm['key'] != 'BARAD_DUR':
+        if fails:
+            sys.exit('%d check(s) failed' % len(fails))
+        print('all checks passed (given on the next turn)')
+        return
     doom = lua.eval('NewCity(1, 7, 7, "TXT_KEY_CITY_NAME_MEC_MOUNT_DOOM")')
     lua.eval('Fire("PlayerCityFounded", 1, 7, 7)')
     check('Mount Doom founding turn: nothing', n(doom), 0)
@@ -134,13 +153,68 @@ def delayed_tests(lua, pre, LM, n, check, fails):
     print('all checks passed (given on the next turn)')
 
 
+def all_cities_tests(lua, pre, LM, n, check, fails):
+    """landmarks.ALL_CITIES_TEST + REVEAL_MAP (+ GIVE_AT_FOUNDING): every city (or, with TEST_MINORS_ONLY, every
+    city-state city) gets ONE of the test landmarks, picked by ((A x + B y) mod M) mod count, at founding."""
+    ids = {e['building']: 7 + i for i, e in enumerate(landmarks.entries('--landmark-tests' in sys.argv))}
+    tests = [ids[b] for b in landmarks.test_buildings()]
+    A, B, M = landmarks.TEST_HASH
+    scope = landmarks.TEST_SCOPE
+    moria = ids['BUILDING_MEC_LM_MORIA']
+
+    def got(c):         # the landmark buildings the city has
+        return sorted(k for k, v in c.b.items() if v == 1 and k in ids.values())
+
+    def want(c):
+        minor = c.owner == 3                     # player 3 = the city-state in the mock
+        if (scope == 'minors' and not minor) or (scope == 'majors' and minor):
+            return [moria] if c.GetNameKey(c) == 'TXT_KEY_CITY_NAME_MEC_MORIA' else []
+        return [tests[((A * c.GetX(c) + B * c.GetY(c)) % M) % len(tests)]]
+    check('fog: human team 0 revealed (10 plots)', lua.eval('Revealed[0]'), 10)
+    check('fog: human team 0 made visible (10 plots)', lua.eval('Visible[0]'), 10)
+    check('fog: AI team 1 untouched', lua.eval('Revealed[1]'), None)
+    check('existing city on load: as expected', got(pre), want(pre))
+    at_founding = lua.eval('g_GiveAtFounding')
+    cities = []
+    for owner, x, y, key in [(1, 5, 5, 'MEC_GORGOROTH'), (1, 6, 6, 'MEC_MORIA'), (3, 7, 7, 'MECS_DALE')]:
+        c = lua.eval('NewCity(%d, %d, %d, "TXT_KEY_CITY_NAME_%s")' % (owner, x, y, key))
+        lua.eval('Fire("PlayerCityFounded", %d, %d, %d)' % (owner, x, y))
+        check('%s at %d,%d: as expected at founding' % (key, x, y), got(c), want(c) if at_founding else [])
+        cities.append(c)
+    # cities (of the tested kind) at positions that hit every version
+    owner = 3 if scope == 'minors' else 1
+    spots, seen = [], set()
+    for x in range(10, 40):
+        v = ((A * x + B * 9) % M) % len(tests)
+        if v not in seen:
+            seen.add(v)
+            spots.append(x)
+    css = []
+    for x in spots:
+        c = lua.eval('NewCity(%d, %d, 9, "TXT_KEY_CITY_NAME_MECS_X%d")' % (owner, x, x))
+        lua.eval('Fire("PlayerCityFounded", %d, %d, 9)' % (owner, x))
+        css.append(c)
+    check('tested cities get every version (%d)' % len(tests), sorted(got(c)[0] for c in css), sorted(tests))
+    missed = lua.eval('NewCity(%d, 8, 8, "TXT_KEY_CITY_NAME_MECS_EDORAS")' % owner)
+    lua.eval('Fire("PlayerDoTurn", 0)')
+    check("missed city: given on ANOTHER player's turn", got(missed), want(missed))
+    if fails:
+        sys.exit('%d check(s) failed' % len(fails))
+    print('all checks passed (render test, %d versions, %s, + no fog)'
+          % (len(tests), 'scope ' + scope))
+
+
 def main():
     if not os.path.exists(SCRIPT):
         sys.exit('build first: python3 tools/build_dlc.py')
     lua = LuaRuntime(unpack_returned_tuples=True)
-    lua.execute(MOCK)
+    # the landmark rows get IDs 7, 8, ... (with Barad-dur enabled: 7 = Barad-dur, 8-10 its tests, as below)
+    ents = landmarks.entries('--landmark-tests' in sys.argv)
+    lua.execute(MOCK.replace('@@BUILDINGS@@', ', '.join('{ ID = %d, Type = "%s" }' % (7 + i, e['building'])
+                                                        for i, e in enumerate(ents))))
+    lm = landmarks.LANDMARKS[0]
     # a city that exists before the script loads (loaded game)
-    pre = lua.eval('NewCity(2, 9, 9, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
+    pre = lua.eval('NewCity(2, 9, 9, "%s")' % lm['name_keys'][0])
     lua.execute(open(SCRIPT, encoding='utf-8').read())
     LM = 7
     n = lambda c: c.GetNumRealBuilding(c, LM)
@@ -151,77 +225,51 @@ def main():
         if got != want:
             fails.append(label)
 
+    if lua.eval('g_AllCitiesTest'):
+        return all_cities_tests(lua, pre, LM, n, check, fails)
     if lua.eval('g_Buildable'):
         return buildable_tests(lua, pre, LM, n, check, fails)
     if not lua.eval('g_GiveAtFounding'):
-        return delayed_tests(lua, pre, LM, n, check, fails)
-    check('existing city on load gets the landmark', n(pre), 1)
-    # Mordor founds its capital: named Barad-dur from Civilization_CityNames
-    cap = lua.eval('NewCity(1, 5, 5, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
+        return delayed_tests(lua, pre, LM, n, check, fails, lm)
+    return founding_tests(lua, pre, LM, n, check, fails, lm)
+
+
+def founding_tests(lua, pre, LM, n, check, fails, lm):
+    """landmarks.GIVE_AT_FOUNDING = True (normal mode): the city named like the landmark gets it when founded;
+    every other city (other names, other civs, city-states) keeps stock art."""
+    t = lm['title']
+    reveal = lua.eval('g_RevealMap')
+    check('fog of war removed for the human team' if reveal else 'fog of war untouched',
+          lua.eval('Revealed[0]'), 10 if reveal else None)
+    check('existing %s on load gets the landmark' % t, n(pre), 1)
+    cap = lua.eval('NewCity(1, 5, 5, "%s")' % lm['name_keys'][0])
     lua.eval('Fire("PlayerCityFounded", 1, 5, 5)')
-    check('capital founded as Barad-dur', n(cap), 1)
-    other = lua.eval('NewCity(1, 6, 6, "TXT_KEY_CITY_NAME_MEC_GORGOROTH")')
+    check('%s founded: landmark at once' % t, n(cap), 1)
+    other = lua.eval('NewCity(1, 6, 6, "TXT_KEY_CITY_NAME_MEC_MOUNT_GUNDABAD")')
     lua.eval('Fire("PlayerCityFounded", 1, 6, 6)')
-    check('other Mordor city stays stock', n(other), 0)
-    other2 = lua.eval('NewCity(0, 1, 1, "TXT_KEY_CITY_NAME_MEC_HOBBITON")')
+    check('same civ, other city: stock', n(other), 0)
+    cap2 = lua.eval('NewCity(0, 1, 1, "TXT_KEY_CITY_NAME_MEC_HOBBITON")')
     lua.eval('Fire("PlayerCityFounded", 0, 1, 1)')
-    check('other civ city stays stock', n(other2), 0)
-    # captured by player 0: keeps it (name unchanged)
+    check('other civ capital: stock', n(cap2), 0)
+    cs = lua.eval('NewCity(3, 2, 2, "TXT_KEY_CITY_NAME_MECS_DALE")')
+    lua.eval('Fire("PlayerCityFounded", 3, 2, 2)')
+    check('city-state: stock', n(cs), 0)
+    lua.eval('Fire("PlayerDoTurn", 1)')
+    check('after a turn: still only %s' % t, [n(c) for c in (cap, other, cap2, cs)], [1, 0, 0, 0])
     lua.eval('MoveCity')(cap, 0)
     lua.eval('Fire("CityCaptureComplete", 1, true, 5, 5, 0, 3, true)')
-    check('captured Barad-dur keeps the landmark', n(cap), 1)
-    # renamed away -> removed on the next turn of its owner
-    cap.SetName(cap, 'Dark Tower')
+    check('captured %s keeps it' % t, n(cap), 1)
+    cap.SetName(cap, 'Goblin Hole')
     lua.eval('Fire("PlayerDoTurn", 0)')
-    check('renamed away: landmark removed', n(cap), 0)
-    # player types "barad-dûr" as a literal name -> landmark
-    other.SetName(other, 'barad-dûr')
+    check('renamed away: removed', n(cap), 0)
+    typed = lm['aliases'][-1].lower()
+    other.SetName(other, typed)
     lua.eval('Fire("PlayerDoTurn", 1)')
-    check('player-typed "barad-dûr" gets the landmark', n(other), 1)
-    other.SetName(other, 'Barad Dur')
-    lua.eval('Fire("PlayerDoTurn", 1)')
-    check('player-typed "Barad Dur" keeps it', n(other), 1)
-    # other buildings untouched
-    check('no other building set', sorted(k for k in cap.b.keys()), [LM])
-    # diagnostic variants: a city renamed "Barad Test 2" gets exactly that variant, and switching works
-    other2.SetName(other2, 'Barad Test 2')
-    lua.eval('Fire("PlayerDoTurn", 0)')
-    check('"Barad Test 2" gets the T2 variant only', (n(other2), other2.GetNumRealBuilding(other2, 9)), (0, 1))
-    other2.SetName(other2, 'barad test 3')
-    lua.eval('Fire("PlayerDoTurn", 0)')
-    check('renamed to "barad test 3": T3 only', tuple(other2.GetNumRealBuilding(other2, i) for i in (7, 8, 9, 10)),
-          (0, 0, 0, 1))
-    # ---- Mount Doom: the volcano only for a city NAMED Mount Doom, with or without Dynamic City Naming
-    MD = 11
-    md = lambda c: c.GetNumRealBuilding(c, MD)
-    doom = lua.eval('NewCity(1, 20, 20, "TXT_KEY_CITY_NAME_MEC_MOUNT_DOOM")')
-    lua.eval('Fire("PlayerCityFounded", 1, 20, 20)')
-    check('city-list "Mount Doom" gets the volcano', md(doom), 1)
-    check('... and not Barad-dur', n(doom), 0)
-    dcn = lua.eval('NewCity(0, 21, 21, "TXT_KEY_CITY_NAME_MEC_HOBBITON")')
-    dcn.SetName(dcn, 'TXT_KEY_CITY_NAME_MEC_MOUNT_DOOM')
-    lua.eval('Fire("PlayerCityFounded", 0, 21, 21)')
-    check('DCN-renamed to Mount Doom (any civ) gets the volcano', md(dcn), 1)
-    away = lua.eval('NewCity(1, 22, 22, "TXT_KEY_CITY_NAME_MEC_MOUNT_DOOM")')
-    away.SetName(away, 'TXT_KEY_CITY_NAME_MEC_UDUN_VALE')
-    lua.eval('Fire("PlayerCityFounded", 1, 22, 22)')
-    check('DCN renamed away from Mount Doom: no volcano', md(away), 0)
-    oro = lua.eval('NewCity(1, 23, 23, "TXT_KEY_CITY_NAME_MEC_ORODRUIN")')
-    lua.eval('Fire("PlayerCityFounded", 1, 23, 23)')
-    check('"Orodruin" is not "Mount Doom": no volcano', md(oro), 0)
-    oro.SetName(oro, 'mount doom')
-    lua.eval('Fire("PlayerDoTurn", 1)')
-    check('player-typed "mount doom" gets the volcano', md(oro), 1)
-    doom.SetName(doom, 'Doom Test 1')
-    lua.eval('Fire("PlayerDoTurn", 1)')
-    check('"Doom Test 1" gets the static variant only', (md(doom), doom.GetNumRealBuilding(doom, 12)), (0, 1))
-    lua.eval('MoveCity')(dcn, 2)
-    dcn.SetName(dcn, 'TXT_KEY_CITY_NAME_MEC_GORGOROTH')
-    lua.eval('Fire("CityCaptureComplete", 0, false, 21, 21, 2, 3, true)')
-    check('captured and renamed by DCN: volcano removed', md(dcn), 0)
+    check('player-typed "%s": given' % typed, n(other), 1)
+    check('no other building set', sorted(k for k, v in other.b.items() if v), [LM])
     if fails:
         sys.exit('%d check(s) failed' % len(fails))
-    print('all landmark checks passed')
+    print('all checks passed (%s only, given at founding%s)' % (t, ', no fog' if reveal else ''))
 
 
 if __name__ == '__main__':

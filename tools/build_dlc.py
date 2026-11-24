@@ -36,10 +36,10 @@ DLC_GUID = '{3c9a6f2e-5b1d-4e7a-8f4c-2d6b9e1a7c53}'
 MAP_KEYS = ['TaHugeRndWw', 'TaLrgRndNww', 'TaHugeRndNww', 'TaLrgRndWw', 'TaStdRndWw', 'TaStdRndNww']
 DATA_EXT = ('.xml', '.sql', '.lua', '.modinfo', '.pdf', '.civ5map')
 SKIP_TABLES_PREFIX = ('Language_', 'Audio_')
-# Per-city landmark models (docs/CITY_MODELS.md) are ON by default since 2026-11-24: Barad-dur (and Mount Doom) show
-# the known-good base model vendor/landmarks/BaradDur (landmarks.EXTERNAL_ART), one turn after founding.
+# Per-city landmark models (docs/CITY_MODELS.md) are ON by default: the enabled rows of tools/landmarks/landmarks.py
+# (2026-11-24: Moria only, our compact Blender model from build/landmarks/out), added one turn after founding.
 # --no-landmarks: every city uses stock art (--landmarks is accepted and changes nothing).
-# --landmark-tests: add the diagnostic variants ("Barad Test 1..3"; only with our Blender models, EXTERNAL_ART = None).
+# --landmark-tests: add the diagnostic variants ("Barad Test 1..3", animated landmarks only).
 # --landmark-stock-art shows the stock Polynesian palace instead (diagnostic).
 LANDMARKS_ON = '--no-landmarks' not in sys.argv
 
@@ -303,9 +303,8 @@ def build_landmarks():
     Returns (gamedata, text, wonders, [vis effect defines], [vis effect model defines]) file names.
     --landmark-tests adds the diagnostic variants ("Barad Test 1..3"); off by default (the old --no-landmark-tests is
     accepted and changes nothing)."""
-    diag = '--landmark-tests' in sys.argv and not landmarks.EXTERNAL_ART
-    # our own Blender models (build/landmarks/out) are only needed when the base model is switched off
-    need = [] if landmarks.EXTERNAL_ART else [f for lm in landmarks.LANDMARKS for f in landmarks.asset_files(lm)]
+    diag = '--landmark-tests' in sys.argv
+    need = [f for lm in landmarks.LANDMARKS for f in landmarks.asset_files(lm)]
     missing = [f for f in need if not os.path.exists(os.path.join(landmarks.OUT, f))]
     if missing:
         sys.exit('landmark models missing (run: blender -b --factory-startup -P tools/landmarks/build_models.py): %s'
@@ -320,6 +319,9 @@ def build_landmarks():
                 probes.to_stock_sections(os.path.join(landmarks.OUT, f), os.path.join(art, f), zero_obb=landmarks.ZERO_OBB)
             else:
                 shutil.copy2(os.path.join(landmarks.OUT, f), art)
+    for e in landmarks.entries(diag):      # rows with their own copy of another row's .fxsxml (landmarks own_fxsxml)
+        if e.get('copy_from') and not stock:
+            shutil.copy2(os.path.join(art, e['copy_from']), os.path.join(art, e['fxsxml']))
     if diag and not stock:   # Test 1 rewritten like stock files (hashed strings / zero OBB), tools/landmarks/probes.py
         import probes
         for model in sorted({landmarks.art_model(lm) for lm in landmarks.LANDMARKS if lm.get('animated')}):
@@ -329,17 +331,10 @@ def build_landmarks():
                      os.path.join(art, landmarks.LOOSE_MODEL + '.gr2'))
         open(os.path.join(art, landmarks.LOOSE_MODEL + '.fxsxml'), 'w', encoding='utf-8', newline='\r\n').write(
             landmarks.loose_probe_fxsxml())
-    if landmarks.EXTERNAL_ART:     # a model not made by us (docs/CITY_MODELS.md §8, "external model")
-        x = landmarks.EXTERNAL_ART
-        for f in os.listdir(x['dir']):
-            if f.lower().endswith(('.gr2', '.dds')):
-                shutil.copy2(os.path.join(x['dir'], f), art)      # byte-identical, no conversion
-        open(os.path.join(art, x['model'] + '.fxsxml'), 'w', encoding='utf-8', newline='\r\n').write(
-            landmarks.external_fxsxml())
     open(os.path.join(art, landmarks.WONDER_XML), 'w', encoding='utf-8', newline='\r\n').write(
         landmarks.wonder_defines(stock_art=stock, with_diagnostics=diag))
     vfx, vmodels = [], []
-    if any(lm.get('animated') for lm in landmarks.LANDMARKS) and not stock and not landmarks.EXTERNAL_ART:
+    if any(lm.get('animated') for lm in landmarks.LANDMARKS) and not stock:
         open(os.path.join(art, landmarks.VISEFFECTS_XML), 'w', encoding='utf-8', newline='\r\n').write(
             landmarks.vis_effects())
         open(os.path.join(art, landmarks.VISMODELS_XML), 'w', encoding='utf-8', newline='\r\n').write(

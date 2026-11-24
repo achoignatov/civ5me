@@ -1,10 +1,10 @@
 # Custom city models: what the game supports and the plan
 
-> **CURRENT STATE (2026-11-24): stable baseline. Read §10 first.**
-> Barad-dûr's landmark shows a known-good model that we did NOT make (the community "Blue Mosque" wonder, a reworked
-> stock Hagia Sophia exported with Firaxis' Granny exporter), stored in `vendor/landmarks/BaradDur/`. It drew 5/5 in
-> the user's test, where our own Blender-made models made the whole city tile vanish in some games. Landmarks are ON
-> by default (`python3 tools/build_dlc.py`; `--no-landmarks` turns them off). Build on this baseline one step at a time.
+> **CURRENT STATE (2026-11-24 evening): Moria works. Read §15 first.**
+> The only landmark is Moria (Goblins' capital): our own high-fidelity Blender model (v3, §14), given when the city is
+> founded. Size limits found in game (§12): footprint +-20 world units in major civ cities, +-16 in city-states, height
+> up to ~24-29. With every major capital showing it, 0-2 of ~12 tiles still stay empty per game (cause unknown, §15).
+> Fog of war is OFF for testing (`landmarks.REVEAL_MAP`). Barad-dûr and Mount Doom rows are `enabled=False`.
 >
 > Older notes below (§1-§9) are history. Several results in them are invalid (see "2026-11-23 evening: STATUS" in §8).
 
@@ -744,3 +744,200 @@ game 3 of a session and then stuck until the game was quit):
 2. Size: same `.gr2`, larger fScale (0.1, 0.2) - does a bigger model start to vanish?
 3. Our geometry: our static Barad-dûr in place of the base model (`EXTERNAL_ART = None`, `SHOW_VARIANT = 'T1'`).
 4. Then animation, then effects, then the beam.
+
+
+## 11. (2026-11-24 night) Our Barad-dûr written into the web model's file: did not render. Reverted.
+
+
+## 12. Moria: our own model, compact (2026-11-24 afternoon, installed, awaiting the user's test)
+
+**What changed**
+- Web model removed: `vendor/landmarks/` (Blue Mosque copy), `landmarks.EXTERNAL_ART`, `build/external/`. The unused
+  Krakatoa experiment (`tools/krakatoa/`, from the same commits) removed too (still in git history).
+- `ONE_REGISTRATION` removed. Barad-dûr and Mount Doom rows kept but `enabled=False`: their 47-unit model fails in some
+  games and the bad state then sticks for the whole game process, which would spoil Moria's test.
+- Kept from the last two commits because the 5/5 web-model test ran with them: landmark given on the owner's turn AFTER
+  founding (`GIVE_AT_FOUNDING = False`), zeroed bounding boxes (`ZERO_OBB = True`), stock section layout.
+- New `tools/landmarks/models/moria.py`: a compact port of `tools/capitals/models/goblins.py` (Walls of Moria, Doors of
+  Durin in ithildin, holly trees, the Watcher's pool and tentacles, goblin palisade, banners, skull totem). Static only.
+
+**Why compact.** The one solid difference between the web model (drew 5/5) and ours (vanished sometimes) is size:
+
+| | footprint (world units) | height | vertices | fScale |
+|---|---|---|---|---|
+| web model (Hagia Sophia rework) | +-8 | 13 | 3k + 6k (hill variant) | 0.05 |
+| stock Polynesian palace | +-4.5 | 10 | 0.7k | 0.2 |
+| our Barad-dûr | +-24 x +-27 | 47 | 21k | 0.25 |
+| **Moria (new)** | **+-10.5 x +-12** | **12.7** | **7.8k** | **0.05** |
+
+Vertex format, shader (BuildingShader), 16-bit indices, zeroed bounding boxes and the Tree-cut + building model layout match the web model's; our material comes from the stock BNW palace (one extra `fZBias` global parameter). Per-landmark limits:
+a row's `envelope=` tightens `ENVELOPE` (`landmarks.envelope()`), and `tree_cut=` sizes the forest-clearing stencil
+(Moria +-10.5, the web model's is +-10.6).
+
+**Test.** Found Moria (Goblins' capital), end the turn: the Doors of Durin stand in the centre, stock houses around them.
+Play several games in ONE launch of the game (the old failure showed up in game 3 and then stuck).
+`Lua.log`: `MEC_Landmarks: TXT_KEY_CITY_NAME_MEC_MORIA (x,y) BUILDING_MEC_LM_MORIA = 1`.
+- Always draws: compact size works for our own files. Next: ithildin glow effects, then a compact Barad-dûr.
+- Vanishes: size is not the cause. Remaining differences from the web model: our writer (uncompressed, Blender), no
+  hill (HB) variant model, the texture atlas.
+
+**Result 1 (user, 2026-11-24 ~17:05): the compact Moria RENDERED** (added the turn after founding, as designed).
+
+**Step 2: full tile (installed ~17:06, awaiting test).** Same geometry scaled up uniformly (`GROW = 24 / 10.5` in
+`models/moria.py`): +-24 x +-27.7, 29 high, same 7.8k vertices, same fScale 0.05, tree cut +-24. If it vanishes, scale
+back down (GROW between 1 and 2.29) to find the limit.
+
+**Result 2 (user, ~17:10): full tile did NOT render.** `Lua.log` shows the building was given
+(`TXT_KEY_CITY_NAME_MEC_MORIA (45,46) BUILDING_MEC_LM_MORIA = 1`), so the Lua side worked and the art didn't draw. The
+same file at 1x drew and at 2.29x did not, so **size is a real factor**. Logs saved in
+`~/civ5-backup-20261121-capitals/moria-compact-*/Logs-fulltile-failed`.
+
+**Step 3 (installed ~17:12): back to compact (GROW 1)** so the user can check over several games that it draws every time.
+After that: bisect GROW (e.g. 1.5) to find the largest size that always draws.
+
+**Result 3 (user, ~17:20): compact Moria renders every time** over several games.
+
+**Step 4 (installed ~17:25): every capital + every city-state city gets Moria's model, no fog of war.**
+`landmarks.ALL_CAPITALS_TEST = True`: `MEC_Landmarks.lua` gives the first enabled landmark to every city where
+`city:IsCapital()` or the owner `IsMinorCiv()`, whatever its name (still on the owner's turn after founding).
+`landmarks.REVEAL_MAP = True`: at load, every plot is revealed and made visible for every human player's team
+(`SetRevealed` + `ChangeVisibilityCount`, the same calls as the stock debug reveal in `InGame.lua`).
+`Lua.log`: `MEC_Landmarks: TEST: fog of war removed ...` and one `... BUILDING_MEC_LM_MORIA = 1` line per city.
+Both switches must go back to `False` before the pack is shared.
+
+**Result 4 (user, ~17:30): only Moria drew; every other capital and city-state showed stock art.** `Lua.log`: 12 AI
+capitals were founded, but only Moria was ever GIVEN the building (by its name, on the next turn). So this was not a
+render failure: the "every capital" path never gave the building (it relied on `IsCapital()` + the owner's own
+`PlayerDoTurn`). Fog removal worked (8000 plots).
+
+**Step 5 (installed ~17:35): every city, given at founding.** `ALL_CITIES_TEST = True` (every city of every player,
+no `IsCapital` check), `GIVE_AT_FOUNDING = True` (added in `PlayerCityFounded`), and every `PlayerDoTurn` now re-checks
+ALL cities (not only that player's), so a city the founding event missed is fixed on the next turn of anyone.
+Slow AI turns with no fog: the user's `UserSettings.ini` has `SinglePlayerQuickMovementEnabled = 0`, so every AI move
+that is now visible is animated. Single player has no simultaneous-turn option; the reveal code does not touch turn mode.
+
+**Result 5 (user, ~17:40): compact Moria drew in EVERY city and city-state** (given at founding, no fog), including
+the user's second city. So the mechanism, at-founding giving, many copies and non-capital cities all work at compact size.
+
+**Step 6 (installed ~17:45): full tile in every city.** `GROW = 24 / 10.5` again (art byte-identical to the failed
+full-tile test of ~17:06), everything else as step 5. Shows which cities (if any) draw a whole-tile model.
+
+**Result 6 (user, ~17:50): uniform full tile drew in only Barad-dûr, Rhûn and Umbar**; every other city (all ~30 were
+given the building, per `Lua.log`) showed an EMPTY tile. Barad-dûr's tile also drew our big Barad models most of the
+time, Mount Doom's (65,24) never: which cities fail depends on location and repeats.
+
+**Step 7 (installed ~18:00): three ways to look bigger, one game.** Every city gets one of three Moria versions, all
+whole-tile size in some way, all with the compact +-10.5 tree cut (`landmarks.py` rows `MORIA_SCALE/WIDE/TALL`):
+- **A, game scale:** the compact `.gr2` that drew everywhere, byte-identical, shown at fScale 0.1143 (x2.29) through its
+  own `.fxsxml` copy. Tests whether the limit is in the file's coordinates or in the size on screen.
+- **B, wide and low:** footprint grown to the whole tile (+-24 x +-27.7), height kept at 12.7.
+- **C, narrow and tall:** compact footprint (+-10.5), height grown to 29.
+
+Assignment by position, `((14x + 12y) mod 17) mod 3` in `MEC_Landmarks.lua`: 10/10/10 on the fixed-start map, and the
+three cities that drew in step 6 get one version each. Expected per city: `docs/moria_size_test_cities.txt`
+(city-states may move between games; `Lua.log` names the building each city really got).
+
+**Result 7 (user, ~18:10): HEIGHT is fine, WIDTH breaks it.** Every city was given its version (`Lua.log`, 31 cities):
+
+| Version | Drew | Cities that drew |
+|---|---|---|
+| A, compact file at fScale x2.29 (whole tile on screen) | **0 / 11** | none (even Umbar, which drew the uniform full-size file in step 6) |
+| B, wide and low (+-24, 12.7 high) | **1 / 10** | Rhûn (also drew in step 6) |
+| C, narrow and tall (+-10.5, 29 high) | **11 / 11** | Rivendell, Northern Mirkwood, Edoras, Lake Town, Entwood, Rhosgobel, Smaug's Lair, Bree, Alatar, Rhovanion, Dale (user had missed Dale at first) |
+
+So a model can be 29 units tall (more than double the compact height) and still draw, but a footprint that reaches the
+whole tile fails almost everywhere, whether it's built into the file (B) or applied by the game's fScale (A). The
+limit is horizontal: somewhere between +-10.5 (draws everywhere) and +-24 (fails almost everywhere). Logs saved in
+`~/civ5-backup-20261121-capitals/moria-abc-*/Logs-abc-result`.
+
+**Step 8 (built ~18:20, installed when the game closes): how wide can it be?** The compact model grown UNIFORMLY (no
+distortion) to three footprints between the safe +-10.5 and the failing +-24: `MORIA_F14` (+-14, 16.9 high),
+`MORIA_F17` (+-17, 20.6 high), `MORIA_F20` (+-20, 24.2 high); all heights under the proven 29, tree cut +-10.5, same
+per-position split (11/10/11). Expected per city: `docs/moria_size_test_cities.txt`. The largest footprint that draws
+everywhere becomes the size limit for every landmark.
+
+**Result 8 (user, ~18:35): +-14 draws everywhere; +-17 and +-20 fail only in city-states.**
+
+| Version | Drew | Empty tiles |
+|---|---|---|
+| +-14 (16.9 high) | **10 / 10** (4 majors incl. Moria, 6 city-states) | none |
+| +-17 (20.6 high) | **7 / 10** (all 4 majors drew) | Himling, Lossoth, Tol Morwen (city-states) |
+| +-20 (24.2 high) | **7 / 11** (all 3 majors drew) | Kingdom of Rhovanion, Rhosgobel, Lake Town, Smaug's Lair (city-states) |
+
+Every one of the 7 failures is a city-state; every major civ city drew at all three sizes. (In step 7, the +-24 "wide"
+version also failed in major cities: Erebor, Carn Dûn, Sirannon.) **+-14 is the proven safe footprint** (1.33x the
+compact model, about 58 % of the tile's width). Between +-14 and +-24 the limit is lower for city-states than for
+major civ cities; why is not known yet.
+
+**Step 9 (built ~18:45): city-states only, +-15 / +-15.5 / +-16.** `TEST_MINORS_ONLY = True`: only city-states get a test
+model; major civ cities behave normally (Moria keeps its compact model). Uniform growth like step 8, tree cut +-10.5.
+Split `((9x + 5y) mod 17) mod 3` (`landmarks.TEST_HASH`): 6/7/6 city-states, and the 7 that failed in step 8 land on all
+three sizes. Expected list: `docs/moria_size_test_cities.txt`. After this: lock the size for Moria (option 1).
+
+**Result 9 (user, ~18:40): all 18 city-states drew** (+-15: 7, +-15.5: 6, +-16: 5), including six that failed at +-17/+-20
+in step 8 (Himling, Lake Town, Smaug's Lair, Lossoth, Rhovanion, Tol Morwen; Rhosgobel was not founded this game).
+Moria (compact, by name) drew; other major cities stock, as designed.
+**Proven safe footprints:** city-states +-16, major civ cities +-20 (7/7 at +-17/+-20; only 3 of ~12 at +-24). Height up to 29.
+
+**The tile is bigger than we assumed.** The user's screenshot of Dale (+-15 model) shows the model's 30-unit-wide base
+covering ~320 px of a ~700 px wide tile: the tile is about **+-32 world units** to its flat sides, not +-24 (the old
+`ENVELOPE` figure, calibrated on a scaled model in 2026-11-21 shots). So "full tile" (+-24) in steps 6-7 was only ~75 % of
+the tile, and the safe +-16 covers ~half of it. The model's own ground plate (our terrain disc + dark skirt) is what reads
+as a small hexagon sitting inside the tile. Screenshot: `~/civ5-backup-20261121-capitals/moria-cs-*/screenshot-dale-F15.png`.
+
+## 13. Moria v2: as big as the game draws it (2026-11-24 ~19:00, installed, awaiting the user's check)
+
+Rebuilt `tools/landmarks/models/moria.py` from the size limits of §12 (major civ cities: footprint +-20; Moria is always
+a major civ's city):
+- **No ground plate** (no terrain disc, no rim): the model stands on the game's own terrain, so no hexagon outline shows.
+- **Removed** everything not needed: goblin palisade, banners, skull totem, ruined stair, firs.
+- **New layout (lore):** the West-gate at the end of a bay of sheer cliffs; the ridges of the Misty Mountains wrap round
+  the sides and run towards the camera; the Watcher's dark lake fills the bay; the two holly trees; Caradhras behind.
+- **Size:** laid out in design units (+-10.5) and grown by 20/10.5, so it fits inside the exact box of the `+-20` test
+  model that drew in every major civ city: x +-19.1, y -13.4..22.2, z -2.9..23.9; 8640 vertices; fScale 0.05;
+  tree cut +-10.5 (as in every passing test); zeroed OBB, stock section layout.
+- **Fixed:** `blib.terrain()` wrote its edge skirts facing inwards (back faces the game doesn't draw); now outwards.
+
+**Check (installed):** `TEST_SCOPE = 'majors'`: every MAJOR civ city gets this final Moria at founding (city-states stock),
+fog off. Then option 1: Moria by name only, fog back, test switches off.
+
+**Result v2 (user, 4 runs, one launch each?, ~19:10):** city-states stock (as designed); all major capitals drew the v2
+Moria except 1-2 per run, a different set each time: run 1 Rivendell; run 2 Rohan (Edoras); run 3 Rivendell + Northern
+Mirkwood (the user's second city, founded on turn 2, drew); run 4 Rivendell + Erebor. Rivendell failed 3 of 4.
+User's hypothesis: some rendering budget/limit is exhausted (1-2 failures, varying). Test: make Moria high fidelity
+(much heavier) and compare.
+
+## 14. Moria v3: high fidelity (2026-11-24 ~19:20, installed, same test as v2)
+
+Same layout and size as v2 (inside the +-20 box: x +-19.6, y -13.4..21.8, z -2.9..23.6), but:
+- **Geometry:** smooth shading, height field 92 x 98 with multi-octave rock relief and crags, a finely subdivided doors'
+  wall (buried in the ridges at both ends), round foliage clusters, smooth tentacles: 16 441 vertices / 16 956 triangles
+  (v2: 8 640 / 4 100; the largest stock wonders: ~22k vertices).
+- **Textures:** new `tools/landmarks/bake.py` (used when a model sets `BAKE = True`): Smart UV unwrap of the whole model,
+  procedural Blender materials (two-tone noise, colour by height with a ragged snow line on Caradhras, rock colour on
+  steep slopes, distorted cracks, strata, moss on low gentle ground), baked base colour + ambient occlusion, SREF from
+  per-material specular/reflection. **1024 DIFF / 512 SREF** (v2: 512 / 256).
+- **The ithildin glow:** every line of the Doors of Durin (incl. letters, stars and rays, which are only painted) is
+  rasterised into a soft two-level blue halo and painted on the doors' wall; the modelled lines use one solid swatch of
+  colour (no tiny texture islands, no mip-map bleeding) and are staggered in depth so overlapping segments don't flicker.
+- Fixed on the way: uv islands of tiny faces baked black between other islands (now solid swatch); `blib.terrain`
+  skirts (§13).
+Test unchanged: every major civ city gets it at founding, fog off. Compare the failure count with v2 (1-2 per run).
+
+**Result v3 (user, ~19:35):** every major capital drew the high-fidelity Moria except Edoras (1 of ~12). The heavier
+model (2x vertices, 4x texture memory) did not fail more than v2 (1-2 per run): no sign of an exhausted rendering budget.
+
+## 15. Wrap-up (2026-11-24 ~19:40): Moria only
+
+State left for the user to commit:
+- `landmarks.ALL_CITIES_TEST = False`: only a city named Moria (key `TXT_KEY_CITY_NAME_MEC_MORIA`, or a typed alias such
+  as "Khazad-dûm") gets `BUILDING_MEC_LM_MORIA`, at founding (`GIVE_AT_FOUNDING = True`); every PlayerDoTurn re-checks
+  all cities (renames, captures). Other cities and city-states: stock.
+- `landmarks.REVEAL_MAP = True` kept on purpose (testing the next models); **set False before sharing the pack.**
+- Model: `tools/landmarks/models/moria.py` v3 (`BAKE = True` -> `tools/landmarks/bake.py`), 16 441 vertices, 1024 DIFF.
+- Test machinery kept but off: `ALL_CITIES_TEST`, `TEST_SCOPE`, `TEST_HASH`, `size_test` rows (none left).
+- Offline test: `build/venv/bin/python tools/landmarks/test_landmarks.py` (Moria only, at founding, fog off).
+
+Rendering, what is known: (1) footprint is the main limit (height is not); (2) within the limit, 80-100 % of tiles draw,
+the failures vary per game (Rivendell most often), no relation to model weight found; (3) the old "second city never
+draws" was the footprint (ours were +-24). Open: the remaining ~10 % — revisit when more models exist.
