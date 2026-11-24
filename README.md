@@ -89,7 +89,7 @@ Everything except True Start Location (TSL) is plain database/art content. TSL w
 - With "Extra Starting Settler" on, every civ has two Settlers on turn 0.
 - Several turns pass without a desync.
 
-Known issue: cities sometimes don't draw (city missing at founding, or vanishing when it grows). The six original mods had the same sporadic problem; see [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md) §8. Our landmarks no longer use the city's own art, so they are not affected ([`docs/LANDMARKS.md`](docs/LANDMARKS.md) §7).
+Known issue: cities sometimes don't draw (city missing at founding, or vanishing when it grows). The six original mods had the same sporadic problem. Our landmarks don't use the city's own art, so they are not affected ([`docs/LANDMARKS.md`](docs/LANDMARKS.md)).
 
 ## If something doesn't work
 
@@ -114,7 +114,8 @@ tools/render.py       print a Civ5Map as text (terrain check)
 tools/dbreplay.py     replay mod XML/SQL on a copy of the game DB and report errors
 tools/mockciv.lua     mock of the Civ5 map Lua API   tools/simulate.py  run a map script through it (Lua 5.1 via lupa)
 tools/testmatrix.py / determinism.py / ingametest.py / dlctest.py   test runs
-tools/landmarks/, tools/capitals/, tools/rendertest/   custom city models (see below)
+tools/landmarks/      capital landmark models and their pack integration (see below; tools/capitals/ = model library + drafts)
+vendor/landmarks/     the landmark art that ships (exact files that drew in game)
 src/                  new and replaced files (map scripts, METSL Lua, fixed Wood Elves script, art fixes)
 vendor/civ5/          files copied from the stock game (vanilla DB, InGame.lua, Upgrade1.Civ5Pkg, palace .gr2 template)
 mods/                 the untouched original mods
@@ -122,4 +123,4 @@ ui/                   the mod manager app (Electron), see ui/README.md
 build/, dist/         generated (not in git): venv, Blender output, temp DBs / built mod + DLC + zips
 ```
 
-Custom city landmarks (2026-11-24) are **tile improvements** that a script places on a capital's tile; the city's own art is never touched. **Moria** (the Goblins' capital) shows our model of the West-gate of Moria, and **Barad-dûr** (Mordor's capital) shows the Dark Tower as in the films, 242 units high and two hexes wide, with the Eye of Sauron, which looks around, burns and casts its beam. Every other city and city-state uses stock art. The art ships from `vendor/landmarks/`, so building the pack needs no Blender. `python3 tools/build_dlc.py --no-landmarks` builds the pack without them. How it works, how to add the next capital, and why the old approach failed: [`docs/LANDMARKS.md`](docs/LANDMARKS.md). Research: [`docs/CITY_ARCHITECTURE_RESEARCH.md`](docs/CITY_ARCHITECTURE_RESEARCH.md). The old city-art approach (history): [`docs/CITY_MODELS.md`](docs/CITY_MODELS.md).
+Custom city landmarks (2026-11-24) are **tile improvements** that a script places on a capital's tile; the city's own art is never touched. **Moria** (the Goblins' capital) shows our model of the West-gate of Moria, and **Barad-dûr** (Mordor's capital) shows the Dark Tower as in the films, 242 units high and two hexes wide, with the Eye of Sauron, which looks around, burns and casts its beam. Every other city and city-state uses stock art. The art ships from `vendor/landmarks/`, so building the pack needs no Blender. `python3 tools/build_dlc.py --no-landmarks` builds the pack without them. How it works and how to build the next capital: [`docs/LANDMARKS.md`](docs/LANDMARKS.md).

@@ -1,4 +1,4 @@
-"""Landmark IMPROVEMENTS (docs/LANDMARKS.md; research in docs/CITY_ARCHITECTURE_RESEARCH.md).
+"""Landmark IMPROVEMENTS (docs/LANDMARKS.md).
 
 A landmark is a purely visual tile improvement that MEC_LandmarkImprovements.lua puts on a city's plot with
 Plot:SetImprovementType. The city's own art (houses, buildings) is never touched. Improvement art is ordinary

@@ -1,4 +1,10 @@
-"""Per-city landmark models (docs/CITY_MODELS.md, Plan A).
+"""Per-city landmark models: Blender build rows (ALL_LANDMARKS, EFFECTS) + the LEGACY city-art path.
+
+Today only ALL_LANDMARKS / EFFECTS / OUT / PREVIEW drive tools/landmarks/build_models.py; the pack places landmarks
+as tile improvements (tools/landmarks/improvements.py, docs/LANDMARKS.md). Everything below about dummy buildings,
+WonderDefines, envelopes and probes is the legacy path; "docs/CITY_MODELS.md" refers to git history (up to 4f8d08e).
+
+Legacy description:
 
 One invisible dummy building per landmark. The in-game script MEC_Landmarks.lua gives it to the
 city whose name matches (text key, or a literal name typed by a player), and the building's plain

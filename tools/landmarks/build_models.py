@@ -4,7 +4,8 @@ Run:  blender -b --factory-startup -P tools/landmarks/build_models.py -- [module
 Output: build/landmarks/out/<model>.{gr2,fxsxml}, <model>_DIFF.dds, <model>_SREF.dds
         build/landmarks/preview/<model>.png
 
-Rendering backbone (see landmarks.ENVELOPE and docs/CITY_MODELS.md):
+Landmarks now ship as tile improvements (docs/LANDMARKS.md); a row's own 'envelope' sets its limits.
+Legacy defaults from the city-art path (landmarks.ENVELOPE):
   * models are authored in WORLD units (origin = tile centre, ground z = 0, south = -Y = towards the camera);
   * the build REFUSES a model outside the envelope: every vertex inside the city hexagon, height
     <= max_height, vertex/triangle counts <= the largest stock wonders;

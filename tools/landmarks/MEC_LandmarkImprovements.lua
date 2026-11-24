@@ -1,5 +1,5 @@
 -- MEC_LandmarkImprovements
--- Landmark models as tile IMPROVEMENTS (docs/CITY_ARCHITECTURE_RESEARCH.md, Approach C).
+-- Landmark models as tile IMPROVEMENTS (docs/LANDMARKS.md).
 --
 -- A city whose name matches a landmark gets that purely visual improvement on its plot; every other city keeps
 -- stock art. The city's own art is never touched.

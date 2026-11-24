@@ -36,13 +36,13 @@ DLC_GUID = '{3c9a6f2e-5b1d-4e7a-8f4c-2d6b9e1a7c53}'
 MAP_KEYS = ['TaHugeRndWw', 'TaLrgRndNww', 'TaHugeRndNww', 'TaLrgRndWw', 'TaStdRndWw', 'TaStdRndNww']
 DATA_EXT = ('.xml', '.sql', '.lua', '.modinfo', '.pdf', '.civ5map')
 SKIP_TABLES_PREFIX = ('Language_', 'Audio_')
-# Per-city landmark models (docs/CITY_MODELS.md) are ON by default: the enabled rows of tools/landmarks/landmarks.py
+# LEGACY city-art landmarks (dummy buildings, git history up to 4f8d08e) were ON by default: the enabled rows of tools/landmarks/landmarks.py
 # (2026-11-24: Moria only, our compact Blender model from build/landmarks/out), added one turn after founding.
 # --no-landmarks: every city uses stock art (--landmarks is accepted and changes nothing).
 # --landmark-tests: add the diagnostic variants ("Barad Test 1..3", animated landmarks only).
 # --landmark-stock-art shows the stock Polynesian palace instead (diagnostic).
 LANDMARKS_ON = '--no-landmarks' not in sys.argv
-# 2026-11-24 architecture reset (docs/CITY_ARCHITECTURE_RESEARCH.md): landmarks are tile IMPROVEMENTS placed by
+# Landmarks (docs/LANDMARKS.md) are tile IMPROVEMENTS placed by
 # MEC_LandmarkImprovements.lua (tools/landmarks/improvements.py). The old city-art path (dummy buildings +
 # WonderDefines, tools/landmarks/landmarks.py) is kept behind --landmark-buildings.
 LANDMARK_BUILDINGS = LANDMARKS_ON and '--landmark-buildings' in sys.argv
@@ -284,7 +284,7 @@ def build_lua():
         hook += 'table.insert(g_uiAddins, ContextPtr:LoadNewContext("MEC_Landmarks"));\n'
     if LANDMARK_IMPROVEMENTS:
         hook += 'table.insert(g_uiAddins, ContextPtr:LoadNewContext("%s"));\n' % improvements.LUA[:-4]
-    if '--redraw-button' in sys.argv:    # opt-in debug buttons (empty-tile bug, docs/CITY_MODELS.md §8)
+    if '--redraw-button' in sys.argv:    # opt-in debug buttons (legacy empty-tile debugging)
         for ext in ('.lua', '.xml'):
             shutil.copy2(os.path.join(HERE, 'landmarks', 'MEC_RedrawCities' + ext), ui)
         hook += 'table.insert(g_uiAddins, ContextPtr:LoadNewContext("MEC_RedrawCities"));\n'
@@ -323,7 +323,7 @@ def build_landmarks():
     if not stock:
         import probes
         for f in sorted(set(need)):
-            if f.endswith('.gr2'):      # stock section layout (docs/CITY_MODELS.md §8, 2026-11-23)
+            if f.endswith('.gr2'):      # stock section layout (legacy path)
                 probes.to_stock_sections(os.path.join(landmarks.OUT, f), os.path.join(art, f), zero_obb=landmarks.ZERO_OBB)
             else:
                 shutil.copy2(os.path.join(landmarks.OUT, f), art)

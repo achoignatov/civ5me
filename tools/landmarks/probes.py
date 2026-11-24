@@ -1,4 +1,4 @@
-"""Empty-tile probes made from a landmark's Test 1 (static) model (docs/CITY_MODELS.md §8).
+"""Empty-tile probes made from a landmark's Test 1 (static) model (legacy city-art debugging; to_stock_sections() converts every shipped .gr2).
 
 Every stock Civ 5 .gr2 stores ALL strings (names, file names, shader names, type-tree names) as
 CRC32 hashes and sets the header's StringDatabaseCRC to 2. Ours store real text (StringDatabaseCRC 0),

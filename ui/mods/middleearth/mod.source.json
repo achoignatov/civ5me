@@ -17,7 +17,7 @@
     }
   },
   "build": {
-    "_comment": "Development only (the app running from this repository): run before every install of this mod, so the app installs the working tree as it is now, committed or not. cwd is relative to ui/. Then the app regenerates this mod's payload. Packaged apps never build. (2026-11-24: landmarks are ON by default in build_dlc.py: Moria only, our high-fidelity Blender model, given at founding; fog of war is OFF for testing (landmarks.REVEAL_MAP). The model is prebuilt into build/landmarks/out (gitignored) with blender -b --factory-startup -P tools/landmarks/build_models.py -- moria; build_dlc.py stops if it's missing. See docs/CITY_MODELS.md §12-15.)",
+    "_comment": "Development only (the app running from this repository): run before every install of this mod, so the app installs the working tree as it is now, committed or not. cwd is relative to ui/. Then the app regenerates this mod's payload. Packaged apps never build. (The capital landmarks ship prebuilt from vendor/landmarks/, so no Blender step is needed: docs/LANDMARKS.md.)",
     "cwd": "..",
     "steps": [
       {

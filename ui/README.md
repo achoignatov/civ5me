@@ -48,7 +48,7 @@ After that, while the app runs from this repository (`npm run dev` / `npm start`
 2. `python3 tools/build_dlc.py`,
 3. this mod's payload (`scripts/build-payload.mjs middleearth`).
 
-Custom city models are switched off (see `../docs/CITY_MODELS.md`), so there is no Blender step. To bring them back, re-add a `blender … tools/landmarks/build_models.py` step before step 1 and pass `--landmarks` to `build_dlc.py`.
+The capital landmarks ship prebuilt from `../vendor/landmarks/`, so there is no Blender step (see `../docs/LANDMARKS.md`).
 
 The tile says "rebuilds from the repository first (dev)". Progress shows the running step. The result names the revision (e.g. `2725e68 + uncommitted changes`) and the build log (`<app data>/build-logs/build-middleearth.log`). If a step fails, nothing is installed and the error shows the step's last output. Installing again after a change rebuilds again and replaces the previous build (new build id). The **Vanilla BNW** tile never builds. Packaged apps (for players) never build; they install the payload they ship with. The rebuild code lives in `src/main/core/modManager/sourceBuild.ts`; other mods get it by adding a `build` section to their `mod.source.json`.
 

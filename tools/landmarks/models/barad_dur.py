@@ -1,7 +1,7 @@
 """Barad-dûr, the Dark Tower of Sauron: the landmark of the city named Barad-dûr.
 
 v4 (2026-11-24, render-test model): redesigned to match the Moria model that draws in 80-90 % of cities, in every
-technical respect (docs/CITY_MODELS.md §12-17):
+technical respect (legacy city-art path; superseded by barad_dur_v5.py):
   * footprint within +-16 world units (the size that drew in 18/18 city-states and every major city), height <= 24;
   * ONE static model (the Eye is modelled, not animated; no effects), Wonder_DecisionTree, fScale 0.05;
   * no ground plate: a jagged outcrop of black rock rising from the game's own terrain;

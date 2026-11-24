@@ -6,7 +6,7 @@ v3 (2026-11-24): high fidelity. Same layout and size as v2, but
     strata, snow, ambient occlusion) instead of the blocky swatch atlas;
   * the ithildin glow: a soft blue halo painted around every line of the Doors of Durin (b.glow).
 v2: NO ground plate (the model stands on the game's terrain); only mountains, doors, lake and trees.
-Size limit found in game (docs/CITY_MODELS.md §12): footprint within +-20 world units in major civ cities (Moria is
+Size limit of the legacy city-art path (now shipped as an improvement, docs/LANDMARKS.md): footprint within +-20 world units in major civ cities (Moria is
 always a major civ's city). Laid out in DESIGN units inside a +-10.5 hexagon, grown uniformly by GROW = 20 / 10.5:
 the box of the "+-20" test model that drew in every major civ city (+-20 x +-23.1, 24.2 high).
 
