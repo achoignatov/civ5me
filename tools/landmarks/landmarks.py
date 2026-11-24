@@ -52,16 +52,21 @@ ALL_LANDMARKS = [
          title='Barad-dûr',
          module='barad_dur',                   # tools/landmarks/models/<module>.py
          model='MEC_LM_BaradDur',              # asset base name (.gr2/.fxsxml/_DIFF.dds/_SREF.dds)
-         scale=0.25,                           # WonderArtInfo fScale: keep 0.25 (see ENVELOPE)
+         # v4 (2026-11-24 ~20:00, render test): built like Moria (§17): fScale 0.05, static, baked textures, footprint
+         # +-16 (drew in every city and city-state at that size), height <= 24, tree cut +-10.5.
+         # (v3: fScale 0.25, +-24 x +-27, 47 high, animated Eye + effects: drew in 2 of ~30 cities.)
+         scale=0.05,
+         envelope=dict(hex_in=16.0, hex_out=16.0 / 0.8660254, max_height=24.0, max_verts=22000, max_tris=20000),
+         tree_cut=10.5,
          name_keys=['TXT_KEY_CITY_NAME_MEC_BARAD_DUR'],
          # literal names a player may type when renaming a city (compared case-insensitively)
          aliases=['Barad Dur', 'Barad-dur', 'Barad-dûr', 'Barad Dûr', 'Baraddur'],
-         # the module has build_eye()/rig()/GAZE: the Eye is a separate skinned, animated part with effects
-         animated=True,
+         # v3 had a separate skinned, animated Eye with effects (build_eye()/rig()/GAZE); v4 is static
+         animated=False,
          test_prefix='Barad',                  # diagnostic cities "Barad Test 1..3" (DIAGNOSTICS)
-         # 2026-11-24: OFF while Moria is tested alone. This model (47 tall, +-24 wide, 21k verts) made the whole
-         # city tile vanish in some games, and a bad state then sticks for the rest of the game process, which would
-         # spoil Moria's test too. Turn back on once compact models are proven (or rebuild it compact).
+         # 2026-11-24: was OFF while Moria was tested alone. ~19:45 ON again for the render test (ALL_CITIES_TEST):
+         # the full model (47 tall, +-24 x +-27 wide, Eye animation + fire + beam) on every city and city-state.
+         # 2026-11-24 ~21:30: OFF for the outrigger probe (§18); set True to bring the v4 test back.
          enabled=False),
     dict(key='MOUNT_DOOM',
          title='Mount Doom',
@@ -94,6 +99,15 @@ ALL_LANDMARKS = [
          tree_cut=10.5,
          name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
          aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
+    # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
+    # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
+    # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
+    dict(key='MORIA_TALL', title='Moria probe: control', module='moria', model='MEC_LM_Moria_Tall', scale=0.05,
+         name_keys=[], aliases=[], size_test=True),      # +-10.5 x +-12.1, 29 high: drew 11/11 (step 7)
+    dict(key='MORIA_OUTRIG', title='Moria probe: outriggers', module='moria', model='MEC_LM_Moria_Outrig', scale=0.05,
+         name_keys=[], aliases=[], size_test=True),      # Tall + 6 invisible specks -> Wide's bounding box/radius
+    dict(key='MORIA_WIDE', title='Moria probe: wide', module='moria', model='MEC_LM_Moria_Wide', scale=0.05,
+         name_keys=[], aliases=[], size_test=True),      # +-24 x +-27.7, 12.7 high: drew 1/10 (step 7)
 ]
 
 # Only the enabled rows are built (2026-11-24: Moria alone).
@@ -120,18 +134,18 @@ GIVE_AT_FOUNDING = True
 # 2026-11-24 RENDER TEST (user): EVERY city (major civs and city-states) gets the first enabled landmark (Moria's
 # model), whatever its name, so one game shows whether dozens of copies all draw. False = only cities named like a
 # landmark. (The first version, capitals + city-states only, gave it to Moria alone: see docs/CITY_MODELS.md §12.)
-ALL_CITIES_TEST = False     # 2026-11-24 ~19:40: tests done (docs/CITY_MODELS.md §12-14): only Moria gets its model
+ALL_CITIES_TEST = True      # 2026-11-24 ~19:45: full Barad-dur on EVERY city and city-state (§16). False = Moria only
 
 
 # Which landmarks ALL_CITIES_TEST hands out: the size-test rows (A/B/C), each city getting one of them by its map
 # position, ((A x + B y) mod M) mod count (TEST_HASH, used by MEC_Landmarks.lua), picked by searching the test map's
 # real positions (TaHugeRndWw, fixed starts): step 7-8 (14, 12, 17) split all 31 cities 11/10/11; step 9 (9, 5, 17)
 # splits the 19 city-states 6/7/6 and spreads the 7 that failed in step 8 over all three sizes.
-TEST_HASH = (9, 5, 17)
+TEST_HASH = (4, 9, 20)      # §18 outrigger probe: 12/11/11 cities, fragile cities 3/3/3
 
 # Which cities ALL_CITIES_TEST covers: 'all', 'minors' (city-states only, step 9) or 'majors' (major civ cities only,
 # step 10: the final Moria in every major civ city; city-states keep stock art). The others follow the name rules.
-TEST_SCOPE = 'majors'
+TEST_SCOPE = 'all'
 
 
 def test_buildings():

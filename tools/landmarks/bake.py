@@ -306,14 +306,50 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     diff = _bake(ob, 'DIFFUSE', px, 'Linear Rec.709')       # linear albedo
     ao = _bake(ob, 'AO', px, 'Non-Color', samples=ao_samples)[..., 0:1]
     emit = _bake(ob, 'EMIT', px, 'Non-Color')
-    # solid materials (palette solid=True, e.g. ithildin): one swatch of colour in the top strip; their faces' UVs
-    # all point at its centre, so tiny faces never depend on tiny islands (mip-map bleeding) and stay crisp
+    # SWATCHES in the top strip: one cell of solid colour per material that needs it. A face points all its UVs at
+    # its material's cell when the material is solid (palette solid=True, e.g. ithildin) or when the face is so small
+    # in the texture (< b.tiny_px square pixels, a model opt-in) that its own island would be a speck: specks bake
+    # black-bordered and bleed in the game's mip-maps (Moria v3, 2026-11-24).
     strip = max(4, int(round(px * SWATCH_V)))
-    solids = [i for i, n in enumerate(b.mat_names) if blib.PALETTE[n].get('solid')]
+    tiny_px = getattr(b, 'tiny_px', 0)
+    uvd = me.uv_layers.active.data
+    to_swatch = {}
+    area_of = {}
+    if tiny_px:
+        # UV islands: faces joined through a shared vertex with the same UV; an island's area in square pixels
+        parent = list(range(len(me.polygons)))
+
+        def find(i):
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+        seen = {}
+        farea = []
+        for poly in me.polygons:
+            uv = [uvd[li].uv for li in poly.loop_indices]
+            farea.append(0.5 * abs(sum(uv[i][0] * uv[(i + 1) % len(uv)][1] - uv[(i + 1) % len(uv)][0] * uv[i][1]
+                                       for i in range(len(uv)))) * px * px)
+            for li in poly.loop_indices:
+                key = (me.loops[li].vertex_index, round(uvd[li].uv[0], 6), round(uvd[li].uv[1], 6))
+                if key in seen:
+                    ra, rb = find(seen[key]), find(poly.index)
+                    if ra != rb:
+                        parent[ra] = rb
+                else:
+                    seen[key] = poly.index
+        for poly in me.polygons:
+            r = find(poly.index)
+            area_of[r] = area_of.get(r, 0.0) + farea[poly.index]
+    for poly in me.polygons:
+        p = blib.PALETTE[b.mat_names[poly.material_index]]
+        if p.get('solid') or (tiny_px and area_of[find(poly.index)] < tiny_px):
+            to_swatch[poly.index] = poly.material_index
+    cells = sorted(set(to_swatch.values()))
     swatch_uv = {}
-    for k, i in enumerate(solids):
+    for k, i in enumerate(cells):
         p = blib.PALETTE[b.mat_names[i]]
-        w = px // max(1, len(solids))
+        w = px // max(1, len(cells))
         x0 = k * w
         c = np.array(blib._srgb_to_lin(p['color']), np.float32)
         rows = slice(0, strip)                     # top rows (arrays are top row first after _bake)
@@ -322,12 +358,11 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
         emit[rows, x0:x0 + w, 1] = (p.get('refl') if p.get('refl') is not None else 6) / 255.0
         emit[rows, x0:x0 + w, 2] = 0.0
         swatch_uv[i] = ((x0 + w / 2) / px, 1.0 - strip / 2 / px)     # Blender uv (v up)
-    if swatch_uv:
-        uvd = me.uv_layers.active.data
-        for poly in me.polygons:
-            if poly.material_index in swatch_uv:
-                for li in poly.loop_indices:
-                    uvd[li].uv = swatch_uv[poly.material_index]
+    for pi, mi in to_swatch.items():
+        for li in me.polygons[pi].loop_indices:
+            uvd[li].uv = swatch_uv[mi]
+    if tiny_px:
+        print('bake: %d of %d faces on %d colour swatches' % (len(to_swatch), len(me.polygons), len(cells)))
     spec, refl, aow = emit[..., 0:1], emit[..., 1:2], emit[..., 2:3]
     if os.environ.get('MEC_BAKE_DEBUG'):        # per material: faces whose baked colour is dark, by facing
         uvd = me.uv_layers.active.data

@@ -941,3 +941,109 @@ State left for the user to commit:
 Rendering, what is known: (1) footprint is the main limit (height is not); (2) within the limit, 80-100 % of tiles draw,
 the failures vary per game (Rivendell most often), no relation to model weight found; (3) the old "second city never
 draws" was the footprint (ours were +-24). Open: the remaining ~10 % — revisit when more models exist.
+
+## 16. Full Barad-dûr on every city (2026-11-24 ~19:45, installed, awaiting the user's test)
+
+Same test as Moria's (§12): `ALL_CITIES_TEST = True`, `TEST_SCOPE = 'all'` (every city AND city-state, Moria included),
+given at founding, fog off. The model is the unchanged full Barad-dûr from 2026-11-23 (`build/landmarks/out`, files of
+16:10; not rebuilt): fortress + tower 47 high, footprint +-24 x +-27 (over the +-20 limit of §12), skinned Eye with the
+gaze animation (`United_Nations_DecistionTree`), 8 fire effects + core blaze + beam on the Eye's bones, fScale 0.25.
+Expectation from §12: a footprint over +-20 should fail in most cities; the question is whether the animated/effect
+layers change that. Back to "Moria only": `ALL_CITIES_TEST = False`, Barad-dûr row `enabled=False`.
+
+**Result §16 (user, ~19:55): full Barad-dûr v3 drew in only Annúminas and Carn Dûm** (2 of ~30); every other capital and
+every city-state stayed an empty tile. Moria v3 in the same kind of test: 80-90 %.
+
+## 17. Barad-dûr v4: built like Moria (2026-11-24 ~20:10, installed, same every-city test)
+
+| | Moria v3 (80-90 %) | Barad-dûr v3 (2/30) | **Barad-dûr v4** |
+|---|---|---|---|
+| footprint | +-19.6 x -13.4..21.8 | +-24 x +-27 | **+-15.4 x +-17.3** (city-state-safe +-16) |
+| height | 23.6 | 47 | **23.9** |
+| fScale | 0.05 | 0.25 | **0.05** |
+| parts | 1 static | static + skinned animated Eye | **1 static** (Eye modelled) |
+| effects | none | 8 fires + blaze + beam | **none** |
+| decision tree | Wonder | United Nations | **Wonder** |
+| textures | baked 1024 | atlas 512 | **baked 1024** |
+| tree cut | +-10.5 | +-7.5 | **+-10.5** |
+| vertices | 16 441 | ~21k (+ Eye) | **19 211** |
+
+`tools/landmarks/models/barad_dur.py` v4 (v3 in git history): no ground plate (a jagged black outcrop), hexagonal outer
+wall with crenellations, spiked buttresses, six corner bastions, a glowing gate between two gate towers, the inner
+terrace with six lesser towers and flying buttresses, the four-tier great tower (ribs, down-turned spikes, fiery slits),
+the iron crown of two great horns (Catmull-Rom splines) and the static Eye (rim, flames, iris, core, slit pupil).
+`bake.py`: UV islands smaller than `b.tiny_px` square pixels go on their material's solid colour swatch (Barad: 40).
+Test: `ALL_CITIES_TEST`, scope 'all' (every city and city-state), at founding, fog off. If it draws like Moria, add back
+the Eye's animation, then the fire, then the beam, one per test.
+
+## 18. Root-cause probe: "invisible outriggers" (2026-11-24 ~21:10, installed, awaiting the user's test)
+
+**Investigation findings this is based on** (static, exe + game files; details in the session report):
+- Stock art keeps a strict footprint per art slot: palace slot 32 (city centre) +-4..6; land wonders/castle/colosseum
+  (1/2/4) +-5..15, max ~+-20 (Red Fort, Pyramids); harbour/lighthouse up to +-23; mountain slot 64 +-22..30. Height is
+  free (up to 54). Our measured limits (+-16 always, majors +-20, +-24 ~10 %) sit exactly at the land-wonder ceiling.
+- Slot 32 places the model at the plot centre (terrain height, fixed rotation), no size check, then queues a city
+  update. The city layout ("RoadLayout", tensor fields TF_Small_City / TF_Large_City, polygon overlap fixups) and the
+  city-vis code use the CRT `rand()` (per process, not synced) -> render-side randomness. Its diagnostics are compiled
+  out (log function 0x422eb0 is `xor al,al; ret`), so no log will ever show the failure.
+- MEC's six `ArtInfoCulturalVariation` lines are a no-op in this exe: with them, PALACE/CASTLE/COLESSEUM are looked up
+  plainly (undefined); without them as "EUROPEAN  PALACE" (double space from the trailing-space prefix), also
+  undefined; the lookup is an exact strcmp. Base WonderModels.fpk DOES define EUROPEAN/ASIAN/AFRICAN/AMERICAN/
+  MEDITERRANEAN PALACE/CASTLE/COLESSEUM (correcting §1.2).
+
+**Question:** does the engine react to the landmark's BOUNDS, or to its VISIBLE geometry?
+
+**Three versions in one game** (every city + city-state, given at founding, fog off; `TEST_HASH (4, 9, 20)`;
+per-city list `docs/outrig_test_cities.txt`):
+
+| | file | visible | bounding box / radius | earlier result |
+|---|---|---|---|---|
+| A control | `MEC_LM_Moria_Tall` (byte-identical to step 7) | +-10.5 x +-12.1, 29 high | same | 11/11 |
+| **B probe** | `MEC_LM_Moria_Outrig` (`tools/landmarks/outrig_probe.py`) | **identical to A** | **= C** (x +-24, y +-27.7, r 27.7) | new |
+| C positive control | `MEC_LM_Moria_Wide` (byte-identical to step 7) | +-24 x +-27.7, 12.7 high | same | 1/10 |
+
+B = A's mesh + 6 triangles 0.1 units across at z -1 on the corners of C's hexagon (18 extra vertices).
+
+**Reading the result** (A must draw and C must mostly fail, otherwise the run is not conclusive):
+- B fails like C -> the engine reacts to the extent/bounds alone (culling, cell assignment, layout reservation from the
+  bbox). Next: find the consumer of the bounds; a fix may be possible by keeping bounds small (e.g. split models).
+- B draws like A -> the real geometry's coverage matters (overlap with the layout's houses/lots, stencil, depth).
+  Next: a frame capture of a failing tile (draw calls issued or not).
+- Mixed -> repeat 2 more games; compare per city.
+
+Revert: Barad-dûr row `enabled=True` (v4 test) or remove the three `MORIA_*` probe rows; `TEST_HASH` back as needed.
+Backup of the previous install + the Barad-dûr v4 run's Logs: `~/civ5-backup-20261121-capitals/outrig-20261124-211151`.
+
+**Result §18 (user, 1 game, ~21:20). Assignments confirmed in `Lua.log` (31 cities; Northern Mirkwood not founded).
+Logs: `~/civ5-backup-20261121-capitals/outrig-20261124-211151/Logs-outrig-result`.**
+
+| Group | Drew | Empty |
+|---|---|---|
+| A control (Tall, visible +-10.5, bounds +-10.5) | **10 / 12** | Bag End, Shelob's Lair |
+| **B probe (looks like A, bounds = C)** | **0 / 10** | all: Annúminas, Beorn's Hall, Bree, Erebor, Himling, Lake Town, Minas Tirith, Paths of the Dead, Rhosgobel, Rhûn |
+| C positive control (Wide, +-24) | **0 / 10** | all |
+
+**Conclusion (the clearest result of the whole investigation): the failure follows the model's BOUNDS, not its visible
+geometry.** Six invisible 0.1-unit specks at +-24/27.7 turn a model that draws into one that blanks the whole tile
+(houses too), exactly like the real wide model. Every city that drew had the small bounds; no city with the large
+bounds drew, including Rhûn, which had drawn the wide model twice before. So overlap of visible geometry with houses,
+stencil/depth effects, textures, vertex count and material are not the cause. Something in the engine reads the
+landmark mesh's extent (from its vertices: the bone-binding OBBs are zeroed) and, above some size, the city's whole
+model group stops drawing.
+
+Still open:
+1. **Which engine code consumes the bounds**, and the exact threshold rule (city-states fail from ~+-17, majors from
+   ~+-20; earlier +-24 successes were rare). Candidates: city group bounds / culling cell assignment, or the city
+   layout reserving the building's area. Static RE target: what `0x4e8b40` / `0x4de0b0` (instance into city group)
+   compute from the mesh bounds, and who reads them.
+2. **A second, smaller failure:** 2 of 12 small-bounds cities stayed empty (Bag End, Shelob's Lair), like the 1-2 per
+   game seen with Moria v2/v3. It may be the same rule with a lower, random margin (render-side `rand()`), or the
+   pre-existing bug the original mods show. Not separated yet.
+
+Practical consequence until (1) is understood: every landmark's VERTEX extent (not just what looks visible) must stay
+inside the proven envelope: +-16 for city-states, +-20 for majors, measured over all vertices of the building mesh.
+Splitting a model into several smaller-bounds parts is an untested idea (it depends on whether the rule is per mesh or
+per city group).
+
+State left installed (test build, not for sharing): `ALL_CITIES_TEST` on with the three probe rows, `REVEAL_MAP` on,
+Barad-dûr row off. To return to "Moria only": remove the three `MORIA_*` rows, `ALL_CITIES_TEST = False`.
