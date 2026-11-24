@@ -6,6 +6,8 @@
 > improvement on a city plot. Barad-dûr (our own v4 file, `Scale` 0.12, about ±41 units, 57 tall) drew on every
 > major capital and every city-state in one game, and all three controls drew (Barad-dûr on a plain tile, the Elven
 > Battle Tower, stock citadel art). Approach C is adopted; the D1 adjacent-tile fallback is not needed.
+> A second test put Moria on every city and city-state: all drew. A release with Moria and the animated Barad-dûr
+> on their own capitals only (everything else stock) followed the same night.
 >
 > **Decisions since:** population-based evolution is **dropped** (the user: landmarks won't change as cities grow),
 > so the population tiers in §8 and prototype step 4 no longer apply. Next goal: a custom landmark for every capital.

@@ -1,7 +1,8 @@
 -- MEC_LandmarkImprovements
 -- Landmark models as tile IMPROVEMENTS (docs/CITY_ARCHITECTURE_RESEARCH.md, Approach C).
 --
--- Each city plot gets a purely visual landmark improvement; the city's own art is never touched.
+-- A city whose name matches a landmark gets that purely visual improvement on its plot; every other city keeps
+-- stock art. The city's own art is never touched.
 -- Founding and capture clear a city plot's improvement (CvCity::init), so every sync re-applies it.
 --
 -- Multiplayer: runs on every client and changes game state only from synchronised GameEvents, deciding from
@@ -18,8 +19,16 @@ for row in GameInfo.Improvements() do
 	g_Type[row.ID] = row.Type
 end
 local g_IsOurs = {}
-for _, t in ipairs(g_Improvements) do
-	if g_ID[t] then g_IsOurs[g_ID[t]] = true else print("MEC_LMI: improvement " .. t .. " missing from the database") end
+local g_ByName = {}      -- city name key, or lower-cased typed name -> improvement ID
+for _, def in ipairs(g_LandmarkDefs) do
+	local id = g_ID[def.Improvement]
+	if id then
+		g_IsOurs[id] = true
+		for _, k in ipairs(def.Keys) do g_ByName[k] = id end
+		for _, a in ipairs(def.Aliases) do g_ByName[string.lower(a)] = id end
+	else
+		print("MEC_LMI: improvement " .. def.Improvement .. " missing from the database")
+	end
 end
 local g_CivID
 for row in GameInfo.Civilizations() do
@@ -40,9 +49,13 @@ local function SetPlot(plot, id, why)
 		.. ", plot now reports " .. Name(plot:GetImprovementType()))
 end
 
+-- The city's name KEY (synchronised; the same with or without Dynamic City Naming), else a name a player typed
+-- (compared case-insensitively). Never the localised display name: it differs between clients.
 local function LandmarkFor(city)
 	if g_AllCities then return g_ID[g_AllCities] end
-	return nil
+	local key = city:GetNameKey()
+	if not key then return nil end
+	return g_ByName[key] or g_ByName[string.lower(key)]
 end
 
 local function SyncCity(city)
@@ -116,7 +129,8 @@ GameEvents.CityCaptureComplete.Add(function(oldOwner, isCapital, x, y, newOwner)
 GameEvents.SetPopulation.Add(function(x, y, oldPop, newPop) SyncAt(x, y) end)
 GameEvents.PlayerDoTurn.Add(function(playerID) SyncAll() end)
 SyncAll()     -- loaded games, and cities that exist before this script runs
-print("MEC_LMI: active" .. (g_AllCities and (", TEST: every city gets " .. g_AllCities) or "")
+print("MEC_LMI: active, " .. #g_LandmarkDefs .. " landmark(s)"
+	.. (g_AllCities and (", TEST: every city gets " .. g_AllCities) or ", matched by city name")
 	.. ", controls " .. #g_Controls .. ", anchor " .. tostring(g_AnchorCiv) .. (g_CivID and "" or " (not in the database)"))
 
 -- g_RevealMap: render test without fog of war; every plot revealed and kept visible for every human team

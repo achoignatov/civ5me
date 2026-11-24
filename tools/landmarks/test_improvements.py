@@ -1,9 +1,9 @@
 """Offline test of MEC_LandmarkImprovements.lua (as built into dist/) against a strict mock of the Civ 5 Lua API.
 
 Run: build/venv/bin/python tools/landmarks/test_improvements.py      (needs lupa; run build_dlc.py first)
-Checks: every city plot gets the test landmark at founding; founding/capture clearing (CvCity::init) is repaired;
-control plots A/B/C next to Mordor's capital skip water, mountains and cities; syncing is idempotent;
-the human fallback anchor; SetImprovementType is always called with the -1 builder.
+Checks: Barad-dur and Moria get their landmarks by name key at founding, every other city and city-state stays
+stock, capture (CvCity::init clears the plot) is repaired, typed names match, a rename removes the landmark,
+syncing is idempotent, SetImprovementType is always called with the -1 builder.
 """
 import os
 import sys
@@ -113,48 +113,44 @@ def run(script, anchor_present=True):
 
 def main():
     script = open(SCRIPT, encoding='utf-8').read()
-    barad = 10 + [r['key'] for r in improvements.IMPROVEMENTS].index(improvements.ALL_CITIES)
-    ctrl = {c: 10 + [r['key'] for r in improvements.IMPROVEMENTS].index(k) for c, k in improvements.CONTROLS}
-
+    ids = {r['key']: 10 + i for i, r in enumerate(improvements.IMPROVEMENTS)}
     lua, out = run(script)
     g = lua.globals()
     imp = lambda x, y: g.Map.GetPlot(x, y).GetImprovementType(g.Map.GetPlot(x, y))
-    # Mordor (player 1) founds Barad-dur at (5,5); its neighbour (6,5) is a mountain
+    if improvements.ALL_CITIES:
+        lua.execute('Found(3, 9, 9, "TXT_KEY_CITY_NAME_MEC_DALE")')
+        assert imp(9, 9) == ids[improvements.ALL_CITIES]
+        print('OK (ALL_CITIES test mode only)')
+        return
+    # Mordor's capital and the Goblins' capital get their landmarks at founding
     lua.execute('Found(1, 5, 5, "TXT_KEY_CITY_NAME_MEC_BARAD_DUR")')
-    assert imp(5, 5) == barad, imp(5, 5)
-    ctl = [l for l in out if 'control ' in l and ' = ' in l]
-    assert len(ctl) == 3, out
-    assert '(6,5)' not in ' '.join(ctl), ctl                     # the mountain is skipped
-    # the three control plots carry A/B/C
-    placed = {}
-    for x in range(12):
-        for y in range(12):
-            if (x, y) != (5, 5) and imp(x, y) >= 0:
-                placed[imp(x, y)] = (x, y)
-    assert set(placed) == set(ctrl.values()), placed
-    # a human city and a city-state (player 3) get Barad-dur too
+    lua.execute('Found(2, 8, 2, "TXT_KEY_CITY_NAME_MEC_MORIA")')
+    assert imp(5, 5) == ids['BARAD_DUR'] and imp(8, 2) == ids['MORIA'], (imp(5, 5), imp(8, 2))
+    # every other city and city-state keeps stock art
     lua.execute('Found(0, 2, 2, "TXT_KEY_CITY_NAME_MEC_MINAS_TIRITH")')
     lua.execute('Found(3, 9, 9, "TXT_KEY_CITY_NAME_MEC_DALE")')
-    assert imp(2, 2) == barad and imp(9, 9) == barad
-    # capture clears the plot (CvCity::init); the event puts it back
-    lua.execute('Capture(Players[0].cities[1], 1)')
-    assert imp(2, 2) == barad
-    # idempotent: a full turn changes nothing
-    n = g.SetCalls
+    assert imp(2, 2) == -1 and imp(9, 9) == -1
+    # no control plots: nothing else on the map was touched
+    touched = [(x, y) for x in range(12) for y in range(12) if imp(x, y) != -1]
+    assert sorted(touched) == [(5, 5), (8, 2)], touched
+    # capture clears the plot (CvCity::init); the event puts the landmark back (the name stays)
+    lua.execute('Capture(Players[2].cities[1], 0)')
+    assert imp(8, 2) == ids['MORIA']
+    # a player-typed name matches case-insensitively, also with the accent
+    lua.execute('Found(0, 3, 9, "barad-dûr")')
+    assert imp(3, 9) == ids['BARAD_DUR']
+    # renamed away: the next turn removes the landmark
+    lua.execute('Map.GetPlot(3, 9).city.key = "Lugburz"')
     lua.execute('Fire("PlayerDoTurn", 0)')
+    assert imp(3, 9) == -1
+    # idempotent: another turn changes nothing
+    n = g.SetCalls
+    lua.execute('Fire("PlayerDoTurn", 1)')
     assert g.SetCalls == n, (n, g.SetCalls)
-    # something else wipes a plot (e.g. a pillage-replace): the next turn repairs it
-    lua.execute('Players[3].cities[1].plot.imp = -1')
-    lua.execute('Fire("PlayerDoTurn", 3)')
-    assert imp(9, 9) == barad
-    lua.execute('Fire("SetPopulation", 9, 9, 1, 2)')
-    assert g.Revealed == 144, g.Revealed                           # fog removed for the human team only
-    print('\n'.join(out[:6]))
-
-    # no Mordor in the game: the human's capital anchors the controls
-    lua2, out2 = run(script, anchor_present=False)
-    lua2.execute('Found(0, 3, 3, "TXT_KEY_CITY_NAME_MEC_MINAS_TIRITH")')
-    assert any('control A' in l and 'MINAS_TIRITH' in l for l in out2), out2
+    lua.execute('Fire("SetPopulation", 5, 5, 1, 2)')
+    assert imp(5, 5) == ids['BARAD_DUR']
+    assert g.Revealed == (144 if improvements.REVEAL_MAP else 0), g.Revealed
+    print('\n'.join(out))
     print('OK: test_improvements (%d log lines, %d SetImprovementType calls)' % (len(out), g.SetCalls))
 
 

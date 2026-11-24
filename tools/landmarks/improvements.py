@@ -1,55 +1,82 @@
-"""Landmark IMPROVEMENTS (docs/CITY_ARCHITECTURE_RESEARCH.md, Approach C).
+"""Landmark IMPROVEMENTS (docs/LANDMARKS.md; research in docs/CITY_ARCHITECTURE_RESEARCH.md).
 
 A landmark is a purely visual tile improvement that MEC_LandmarkImprovements.lua puts on a city's plot with
 Plot:SetImprovementType. The city's own art (houses, buildings) is never touched. Improvement art is ordinary
-ArtDefine_* database rows, so it needs no WonderDefines.
+ArtDefine_* database rows; effects use the DLC's VisEffect defines.
 
-2026-11-24 TEST (user: "test Mordor and its capital Barad-dur relentlessly ... every city and every city state"):
-  * EVERY city and city-state plot gets Barad-dur (ALL_CITIES = True),
-  * three CONTROL plots next to Mordor's capital (or the human's capital if Mordor isn't in the game):
-      A  Barad-dur on a plain plot  -> does our model draw as an improvement at all?
-      B  Elven Battle Tower (Nomad's BFME II conversion, shipped by ME Civilizations v9) -> community art
-      C  stock citadel art          -> does a Lua-placed improvement draw at all?
+Which city gets which landmark: the city's name KEY (synchronised, the same with or without Dynamic City Naming),
+or a name a player typed (aliases, case-insensitive). Every other city keeps stock art.
+
+The art is vendored (vendor/landmarks/<Model>/): the exact files that drew in game, so the pack builds without
+Blender. The Blender sources are tools/landmarks/models/*.py.
+
+History of tests (all with this mechanism, 2026-11-24): Barad-dur v4 (static) on every city and city-state + control
+plots (Elven Battle Tower, stock citadel art): all drew. Moria v3 on every city and city-state: all drew.
 """
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
-OUT = os.path.join(ROOT, 'build', 'landmarks', 'out')        # prebuilt models (tools/landmarks/build_models.py)
+VENDOR = os.path.join(ROOT, 'vendor', 'landmarks')
 
 GAMEDATA_XML = 'MEDLC_LandmarkImprovements.xml'
 TEXT_XML = 'MEDLC_Text_LandmarkImprovements.xml'
+VISEFFECTS_XML = 'MEDLC_LandmarkImprovements_VisEffects.xml'
+VISMODELS_XML = 'MEDLC_LandmarkImprovements_VisEffectModels.xml'
 LUA = 'MEC_LandmarkImprovements.lua'
 
-# One row per landmark improvement.
-#   key     -> IMPROVEMENT_MEC_LM_<key>, art tag ART_DEF_IMPROVEMENT_MEC_LM_<key> (unless art_tag reuses a stock one)
-#   gr2     -> our model in build/landmarks/out, written into a new improvement .fxsxml (fxsxml_textures)
-#   fxsxml  -> an existing .fxsxml already in the pack (built, pillaged)
-#   scale   -> ArtDefine_Landmarks.Scale. Stock improvements are authored at Scale 1 with the hex ~ +-45 units.
-#              Barad-dur v4's file is +-308 x +-346, 478 high (written for wonder fScale 0.05), so 0.12 makes it
-#              ~+-41 x 57 high: tile-filling. Calibrate from the in-game screenshot (research plan step 2).
+# One row per landmark.
+#   key        -> IMPROVEMENT_MEC_LM_<key>, art tag ART_DEF_IMPROVEMENT_MEC_LM_<key>, fxsxml MEC_LMI_<Key>.fxsxml
+#   dir        -> vendor/landmarks/<dir>: every file there is copied into the pack as-is
+#   gr2 / textures -> what the generated .fxsxml names
+#   scale      -> ArtDefine_Landmarks.Scale (in-game size = file size x scale; the hex is about +-32..41)
+#   animation  -> (file, name) of an idle loop: played by the stock LandmarkDecisionTree (like the stock oil rig)
+#   trigger    -> (ftsxml, model) TimedTrigger for effects on bones; bones = BoneUsage
+#   name_keys / aliases -> which cities get it
 IMPROVEMENTS = [
-    dict(key='BARAD_DUR', title='Barad-dûr',
+    # Moria v3 (tools/landmarks/models/moria.py): baked, 16.4k vertices, static. File +-391 x (-268..+435) x 471;
+    # Scale 0.094 -> ~+-37 x (-25..+41), ~44 high. Drew on every city and city-state (test 2, 2026-11-24).
+    dict(key='MORIA', title='Moria', dir='Moria',
+         gr2='MEC_LM_Moria.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Moria_DIFF.dds', 'MEC_LM_Moria_SREF.dds'],
+         scale=0.094,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
+         aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
+    # Barad-dur v3, the Eye of Sauron (models/barad_dur.py at commit 384416f): fortress + tower (static) and a skinned
+    # Eye that looks around (6 s idle loop), 8 fires around the Eye + a blaze in it (stock Great Lighthouse fire)
+    # and a searchlight beam (our model effect, MEC_EyeBeam). File +-94 x +-109 x 188 (made for wonder fScale 0.25,
+    # where the effect sizes were tuned). Scale 0.3 -> ~+-28 x +-33, ~56 high (inside the proven 57).
+    dict(key='BARAD_DUR', title='Barad-dûr', dir='BaradDur',
          gr2='MEC_LM_BaradDur.gr2',
-         fxsxml_textures=['MEC_LM_BaradDur_DIFF.dds', 'MEC_LM_BaradDur_SREF.dds', 'Generic_Grey_8.dds'],
-         copy=['MEC_LM_BaradDur_DIFF.dds', 'MEC_LM_BaradDur_SREF.dds'],
-         scale=0.12, sv='SV_Citadel.dds'),
-    dict(key='TOWER', title='Elven Battle Tower (control)',
-         fxsxml=('Battle_Tower_B.fxsxml', 'Battle_Tower_P.fxsxml'),   # MEC Wood Elves/Art/Improvements (in the pack)
-         scale=1.0, sv='SV_Citadel.dds'),
-    dict(key='CITADEL', title='Citadel art (control)',
-         art_tag='ART_DEF_IMPROVEMENT_CITADEL'),                       # stock art rows, nothing new
+         textures=['Generic_Grey_8.dds', 'MEC_LM_BaradDur_DIFF.dds', 'MEC_LM_BaradDur_SREF.dds',
+                   'MEC_LM_BaradDur_Eye_DIFF.dds', 'MEC_LM_BaradDur_Eye_SREF.dds'],
+         animation=('MEC_LM_BaradDur_Idle.gr2', 'Idle'),
+         bones=['fxfire%d' % i for i in range(8)] + ['fxcore', 'fxbeam'],
+         trigger=('FX_Triggers_MEC_LM_BaradDur.ftsxml', 'MEC_LM_BaradDur_Eye'),
+         scale=0.3,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_BARAD_DUR'],
+         aliases=['Barad Dur', 'Barad-dur', 'Barad-dûr', 'Barad Dûr', 'Baraddur']),
 ]
 
-# Which landmark every city plot gets during the test (None = name rules only, not implemented yet).
-ALL_CITIES = 'BARAD_DUR'
+# Effects used by the triggers above (VisEffectInfoDefines / VisEffectModelDefines in the DLC package).
+# Values as tuned for Barad-dur v3 in the old city-art path (tools/landmarks/landmarks.py EFFECTS, 2026-11-22).
+VIS_EFFECTS = [
+    # (name, rotation x, scale, particle effect or None, model effect or None)
+    ('ART_DEF_VEFFECT_MEC_EYE_FIRE', 90.0, 0.4, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
+    ('ART_DEF_VEFFECT_MEC_EYE_BLAZE', 90.0, 1.0, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
+    ('ART_DEF_VEFFECT_MEC_EYE_BEAM', 0.0, 13.0, None, 'ART_DEF_MEFFECT_MEC_EYE_BEAM'),
+]
+VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml')]     # file in vendor/landmarks/BaradDur
 
-# Control plots around the anchor capital: (control letter, improvement key), filled in direction order.
-CONTROLS = [('A', 'BARAD_DUR'), ('B', 'TOWER'), ('C', 'CITADEL')]
+# ----- test switches (all off in a release) -------------------------------------------------------------------
+# A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).
+ALL_CITIES = None
+# Control plots next to the anchor capital: (letter, key). Test 1 used A Barad-dur / B Elven Battle Tower /
+# C stock citadel art (all drew); those rows were removed after the test.
+CONTROLS = []
 ANCHOR_CIV = 'CIVILIZATION_MEC_MORDOR'      # fallback: the first human player's capital
-
-# Fog of war off for human teams (test only; set False before sharing the pack).
-REVEAL_MAP = True
+# Fog of war off for human teams.
+REVEAL_MAP = True                           # ON for the user's check of this build; False for the release commit
 
 
 def improvement(row):
@@ -57,25 +84,32 @@ def improvement(row):
 
 
 def art_tag(row):
-    return row.get('art_tag') or 'ART_DEF_IMPROVEMENT_MEC_LM_' + row['key']
+    return 'ART_DEF_IMPROVEMENT_MEC_LM_' + row['key']
 
 
 def own_fxsxml(row):
-    """Name of the .fxsxml we write for a row with our own gr2 (None otherwise)."""
-    return 'MEC_LMI_%s.fxsxml' % row['key'].title().replace('_', '') if row.get('gr2') else None
+    return 'MEC_LMI_%s.fxsxml' % row['key'].title().replace('_', '')
+
+
+def src_dir(row):
+    return os.path.join(VENDOR, row['dir'])
 
 
 def fxsxml_text(row):
-    """Like the stock improvement files (Anc_Citadel.fxsxml): a mesh and its textures, no decision tree."""
+    """Like the stock improvement files: mesh + textures; an animated model gets its idle animation and the stock
+    LandmarkDecisionTree (Oil_Rig.fxsxml); effects are TimedTriggers on bones (the stock gold mine)."""
     L = ['<Asset>', '  <Mesh file="%s" source="Max" />' % row['gr2']]
-    L += ['  <Texture file="%s" source="Max" />' % t for t in row['fxsxml_textures']]
+    if row.get('animation'):
+        L.append('  <Animation file="%s" name="%s" ec="1000" source="Max" layer="None" />' % row['animation'])
+    L += ['  <Texture file="%s" source="Max" />' % t for t in row['textures']]
+    if row.get('bones'):
+        L += ['  <BoneUsage>'] + ['    <Bone name="%s" />' % b for b in row['bones']] + ['  </BoneUsage>']
+    if row.get('trigger'):
+        L.append('  <TimedTrigger file="%s" source="Tool" model="%s" state="0,1,2,3" />' % row['trigger'])
+    if row.get('animation'):
+        L.append('  <DecisionTree file="LandmarkDecisionTree.ddtxml" source="Tool" />')
     L.append('</Asset>')
     return '\n'.join(L) + '\n'
-
-
-def asset_files(row):
-    """Files copied from build/landmarks/out for this row."""
-    return ([row['gr2']] if row.get('gr2') else []) + row.get('copy', [])
 
 
 def _x(s):
@@ -86,24 +120,21 @@ def gamedata():
     L = ['<?xml version="1.0" encoding="utf-8"?>',
          '<!-- Middle-earth landmark improvements: purely visual, placed only by MEC_LandmarkImprovements.lua '
          '(no Build row, no yields) -->',
-         '<GameData>']
-    own = [r for r in IMPROVEMENTS if not r.get('art_tag')]
-    L.append('\t<ArtDefine_LandmarkTypes>')
-    for r in own:
+         '<GameData>', '\t<ArtDefine_LandmarkTypes>']
+    for r in IMPROVEMENTS:
         L.append('\t\t<Row><Type>%s</Type><LandmarkType>Improvement</LandmarkType><FriendlyName>%s</FriendlyName></Row>'
                  % (art_tag(r), _x(r['title'])))
     L += ['\t</ArtDefine_LandmarkTypes>', '\t<ArtDefine_Landmarks>']
-    for r in own:
-        built, pillaged = r.get('fxsxml') or (own_fxsxml(r), own_fxsxml(r))
-        for state, model in (('Constructed', built), ('Pillaged', pillaged)):
+    for r in IMPROVEMENTS:
+        for state in ('Constructed', 'Pillaged'):
             L.append('\t\t<Row><Era>Any</Era><State>%s</State><Scale>%s</Scale><ImprovementType>%s</ImprovementType>'
                      '<LayoutHandler>SNAPSHOT</LayoutHandler><ResourceType>ART_DEF_RESOURCE_ALL</ResourceType>'
                      '<Model>%s</Model><TerrainContour>1</TerrainContour></Row>'
-                     % (state, r['scale'], art_tag(r), model))
+                     % (state, r['scale'], art_tag(r), own_fxsxml(r)))
     L += ['\t</ArtDefine_Landmarks>', '\t<ArtDefine_StrategicView>']
-    for r in own:
+    for r in IMPROVEMENTS:
         L.append('\t\t<Row><StrategicViewType>%s</StrategicViewType><TileType>Improvement</TileType>'
-                 '<Asset>%s</Asset></Row>' % (art_tag(r), r['sv']))
+                 '<Asset>SV_Citadel.dds</Asset></Row>' % art_tag(r))
     L += ['\t</ArtDefine_StrategicView>', '\t<Improvements>']
     for r in IMPROVEMENTS:
         t = improvement(r)
@@ -123,18 +154,56 @@ def text():
     for r in IMPROVEMENTS:
         t = improvement(r)
         L.append('\t\t<Row Tag="TXT_KEY_%s"><Text>%s (landmark)</Text></Row>' % (t, _x(r['title'])))
-        L.append('\t\t<Row Tag="TXT_KEY_%s_HELP"><Text>A Middle-earth landmark. Purely visual: no effect on the game.'
-                 '</Text></Row>' % t)
+        L.append('\t\t<Row Tag="TXT_KEY_%s_HELP"><Text>The landmark of %s. Purely visual: no effect on the game.'
+                 '</Text></Row>' % (t, _x(r['title'])))
     L += ['\t</Language_en_US>', '</GameData>']
+    return '\n'.join(L) + '\n'
+
+
+def vis_effects():
+    L = ['<?xml version="1.0" encoding="utf-8"?>',
+         '<VisEffectArtInfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+         'xsi:noNamespaceSchemaLocation="Civ5ArtDefines_VisEffects.xsd">']
+    for name, rotx, scale, particle, model in VIS_EFFECTS:
+        L += ['\t<VisEffectArtInfo>', '\t\t<Name>%s</Name>' % name, '\t\t<Transform>',
+              '\t\t\t<Translation x="0.0" y="0.0" z="0.0"/>', '\t\t\t<Rotation x="%.1f" y="0.0" z="0.0"/>' % rotx,
+              '\t\t\t<Scale>%s</Scale>' % scale, '\t\t</Transform>',
+              '\t\t<fBaseDuration>0.01</fBaseDuration>', '\t\t<fBaseDurationScale>1.0</fBaseDurationScale>']
+        if particle:
+            L += ['\t\t<ParticleEffects>', '\t\t\t<ParticleEffect>', '\t\t\t\t<Name>%s</Name>' % particle,
+                  '\t\t\t</ParticleEffect>', '\t\t</ParticleEffects>']
+        if model:
+            L += ['\t\t<ModelEffects>', '\t\t\t<ModelEffect>', '\t\t\t\t<Name>%s</Name>' % model,
+                  '\t\t\t</ModelEffect>', '\t\t</ModelEffects>']
+        L.append('\t</VisEffectArtInfo>')
+    L.append('</VisEffectArtInfos>')
+    return '\n'.join(L) + '\n'
+
+
+def vis_effect_models():
+    L = ['<?xml version="1.0" encoding="utf-8"?>',
+         '<VisEffectModelArtInfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+         'xmlns:xsd="http://www.w3.org/2001/XMLSchema">']
+    for name, fx in VIS_MODELS:
+        L += ['\t<VisEffectModelArtInfo>', '\t\t<Name>%s</Name>' % name, '\t\t<File>%s</File>' % fx,
+              '\t\t<fScale>1.0</fScale>', '\t\t<fScrollTime>1.0</fScrollTime>', '\t</VisEffectModelArtInfo>']
+    L.append('</VisEffectModelArtInfos>')
     return '\n'.join(L) + '\n'
 
 
 def lua_table():
     """Replaces the -- @@LANDMARK_TABLE@@ line of MEC_LandmarkImprovements.lua."""
     def s(v):
-        return '"%s"' % v if v is not None else 'nil'
-    return ('g_AllCities = %s\n' % s(improvement(dict(key=ALL_CITIES)) if ALL_CITIES else None)
-            + 'g_Controls = { %s }\n' % ', '.join('{ "%s", "%s" }' % (c, improvement(dict(key=k))) for c, k in CONTROLS)
+        return '"%s"' % v if v is not None else 'false'
+
+    def q(v):   # Lua string literal (UTF-8 kept)
+        return '"%s"' % v.replace('\\', '\\\\').replace('"', '\\"')
+    defs = ', '.join('{ Improvement = %s, Keys = { %s }, Aliases = { %s } }' % (
+        q(improvement(r)), ', '.join(q(k) for k in r['name_keys']), ', '.join(q(a) for a in r['aliases']))
+        for r in IMPROVEMENTS)
+    all_cities = next((improvement(r) for r in IMPROVEMENTS if r['key'] == ALL_CITIES), None)
+    return ('g_LandmarkDefs = { %s }\n' % defs
+            + 'g_AllCities = %s\n' % s(all_cities)
+            + 'g_Controls = { %s }\n' % ', '.join('{ "%s", "IMPROVEMENT_MEC_LM_%s" }' % (c, k) for c, k in CONTROLS)
             + 'g_AnchorCiv = %s\n' % s(ANCHOR_CIV)
-            + 'g_Improvements = { %s }\n' % ', '.join('"%s"' % improvement(r) for r in IMPROVEMENTS)
             + 'g_RevealMap = %s' % ('true' if REVEAL_MAP else 'false'))

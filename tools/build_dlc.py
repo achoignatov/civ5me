@@ -414,36 +414,48 @@ def stock_file_names():
 
 
 def build_landmark_improvements():
-    """Landmark improvements (docs/CITY_ARCHITECTURE_RESEARCH.md): art rows + improvements + in-game script.
-    Returns (gamedata, text) file names."""
+    """Landmark improvements (docs/LANDMARKS.md): vendored art + generated .fxsxml, art rows + improvements, effect
+    defines, in-game script. Returns (gamedata, text, [vis effect defines], [vis effect model defines])."""
     rows = improvements.IMPROVEMENTS
-    need = sorted({f for r in rows for f in improvements.asset_files(r)})
-    missing = [f for f in need if not os.path.exists(os.path.join(improvements.OUT, f))]
-    if missing:
-        sys.exit('landmark models missing from %s: %s' % (improvements.OUT, missing))
     art = os.path.join(OUT, 'Art', 'Landmarks')
     os.makedirs(art, exist_ok=True)
-    import probes
-    for f in need:
-        if f.endswith('.gr2'):      # the same stock-like section layout the city-art builds used
-            probes.to_stock_sections(os.path.join(improvements.OUT, f), os.path.join(art, f), zero_obb=landmarks.ZERO_OBB)
-        else:
-            shutil.copy2(os.path.join(improvements.OUT, f), art)
-    for r in rows:
-        if improvements.own_fxsxml(r):
-            open(os.path.join(art, improvements.own_fxsxml(r)), 'w', encoding='utf-8', newline='\r\n').write(
-                improvements.fxsxml_text(r))
-    # every .fxsxml a row points at must be in the pack, and every file it names must exist (ours or the game's)
+    for r in rows:      # the exact files that drew in game, copied as-is (no conversion)
+        src = improvements.src_dir(r)
+        assert os.path.isdir(src), src
+        for f in sorted(os.listdir(src)):
+            if not f.lower().endswith(('.md', '.txt')):
+                shutil.copy2(os.path.join(src, f), art)
+        open(os.path.join(art, improvements.own_fxsxml(r)), 'w', encoding='utf-8', newline='\r\n').write(
+            improvements.fxsxml_text(r))
+    vfx, vmodels = [], []
+    if improvements.VIS_EFFECTS:
+        open(os.path.join(art, improvements.VISEFFECTS_XML), 'w', encoding='utf-8', newline='\r\n').write(
+            improvements.vis_effects())
+        vfx = [improvements.VISEFFECTS_XML]
+    if improvements.VIS_MODELS:
+        open(os.path.join(art, improvements.VISMODELS_XML), 'w', encoding='utf-8', newline='\r\n').write(
+            improvements.vis_effect_models())
+        vmodels = [improvements.VISMODELS_XML]
+    for x in vfx + vmodels:
+        ET.parse(os.path.join(art, x))
+
+    # every file an .fxsxml / .ftsxml names must be in the pack or in the game's own .fpk packs; every effect a
+    # trigger fires must be defined (ours or stock); every model effect's .fxsxml must be in the pack
     packed = {f.lower(): os.path.join(dp, f) for dp, _, fs in os.walk(os.path.join(OUT, 'Art')) for f in fs}
-    stock_tex = stock_file_names()
-    for r in rows:
-        if r.get('art_tag'):
-            continue
-        for fx in (r.get('fxsxml') or (improvements.own_fxsxml(r),)):
-            assert fx.lower() in packed, fx
-            for ref in re.findall(r'file="([^"]+)"', open(packed[fx.lower()], encoding='utf-8', errors='replace').read()):
-                if not ref.lower().endswith('.ddtxml'):
-                    assert ref.lower() in packed or ref.lower() in stock_tex, (fx, ref)
+    stock = stock_file_names()
+    ours_fx = {v[0] for v in improvements.VIS_EFFECTS}
+    todo = [improvements.own_fxsxml(r) for r in rows] + [m[1] for m in improvements.VIS_MODELS]
+    for fx in todo:
+        assert fx.lower() in packed, fx
+        txt = open(packed[fx.lower()], encoding='utf-8', errors='replace').read()
+        for ref in re.findall(r'file="([^"]+)"', txt):
+            assert ref.lower() in packed or ref.lower() in stock, (fx, ref)
+            if ref.lower().endswith('.ftsxml') and ref.lower() in packed:
+                trig = open(packed[ref.lower()], encoding='utf-8', errors='replace').read()
+                for ev in re.findall(r'event="([^"]+)"', trig):
+                    assert ev in ours_fx or not ev.startswith('ART_DEF_VEFFECT_MEC'), (ref, ev)
+                bones = set(re.findall(r'bone="([^"]+)"', trig))
+                assert bones <= set(sum((r.get('bones', []) for r in rows), [])), (ref, bones)   # declared in BoneUsage
     gd = os.path.join(OUT, 'Gameplay', 'XML', improvements.GAMEDATA_XML)
     open(gd, 'w', encoding='utf-8', newline='\r\n').write(improvements.gamedata())
     tx = os.path.join(OUT, 'Gameplay', 'XML', 'Text', improvements.TEXT_XML)
@@ -464,23 +476,26 @@ def build_landmark_improvements():
     dbreplay.load_xml(db, gd, errs)
     db.commit()
     assert not errs, errs
-    own = [r for r in rows if not r.get('art_tag')]
-    added = {'Improvements': len(rows), 'ArtDefine_LandmarkTypes': len(own), 'ArtDefine_StrategicView': len(own),
-             'ArtDefine_Landmarks': 2 * len(own)}
+    added = {'Improvements': len(rows), 'ArtDefine_LandmarkTypes': len(rows), 'ArtDefine_StrategicView': len(rows),
+             'ArtDefine_Landmarks': 2 * len(rows)}
     for t, n in before.items():
         now = db.execute('select count(*) from "%s"' % t).fetchone()[0]
         assert now == n + added.get(t, 0), (t, n, now)
     for r in rows:
         tag = db.execute('select ArtDefineTag from Improvements where Type=?', (improvements.improvement(r),)).fetchone()
         assert tag and tag[0] == improvements.art_tag(r), (r['key'], tag)
-        assert db.execute('select count(*) from ArtDefine_Landmarks where ImprovementType=?', (tag[0],)).fetchone()[0] >= 2
+        assert db.execute('select count(*) from ArtDefine_Landmarks where ImprovementType=?', (tag[0],)).fetchone()[0] == 2
         assert not db.execute('select count(*) from Builds where ImprovementType=?',
                               (improvements.improvement(r),)).fetchone()[0]
+        for k in r['name_keys']:    # the name keys must be real city names of the pack
+            assert db.execute('select count(*) from Civilization_CityNames where CityName=?', (k,)).fetchone()[0], k
     db.close()
-    print('landmark improvements: %s; every city -> %s; controls %s' % (
-        ', '.join(improvements.improvement(r) for r in rows), improvements.ALL_CITIES,
-        ', '.join('%s=%s' % c for c in improvements.CONTROLS)))
-    return improvements.GAMEDATA_XML, improvements.TEXT_XML
+    print('landmark improvements: %s%s; effects %d; controls %d; fog %s' % (
+        ', '.join('%s (%s)' % (improvements.improvement(r), '/'.join(r['name_keys'])) for r in rows),
+        ('; TEST every city -> ' + improvements.ALL_CITIES) if improvements.ALL_CITIES else '',
+        len(improvements.VIS_EFFECTS), len(improvements.CONTROLS),
+        'OFF (test)' if improvements.REVEAL_MAP else 'on'))
+    return improvements.GAMEDATA_XML, improvements.TEXT_XML, vfx, vmodels
 
 
 # --------------------------------------------------------------------------- assets
@@ -547,6 +562,8 @@ def main():
     if lmi:
         P.append('\t<TextData>%s</TextData>' % lmi[1])
         P.append('\t<GameData>%s</GameData>' % lmi[0])
+        P += ['\t<VisEffectInfoDefines>%s</VisEffectInfoDefines>' % x for x in lmi[2]]
+        P += ['\t<VisEffectModelDefines>%s</VisEffectModelDefines>' % x for x in lmi[3]]
     P += ['\t<AudioDefines>MEDLC_AudioDefines.xml</AudioDefines>',
           '\t<AudioScripts2D>MEDLC_Audio2DScripts.xml</AudioScripts2D>',
           '\t<AudioScripts3D>MEDLC_Audio3DScripts.xml</AudioScripts3D>',

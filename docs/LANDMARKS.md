@@ -1,8 +1,12 @@
 # Capital landmarks: how they work and how to add one
 
-**Status 2026-11-24: the improvement approach works.** In the first in-game test, Barad-dûr drew on **every major
-capital and every city-state** in one game (about 30 tiles), at a size the old city-art approach never drew. This is
-now the project's only rendering path for custom city models. Research and evidence:
+**Status 2026-11-24 night: the improvement approach works, and the first release is being checked.** Two render
+tests drew a custom model on **every major capital and every city-state** in one game: Barad-dûr (static v4), then
+Moria. This is now the project's only rendering path for custom city models.
+
+**Release under test (installed 2026-11-24 22:27):** Moria (the Goblins' capital) shows our Moria model; Barad-dûr
+(Mordor's capital) shows the Eye of Sauron with its animation, fires and beam; every other city and city-state shows
+stock art. Fog of war is still off so both capitals can be checked; it goes back on in the release commit. Research and evidence:
 [`CITY_ARCHITECTURE_RESEARCH.md`](CITY_ARCHITECTURE_RESEARCH.md). History of the old approach:
 [`CITY_MODELS.md`](CITY_MODELS.md).
 
@@ -41,20 +45,23 @@ native houses + buildings (engine, untouched) ---------------------->    drawn t
 | In-game script (template; the table is inserted at build time) | `tools/landmarks/MEC_LandmarkImprovements.lua` |
 | Pack integration (art copy, fxsxml, GameData + text, Lua hook, database and file checks) | `tools/build_dlc.py` → `build_landmark_improvements()` |
 | Offline Lua test (strict mock of the game API) | `tools/landmarks/test_improvements.py` |
+| Vendored art that ships (exact files that drew in game) | `vendor/landmarks/<Model>/` (see its `SOURCE.md`) |
 | Our Blender models | `tools/landmarks/models/*.py` (Barad-dûr, Moria, Mount Doom), `tools/capitals/models/*.py` (first-generation models of all 14 capitals and 26 city-states) |
 | Blender driver, texture baking | `tools/landmarks/build_models.py`, `tools/landmarks/bake.py` → `build/landmarks/out/` |
 
 Build and check:
 
 ```
-python3 tools/build.py && python3 tools/build_dlc.py --zip     # improvement landmarks are the default
+python3 tools/build.py && python3 tools/build_dlc.py --zip     # improvement landmarks are the default (no Blender needed)
 build/venv/bin/python tools/landmarks/test_improvements.py      # Lua logic test (needs lupa in build/venv)
 python3 tools/build_dlc.py --zip --no-landmarks                 # pack without any landmarks
 python3 tools/build_dlc.py --zip --landmark-buildings           # OLD city-art path (history only)
 ```
 
-The build fails if a model file is missing, if an `.fxsxml` names a file that is neither in the pack nor in the
-game's own `.fpk` packs, if the rows change anything but the four tables below, or if a landmark has a Build row.
+The build fails if a vendored folder is missing, if an `.fxsxml` names a file (mesh, texture, animation, trigger,
+decision tree) that is neither in the pack nor in the game's own `.fpk` packs, if a trigger fires an undefined
+`ART_DEF_VEFFECT_MEC_*` effect or uses a bone missing from `BoneUsage`, if the rows change anything but the four
+tables below, if a landmark has a Build row, or if a name key is not a real city name of the pack.
 
 ## 3. One landmark = these rows (generated from `improvements.IMPROVEMENTS`)
 
@@ -65,8 +72,11 @@ game's own `.fpk` packs, if the rows change anything but the four tables below, 
 | `ArtDefine_StrategicView` | TileType `Improvement`, an icon (`SV_Citadel.dds` for now) |
 | `Improvements` | `IMPROVEMENT_MEC_LM_<KEY>`, `ArtDefineTag`, `Permanent`, no yields, text `TXT_KEY_IMPROVEMENT_MEC_LM_<KEY>` |
 
-The `.fxsxml` is written like the stock improvement files (`Anc_Citadel.fxsxml`): one mesh plus its textures, no
-decision tree.
+The `.fxsxml` is generated like the stock improvement files: one mesh plus its textures (`Anc_Citadel.fxsxml`). An
+animated model adds its idle loop and the stock `LandmarkDecisionTree.ddtxml` (as `Oil_Rig.fxsxml` does); effects
+are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine does). Effects named
+`ART_DEF_VEFFECT_MEC_*` are defined in `MEDLC_LandmarkImprovements_VisEffects.xml` (and the beam's model effect in
+`..._VisEffectModels.xml`), registered in the DLC package as `<VisEffectInfoDefines>` / `<VisEffectModelDefines>`.
 
 ## 4. Model rules (what is proven)
 
@@ -74,40 +84,51 @@ decision tree.
 |---|---|---|
 | File | Barad-dûr v4 `.gr2` from our own writer (uncompressed, stock-like sections, zeroed OBB), 19.2k vertices, 1024² DIFF | The same file the old path could only draw at about two-thirds of this size |
 | Size | `Scale` 0.12 on a ±308 × ±346 × 478 file = about **±37 × ±41, 57 tall** | Slightly wider than the hex: the walls overlap the neighbouring tiles, as the stock citadel does. Calibrate per model |
+| Size, second model | Moria: `Scale` 0.094 on a ±391 × (−268..+435) × 471 file = about ±37 × (−25..+41), 44 tall | Drew everywhere too |
 | Count | About 30 copies in one game, majors and city-states | |
 | Coexistence | Houses and city buildings draw with it | The landmark covers part of the houses |
 | Community art | Elven Battle Tower (Nexus Buddy 2 export) and stock citadel art also drew | |
 
-**Not yet proven:** repeat launches (several games in a row and in one process), animation, particle effects, models
-taller than 57, more than one landmark type per game. Treat each as a test the first time it is used.
+**Being tested now (release build):** animation (the Eye's idle loop through `LandmarkDecisionTree`), particle
+effects (fires) and the beam on an improvement, and two different landmarks in one game. Barad-dûr v3 is placed at
+`Scale` 0.3 (about ±28 × ±33, 56 tall); its effect sizes were tuned for the old wonder `fScale` 0.25, so if the fires or
+the beam look too big or too small, adjust `VIS_EFFECTS` in `improvements.py` (no model rebuild).
+**Not yet proven:** repeat launches (several games in a row and in one process), models taller than 57.
 
 **Authoring rules:** Z-up, origin at the hex centre, ground at z = 0. Keep the footprint inside the hex (aim for
 ≤ ±40 in-game units, i.e. file size × `Scale`), keep vertices ≤ 22k per model, textures 512–1024². Leave room in the
 middle of the tile, or put the landmark on one side, so the houses stay visible. The old ±16/±20 city-art limits and
 the `ENVELOPE` in `landmarks.py` do **not** apply to improvements.
 
-## 5. Current switches (`tools/landmarks/improvements.py`)
+## 5. Switches (`tools/landmarks/improvements.py`)
 
-| Switch | Installed value (test build) | Before sharing the pack |
-|---|---|---|
-| `ALL_CITIES` | `'BARAD_DUR'`: every city gets Barad-dûr | Replace with per-capital rules (§6 step 1) |
-| `CONTROLS` | A Barad-dûr, B Elven Battle Tower, C stock citadel, next to Mordor's capital | `[]` (they take workable tiles) |
-| `REVEAL_MAP` | `True` (no fog of war for human players) | `False` |
-
-## 6. Ground work for the capital models
-
-**Step 1, the rules table (code, next prompt).** Replace `ALL_CITIES` with a lookup in this order, first match wins:
-(1) the city's name key (`TXT_KEY_CITY_NAME_MEC_*`, plus typed aliases), (2) the capital of a civ
-(`city:IsCapital()` and the owner's civ type), (3) nothing. A city that no longer matches (renamed, captured) loses
-our improvement. Remove the controls, switch the fog back on, extend `test_improvements.py`.
-
-**Step 2, one model at a time.** Each new model: build in Blender → write the `.gr2` → add one row → build → in-game
-check on every city (the `ALL_CITIES` test mode) → then bind it to its capital only.
-
-| Civ | Capital (name key) | Model source we have | Status |
+| Switch | Installed now (release under test) | Release commit | Use |
 |---|---|---|---|
-| Mordor | Barad-dûr (`MEC_BARAD_DUR`) | `tools/landmarks/models/barad_dur.py` (v4, static Eye) | **Draws** (2026-11-24) |
-| Goblins | Moria (`MEC_MORIA`) | `tools/landmarks/models/moria.py` (v3, baked) | Drew in the old path; to re-test as an improvement |
+| `ALL_CITIES` | `None` | `None` | A landmark key: EVERY city and city-state gets it (render test of a new model) |
+| `CONTROLS` | `[]` | `[]` | Control plots next to Mordor's capital (test 1 only) |
+| `REVEAL_MAP` | `True` (fog off) | `False` | Lets you check every capital in one game |
+
+## 6. The capital models
+
+**Rules (done 2026-11-24):** a city gets a landmark when its name **key** is one of the row's `name_keys`
+(the same with or without Dynamic City Naming), or a player typed one of its `aliases` (case-insensitive). Every
+other city keeps stock art. A landmark follows the city's name, not its owner: a captured Barad-dûr keeps the Eye; a
+city renamed away loses it on the next turn.
+
+**Adding a capital (one at a time):**
+
+1. Build the model in Blender (`tools/landmarks/models/<name>.py`, `tools/landmarks/build_models.py`), within §4.
+2. Convert the `.gr2` like the others (stock section layout, zeroed OBBs) and copy the files to
+   `vendor/landmarks/<Model>/`.
+3. Add a row to `IMPROVEMENTS` (key, title, dir, gr2, textures, scale, name_keys, aliases; animation, bones and
+   trigger only if it has them).
+4. Render test: set `ALL_CITIES` to its key, build, install, check that every city and city-state draws it.
+5. Set `ALL_CITIES = None`, build, check it appears only on its capital, commit.
+
+| Civ | Capital (name key) | Model | Status |
+|---|---|---|---|
+| Mordor | Barad-dûr (`MEC_BARAD_DUR`) | Barad-dûr v3, the animated Eye (`vendor/landmarks/BaradDur`) | Release under test |
+| Goblins | Moria (`MEC_MORIA`) | Moria v3 (`vendor/landmarks/Moria`) | Drew everywhere (test 2); release under test |
 | Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | `tools/capitals/models/gondor.py` (first generation) | To rebuild |
 | Dwarves | Erebor (`MEC_EREBOR`) | `tools/capitals/models/dwarves.py` | To rebuild |
 | Hobbits | The Shire (`MEC_THE_SHIRE`) | `tools/capitals/models/hobbits.py` (Bag End) | To rebuild |
@@ -124,9 +145,6 @@ check on every city (the `ALL_CITIES` test mode) → then bind it to its capital
 "To rebuild" means the first-generation scripts exist but were made for the old envelope and pipeline; they need
 porting to the `tools/landmarks` builder (as Moria and Barad-dûr were) and a size check against §4.
 
-**Step 3, effects (later).** The Eye's animation, fire and beam worked in the old path's files
-(`docs/CITY_MODELS.md` §6). Stock improvements use `TimedTrigger` files on bones; add one effect at a time and test
-each.
 
 ## 7. Why this works and the old approach failed randomly
 
