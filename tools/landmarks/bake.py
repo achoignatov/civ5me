@@ -213,6 +213,35 @@ def _material(name, glow=None):
         Lk.new(tc.outputs['Object'], wave.inputs['Vector'])
         lo = 1.0 - p.get('strata_amp', 0.12)
         col = mix(col, mix((lo, lo, lo, 1), (1.03, 1.03, 1.03, 1), wave.outputs['Fac']), 1.0, 'MULTIPLY')
+    if p.get('vcracks'):
+        # vertical fractures on steep rock (columnar joints of a crag): Voronoi cells stretched up and down
+        # (z squashed), their edges dark, only where the face is steep. vcracks = (cells per unit, darkness 0..1)
+        vsc, vdark = p['vcracks']
+        mp = N.new('ShaderNodeMapping')
+        mp.inputs['Scale'].default_value = (1.0, 1.0, 0.07)
+        Lk.new(tc.outputs['Object'], mp.inputs['Vector'])
+        vv = N.new('ShaderNodeTexVoronoi')
+        vv.feature = 'DISTANCE_TO_EDGE'
+        vv.inputs['Scale'].default_value = vsc
+        Lk.new(mp.outputs[0], vv.inputs['Vector'])
+        geo6 = N.new('ShaderNodeNewGeometry')
+        nz6 = N.new('ShaderNodeSeparateXYZ')
+        Lk.new(geo6.outputs['Normal'], nz6.inputs[0])
+        steep6 = maprange(nz6.outputs['Z'], 0.75, 0.45)
+        edge = maprange(vv.outputs['Distance'], 0.0, 0.05, 1.0, 0.0)
+        mm6 = N.new('ShaderNodeMath'); mm6.operation = 'MULTIPLY'
+        Lk.new(edge, mm6.inputs[0]); Lk.new(steep6, mm6.inputs[1])
+        col = mix(col, tuple(x * (1.0 - vdark) for x in (0.32, 0.3, 0.28)) + (1.0,), mm6.outputs[0], 'MULTIPLY')
+    if p.get('speckle'):
+        # small dots of colour scattered over the surface (flowers in grass: simbelmynë on the barrows of Edoras):
+        # [(cells per unit, dot radius 0..0.5 of a cell, colour)], Voronoi F1 distance in object space
+        for (sc, rad, scol) in p['speckle']:
+            vo = N.new('ShaderNodeTexVoronoi')
+            vo.feature = 'F1'
+            vo.inputs['Scale'].default_value = sc
+            Lk.new(tc.outputs['Object'], vo.inputs['Vector'])
+            dotf = maprange(vo.outputs['Distance'], rad, rad * 0.6)
+            col = mix(col, _lin(scol), dotf)
     if p.get('windows'):
         # rows of dark windows on vertical faces: dict(fx=per unit along the wall, fz=per unit up, w=(u0, u1) and
         # h=(v0, v1) the window inside each cell, color, z0=lowest sill). "Along the wall" = position . (-ny, nx),

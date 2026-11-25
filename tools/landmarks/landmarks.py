@@ -126,6 +126,13 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=62.0, min_z=-3.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-25: Edoras (models/edoras.py), Rohan's capital: fits its own hex, in-game units written x4 (scale 0.25);
+    # static part = the land + the stone terrace and stair, skinned part = timber, life of the plain (still bone) +
+    # the banner of the Mark (swings). Shipped from vendor/landmarks/Edoras.
+    dict(key='EDORAS', title='Edoras', module='edoras', model='MEC_LM_Edoras', scale=0.25,
+         envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=40.0, min_z=-3.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.

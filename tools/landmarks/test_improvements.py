@@ -129,7 +129,7 @@ def main():
     # every other city and city-state keeps stock art (or, in the size-ladder test, gets its variant)
     lad = improvements.TEST_LADDER
     other = lambda x, y: ids[lad[(5 * x + 3 * y) % len(lad)]] if lad else -1
-    lua.execute('Found(0, 2, 2, "TXT_KEY_CITY_NAME_MEC_MINAS_TIRITH")')
+    lua.execute('Found(0, 2, 2, "TXT_KEY_CITY_NAME_MEC_PELARGIR")')
     lua.execute('Found(3, 9, 9, "TXT_KEY_CITY_NAME_MEC_DALE")')
     assert imp(2, 2) == other(2, 2) and imp(9, 9) == other(9, 9), (imp(2, 2), imp(9, 9))
     # no control plots: nothing but city plots was touched
@@ -152,6 +152,15 @@ def main():
     lua.execute('Fire("SetPopulation", 5, 5, 1, 2)')
     assert imp(5, 5) == ids['BARAD_DUR']
     assert g.Revealed == (144 if improvements.REVEAL_MAP else 0), g.Revealed
+    # every other capital with a landmark gets its own (by name key, and by a typed alias)
+    for k, (x, y) in zip([r['key'] for r in improvements.IMPROVEMENTS if r['key'] not in ('MORIA', 'BARAD_DUR')],
+                         [(10, 1), (10, 4), (10, 7), (10, 10), (6, 10), (1, 6)]):
+        row = next(r for r in improvements.IMPROVEMENTS if r['key'] == k)
+        lua.execute('Found(0, %d, %d, "%s")' % (x, y, row['name_keys'][0]))
+        assert imp(x, y) == ids[k], (k, imp(x, y))
+        if row['aliases']:
+            lua.execute('Found(0, %d, %d, "%s")' % (x - 1, y, row['aliases'][0].upper()))
+            assert imp(x - 1, y) == ids[k], (k, 'alias', imp(x - 1, y))
     print('\n'.join(out))
     print('OK: test_improvements (%d log lines, %d SetImprovementType calls)' % (len(out), g.SetCalls))
 

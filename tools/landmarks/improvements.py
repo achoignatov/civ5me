@@ -75,6 +75,20 @@ IMPROVEMENTS = [
          scale=0.25,
          name_keys=['TXT_KEY_CITY_NAME_MEC_MINAS_TIRITH'],
          aliases=['Minas Tirith', 'MinasTirith', 'Minas Anor']),
+    # Edoras v2 (tools/landmarks/models/edoras.py, 2026-11-25, after the user's film still edoras.jpg): a great crag
+    # with a jointed sheer face and ledges over dry tussock slopes, ~100 weathered longhouses under heavy thatch on its
+    # foot, the log wall with wall-walk, watchtowers and gatehouse, rail fences on the climbing road, a stone stair up a
+    # spur to Meduseld's compound (antique-gold thatch, gold-bound posts, horse-head gables, lesser and spired halls),
+    # the barrows with simbelmynë, the Snowbourn; the banner of the Mark swings (the only moving part). The plain is the
+    # game's own ground. Static part 30.0k vertices (the land, stair, fences), skinned 28.9k (wall, buildings, banner).
+    dict(key='EDORAS', title='Edoras', dir='Edoras',
+         gr2='MEC_LM_Edoras.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Edoras_DIFF.dds', 'MEC_LM_Edoras_SREF.dds',
+                   'MEC_LM_Edoras_Eye_DIFF.dds', 'MEC_LM_Edoras_Eye_SREF.dds'],
+         animation=('MEC_LM_Edoras_Idle.gr2', 'Idle'),
+         scale=0.25,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_EDORAS'],
+         aliases=['Edoras', 'Meduseld']),
     # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
     # spire with clinging turrets + the two-pronged crown, baked 2048, 30.5k vertices; a skinned Eye (6.3k vertices)
     # with the 6 s look-around loop, a ring of fire + a blaze round it, the searching beam, six braziers on the
