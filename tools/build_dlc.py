@@ -506,6 +506,8 @@ def build_landmark_improvements():
                               (improvements.improvement(r),)).fetchone()[0]
         for k in r['name_keys']:    # the name keys must be real city names of the pack
             assert db.execute('select count(*) from Civilization_CityNames where CityName=?', (k,)).fetchone()[0], k
+        if r.get('civ'):            # ...and its civilization (its original capital gets the landmark) a real one
+            assert db.execute('select count(*) from Civilizations where Type=?', (r['civ'],)).fetchone()[0], r['civ']
     db.close()
     print('landmark improvements: %s%s; effects %d; controls %d; fog %s' % (
         ', '.join('%s (%s)' % (improvements.improvement(r), '/'.join(r['name_keys'])) for r in rows),

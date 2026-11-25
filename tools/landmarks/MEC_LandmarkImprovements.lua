@@ -1,8 +1,10 @@
 -- MEC_LandmarkImprovements
 -- Landmark models as tile IMPROVEMENTS (docs/LANDMARKS.md).
 --
--- A city whose name matches a landmark gets that purely visual improvement on its plot; every other city keeps
--- stock art. The city's own art is never touched.
+-- A city whose name matches a landmark gets that purely visual improvement on its plot, and so does the ORIGINAL
+-- capital of the landmark's civilization whatever it is called (the Third Age maps rename cities by their founding
+-- tile: the Hobbits' capital becomes Bag End, Tuckborough...). Every other city keeps stock art. The city's own art
+-- is never touched.
 -- Founding and capture clear a city plot's improvement (CvCity::init), so every sync re-applies it.
 --
 -- Multiplayer: runs on every client and changes game state only from synchronised GameEvents, deciding from
@@ -31,8 +33,12 @@ for _, def in ipairs(g_LandmarkDefs) do
 	end
 end
 local g_CivID
+local g_ByCiv = {}       -- civilization ID -> improvement ID (for that civilization's original capital)
 for row in GameInfo.Civilizations() do
 	if row.Type == g_AnchorCiv then g_CivID = row.ID end
+	for _, def in ipairs(g_LandmarkDefs) do
+		if def.Civ == row.Type and g_ID[def.Improvement] then g_ByCiv[row.ID] = g_ID[def.Improvement] end
+	end
 end
 
 local function Name(id)
@@ -56,6 +62,12 @@ local function LandmarkFor(city)
 	local key = city:GetNameKey()
 	local own = key and (g_ByName[key] or g_ByName[string.lower(key)])
 	if own then return own end
+	-- the founding capital of a civilization with a landmark (synchronised: original owner, original capital)
+	if city:IsOriginalCapital() then
+		local founder = Players[city:GetOriginalOwner()]
+		local civ = founder and g_ByCiv[founder:GetCivilizationType()]
+		if civ then return civ end
+	end
 	-- size-ladder render test (improvements.TEST_LADDER): every other city gets a variant by its map position
 	if #g_Ladder > 0 then
 		return g_ID[g_Ladder[(5 * city:GetX() + 3 * city:GetY()) % #g_Ladder + 1]]
@@ -135,7 +147,7 @@ GameEvents.SetPopulation.Add(function(x, y, oldPop, newPop) SyncAt(x, y) end)
 GameEvents.PlayerDoTurn.Add(function(playerID) SyncAll() end)
 SyncAll()     -- loaded games, and cities that exist before this script runs
 print("MEC_LMI: active, " .. #g_LandmarkDefs .. " landmark(s)"
-	.. (g_AllCities and (", TEST: every city gets " .. g_AllCities) or ", matched by city name")
+	.. (g_AllCities and (", TEST: every city gets " .. g_AllCities) or ", matched by city name and by civilization's original capital")
 	.. (#g_Ladder > 0 and (", TEST ladder on the other cities: " .. table.concat(g_Ladder, " / ")) or "")
 	.. ", controls " .. #g_Controls .. ", anchor " .. tostring(g_AnchorCiv) .. (g_CivID and "" or " (not in the database)"))
 

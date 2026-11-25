@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Middle Earth MP pack: city names of the Third Age maps' dynamic city naming that had no text, so the game
+     showed the raw key (2026-11-25: "TXT_KEY_CITY_NAME_MEC_LONGCLEAVE" for the Hobbits' second city).
+     The keys are those the True Start Location data uses; proper names, the same in every language. -->
+<GameData>
+	<Language_en_US>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_LONGCLEAVE"><Text>Long Cleeve</Text></Row>  <!-- no text in the original mods -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_DURTHAND"><Text>Durthang</Text></Row>  <!-- no text; Tolkien spells it Durthang -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_EMYN_UAIL"><Text>Emyn Uial</Text></Row>  <!-- no text -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_ERED_DUATH"><Text>Ephel Dúath</Text></Row>  <!-- no text (Mordor, south of Barad-dûr: the Mountains of Shadow) -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_ETHIR_ANDUIN"><Text>Ethir Anduin</Text></Row>  <!-- no text -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_NUNUIAL"><Text>Nenuial</Text></Row>  <!-- no text (Lake Evendim) -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_GREENFILEDS"><Text>Greenfields</Text></Row>  <!-- misspelled key; the text exists as ..._GREENFIELDS -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_TAUR_EN_DAEDLOS"><Text>Taur-En-Daedelos</Text></Row>  <!-- misspelled key; the text exists as ..._TAUR_EN_DAEDELOS -->
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_VALE_OR_ERECH"><Text>Vale of Erech</Text></Row>  <!-- misspelled key; the text exists as ..._VALE_OF_ERECH -->
+	</Language_en_US>
+	<Language_IT_IT>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_LONGCLEAVE"><Text>Long Cleeve</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_DURTHAND"><Text>Durthang</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_EMYN_UAIL"><Text>Emyn Uial</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_ERED_DUATH"><Text>Ephel Dúath</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_ETHIR_ANDUIN"><Text>Ethir Anduin</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_NUNUIAL"><Text>Nenuial</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_GREENFILEDS"><Text>Greenfields</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_TAUR_EN_DAEDLOS"><Text>Taur-En-Daedelos</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_VALE_OR_ERECH"><Text>Vale of Erech</Text></Row>
+	</Language_IT_IT>
+	<Language_PL_PL>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_LONGCLEAVE"><Text>Long Cleeve</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_DURTHAND"><Text>Durthang</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_EMYN_UAIL"><Text>Emyn Uial</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_ERED_DUATH"><Text>Ephel Dúath</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_ETHIR_ANDUIN"><Text>Ethir Anduin</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_NUNUIAL"><Text>Nenuial</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_GREENFILEDS"><Text>Greenfields</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_TAUR_EN_DAEDLOS"><Text>Taur-En-Daedelos</Text></Row>
+		<Row Tag="TXT_KEY_CITY_NAME_MEC_VALE_OR_ERECH"><Text>Vale of Erech</Text></Row>
+	</Language_PL_PL>
+</GameData>

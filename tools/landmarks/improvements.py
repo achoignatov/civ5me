@@ -33,6 +33,8 @@ LUA = 'MEC_LandmarkImprovements.lua'
 #   animation  -> (file, name) of an idle loop: played by the stock LandmarkDecisionTree (like the stock oil rig)
 #   trigger    -> (ftsxml, model) TimedTrigger for effects on bones; bones = BoneUsage
 #   name_keys / aliases -> which cities get it
+#   civ        -> ...and that civilization's ORIGINAL capital, whatever it is called (2026-11-25: the Third Age maps'
+#                 dynamic city names rename a capital by its founding tile, e.g. the Hobbits' to Bag End/Tuckborough)
 BARAD_V5 = dict(dir='BaradDur5', gr2='MEC_LM_BaradDur5.gr2',
                 textures=['Generic_Grey_8.dds', 'MEC_LM_BaradDur5_DIFF.dds', 'MEC_LM_BaradDur5_SREF.dds',
                           'MEC_LM_BaradDur5_Eye_DIFF.dds', 'MEC_LM_BaradDur5_Eye_SREF.dds'],
@@ -51,7 +53,7 @@ IMPROVEMENTS = [
     # overlap with the neighbours. Everything above ground reaches 61.3 in the hex's own measure (centre -> flat side
     # = 34), so x0.536: Scale 0.134 -> about +-29 x (-19..+30), 41 high; the glow and the tentacles scale with it.
     # (v3, test 2 of 2026-11-24, is kept in vendor/landmarks/Moria but no longer packed.)
-    dict(key='MORIA', title='Moria', dir='Moria4',
+    dict(key='MORIA', civ='CIVILIZATION_MEC_GOBLINS', title='Moria', dir='Moria4',
          gr2='MEC_LM_Moria4.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_Moria4_DIFF.dds', 'MEC_LM_Moria4_SREF.dds',
                    'MEC_LM_Moria4_Eye_DIFF.dds', 'MEC_LM_Moria4_Eye_SREF.dds'],
@@ -67,7 +69,7 @@ IMPROVEMENTS = [
     # King's banner swinging on its pole (the only moving part). Static part 28.1k vertices (mountain + the city's
     # stone), skinned part 25.7k (everything built on it, on the still bone eyeroot); 2 x 2048 baked. Authored 1:1 in
     # in-game units: about +-32.5 x (-36..+38) (inside the hex), 62 high with the banner.
-    dict(key='MINAS_TIRITH', title='Minas Tirith', dir='MinasTirith',
+    dict(key='MINAS_TIRITH', civ='CIVILIZATION_MEC_GONDOR', title='Minas Tirith', dir='MinasTirith',
          gr2='MEC_LM_MinasTirith.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_MinasTirith_DIFF.dds', 'MEC_LM_MinasTirith_SREF.dds',
                    'MEC_LM_MinasTirith_Eye_DIFF.dds', 'MEC_LM_MinasTirith_Eye_SREF.dds'],
@@ -81,7 +83,7 @@ IMPROVEMENTS = [
     # spur to Meduseld's compound (antique-gold thatch, gold-bound posts, horse-head gables, lesser and spired halls),
     # the barrows with simbelmynë, the Snowbourn; the banner of the Mark swings (the only moving part). The plain is the
     # game's own ground. Static part 30.0k vertices (the land, stair, fences), skinned 28.9k (wall, buildings, banner).
-    dict(key='EDORAS', title='Edoras', dir='Edoras',
+    dict(key='EDORAS', civ='CIVILIZATION_MEC_ROHAN', title='Edoras', dir='Edoras',
          gr2='MEC_LM_Edoras.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_Edoras_DIFF.dds', 'MEC_LM_Edoras_SREF.dds',
                    'MEC_LM_Edoras_Eye_DIFF.dds', 'MEC_LM_Edoras_Eye_SREF.dds'],
@@ -96,7 +98,7 @@ IMPROVEMENTS = [
     # bone fxglow), two colossal dwarf warriors leaning on their axes, the River Running from culverts under the
     # threshold, a dwarven bridge, Ravenhill's guard-post; five braziers (fire0..4: gate x2, bridge x2, Ravenhill).
     # Nothing moves. Static part 23.1k vertices, skinned 10.7k; 2 x 2048 baked. About +-31.5 x (-37..+36), 59 high.
-    dict(key='EREBOR', title='Erebor', dir='Erebor',
+    dict(key='EREBOR', civ='CIVILIZATION_MEC_DWARVES', title='Erebor', dir='Erebor',
          gr2='MEC_LM_Erebor.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_Erebor_DIFF.dds', 'MEC_LM_Erebor_SREF.dds',
                    'MEC_LM_Erebor_Eye_DIFF.dds', 'MEC_LM_Erebor_Eye_SREF.dds'],
@@ -115,7 +117,7 @@ IMPROVEMENTS = [
     # screenshots/saruman.webp). The staff's white light is an additive model effect (MEC_OrthancGlow on bone fxglow);
     # six pit fires (fire0..5, TOWER_FIRE). Nothing moves. Static part 26.8k vertices, skinned 15.8k; 2 x 2048 baked.
     # About +-30.5 x (-32..+34), 64 high.
-    dict(key='ORTHANC', title='Orthanc', dir='Orthanc',
+    dict(key='ORTHANC', civ='CIVILIZATION_MEC_ISENGARD', title='Orthanc', dir='Orthanc',
          gr2='MEC_LM_Orthanc.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_Orthanc_DIFF.dds', 'MEC_LM_Orthanc_SREF.dds',
                    'MEC_LM_Orthanc_Eye_DIFF.dds', 'MEC_LM_Orthanc_Eye_SREF.dds'],
@@ -125,6 +127,24 @@ IMPROVEMENTS = [
          scale=0.25,
          name_keys=['TXT_KEY_CITY_NAME_MEC_ISENGARD'],
          aliases=['Isengard', 'Orthanc', 'Angrenost']),
+    # Bag End v4 (tools/landmarks/models/bag_end.py, 2026-11-25, after the user's screenshots/bag-end.webp): the tile
+    # is Bag End's garden at ground level, the white picket fence on it near the tile's edge (gate in the south-east);
+    # the big Hill (25 high, covering the tile's middle and the stock houses there) in tufts of grass, the great tree,
+    # the brick chimney; the arched stone front, the green round door (10.8 across), two round windows with a warm
+    # additive glow (MEC_BagEndGlow on bone fxglow); stepping stones, sunflowers; Bilbo and Gandalf (x3) sitting on the
+    # grass. Smoke: the chimney smokes (smoke0, CHIMNEY_SMOKE) and billows (smoke1, CHIMNEY_PUFF at 2.4 and 6.4 s);
+    # the pipes puff (pipe0 Gandalf at 0.6 and 1.3 s, pipe1 Bilbo at 4.6 s, PIPE_PUFF): one-shot triggers in the 8 s
+    # idle loop. Nothing moves. Static part 31.6k vertices, skinned 31.0k; 2 x 2048 baked. 51 high (the tree).
+    dict(key='BAG_END', civ='CIVILIZATION_MEC_HOBBITS', title='Bag End', dir='BagEnd',
+         gr2='MEC_LM_BagEnd.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_BagEnd_DIFF.dds', 'MEC_LM_BagEnd_SREF.dds',
+                   'MEC_LM_BagEnd_Eye_DIFF.dds', 'MEC_LM_BagEnd_Eye_SREF.dds'],
+         animation=('MEC_LM_BagEnd_Idle.gr2', 'Idle'),
+         bones=['fxglow', 'smoke0', 'smoke1', 'pipe0', 'pipe1'],
+         trigger=('FX_Triggers_MEC_LM_BagEnd.ftsxml', 'MEC_LM_BagEnd_Eye'),
+         scale=0.25,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_THE_SHIRE'],
+         aliases=['The Shire', 'Shire', 'Bag End', 'Bag-End']),
     # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
     # spire with clinging turrets + the two-pronged crown, baked 2048, 30.5k vertices; a skinned Eye (6.3k vertices)
     # with the 6 s look-around loop, a ring of fire + a blaze round it, the searching beam, six braziers on the
@@ -132,7 +152,7 @@ IMPROVEMENTS = [
     # PRODUCTION SIZE x2 (user, 2026-11-24, after the size-ladder test drew every size on every city): Scale 0.5,
     # about +-66 x +-74 (two hexes), 242 high; the fires and beam grow with it.
     # (v3, the Eye of the first release, is kept in vendor/landmarks/BaradDur but no longer packed.)
-    dict(BARAD_V5, key='BARAD_DUR', title='Barad-dûr', scale=0.5,
+    dict(BARAD_V5, key='BARAD_DUR', civ='CIVILIZATION_MEC_MORDOR', title='Barad-dûr', scale=0.5,
          name_keys=['TXT_KEY_CITY_NAME_MEC_BARAD_DUR'],
          aliases=['Barad Dur', 'Barad-dur', 'Barad-dûr', 'Barad Dûr', 'Baraddur']),
     # The size-ladder test rows (x0.5 / x1.5 / x2 on every other city, 2026-11-24) are described in docs/LANDMARKS.md
@@ -158,11 +178,21 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_BRAZIER', 90.0, 0.35, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
     # Orthanc: the white light of Saruman's staff (file units, Scale 1.0)
     ('ART_DEF_VEFFECT_MEC_STAFF_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_STAFF_GLOW'),
+    # Bag End: the warm light of its windows (file units, Scale 1.0); chimney smoke = the stock idle smoke of the Dromon
+    # (BNW particle), its size a guess (tune after the in-game test)
+    ('ART_DEF_VEFFECT_MEC_WINDOW_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_WINDOW_GLOW'),
+    ('ART_DEF_VEFFECT_MEC_CHIMNEY_SMOKE', 90.0, 2.4, 'ART_DEF_PEFFECT_DROMON_IDLE_SMOKE', None),
+    # Bag End v4: one-shot puffs fired at set seconds of the 8 s idle loop (FX_Triggers time=t duration=0, like the
+    # stock cannon smoke): musket smoke from the pipes (a soldier's puff is 1.3 at unit scale; Gandalf is ~7x a
+    # soldier here), cannon smoke billowing from the chimney. Sizes are first guesses: tune after the test.
+    ('ART_DEF_VEFFECT_MEC_PIPE_PUFF', 90.0, 2.5, 'ART_DEF_PEFFECT_RIFLE_SMOKE', None),
+    ('ART_DEF_VEFFECT_MEC_CHIMNEY_PUFF', 90.0, 1.6, 'ART_DEF_PEFFECT_CANNON_SMOKE', None),
 ]
 VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
               ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml'),   # file in vendor/landmarks/Moria4
               ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml'),  # file in vendor/landmarks/Erebor
-              ('ART_DEF_MEFFECT_MEC_STAFF_GLOW', 'MEC_OrthancGlow.fxsxml')]  # file in vendor/landmarks/Orthanc
+              ('ART_DEF_MEFFECT_MEC_STAFF_GLOW', 'MEC_OrthancGlow.fxsxml'),  # file in vendor/landmarks/Orthanc
+              ('ART_DEF_MEFFECT_MEC_WINDOW_GLOW', 'MEC_BagEndGlow.fxsxml')]  # file in vendor/landmarks/BagEnd
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).
@@ -297,8 +327,9 @@ def lua_table():
 
     def q(v):   # Lua string literal (UTF-8 kept)
         return '"%s"' % v.replace('\\', '\\\\').replace('"', '\\"')
-    defs = ', '.join('{ Improvement = %s, Keys = { %s }, Aliases = { %s } }' % (
-        q(improvement(r)), ', '.join(q(k) for k in r['name_keys']), ', '.join(q(a) for a in r['aliases']))
+    defs = ', '.join('{ Improvement = %s, Keys = { %s }, Aliases = { %s }, Civ = %s }' % (
+        q(improvement(r)), ', '.join(q(k) for k in r['name_keys']), ', '.join(q(a) for a in r['aliases']),
+        q(r['civ']) if r.get('civ') else 'false')
         for r in IMPROVEMENTS)
     all_cities = next((improvement(r) for r in IMPROVEMENTS if r['key'] == ALL_CITIES), None)
     return ('g_LandmarkDefs = { %s }\n' % defs

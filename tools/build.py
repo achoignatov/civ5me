@@ -104,6 +104,7 @@ def main():
 
     # fixes on top of the original mods (applied last)
     actions.append('Fixes/MEMP_ArtFixes.xml')
+    actions.append('Fixes/MEMP_CityNameFixes.xml')
 
     entry_points = [
         ('InGameUIAddin', 'MEC/Wood Elves/LUA/Wood_Elves_Units_Promotions.lua', 'Wood Elf Unit Promotions', ''),

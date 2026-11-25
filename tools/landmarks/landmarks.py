@@ -147,6 +147,14 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=70.0, min_z=-3.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-25: Bag End and Hobbiton (models/bag_end.py), the Hobbits' capital (The Shire): fits its own hex, in-game
+    # units written x4 (scale 0.25); static part = the land, the stone fronts of the holes, the bridge; skinned part
+    # (all on the still bone) = doors, windows, gardens, trees, hedges, the inn, the mill; effects: Bag End's warm
+    # windows (WINDOW_GLOW), chimney smoke (CHIMNEY_SMOKE).
+    dict(key='BAG_END', title='Bag End', module='bag_end', model='MEC_LM_BagEnd', scale=0.25,
+         envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=64.0, min_z=-3.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
@@ -232,6 +240,16 @@ EFFECTS = {
     # Orthanc: the white light in the claw of Saruman's staff (glow.py)
     'STAFF_GLOW': dict(name='ART_DEF_VEFFECT_MEC_STAFF_GLOW', model='ART_DEF_MEFFECT_MEC_STAFF_GLOW',
                        file='MEC_OrthancGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    # Bag End: the warm light of its windows (glow.py) and the chimneys' smoke (the stock idle smoke of the Dromon)
+    'WINDOW_GLOW': dict(name='ART_DEF_VEFFECT_MEC_WINDOW_GLOW', model='ART_DEF_MEFFECT_MEC_WINDOW_GLOW',
+                        file='MEC_BagEndGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'CHIMNEY_SMOKE': dict(name='ART_DEF_VEFFECT_MEC_CHIMNEY_SMOKE', particle='ART_DEF_PEFFECT_DROMON_IDLE_SMOKE',
+                          scale=1.0, rotation=(90.0, 0.0, 0.0)),
+    # Bag End v4: timed one-shot puffs (rig times): the stock musket and cannon smoke, which billow and dissipate
+    'PIPE_PUFF': dict(name='ART_DEF_VEFFECT_MEC_PIPE_PUFF', particle='ART_DEF_PEFFECT_RIFLE_SMOKE',
+                      scale=2.5, rotation=(90.0, 0.0, 0.0)),         # Bilbo's and Gandalf's pipes
+    'CHIMNEY_PUFF': dict(name='ART_DEF_VEFFECT_MEC_CHIMNEY_PUFF', particle='ART_DEF_PEFFECT_CANNON_SMOKE',
+                         scale=1.6, rotation=(90.0, 0.0, 0.0)),      # billows from Bag End's chimney
     'BRAZIER': dict(name='ART_DEF_VEFFECT_MEC_BRAZIER', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
                     scale=0.35, rotation=(90.0, 0.0, 0.0)),
     'EYE_BEAM': dict(name='ART_DEF_VEFFECT_MEC_EYE_BEAM', model='ART_DEF_MEFFECT_MEC_EYE_BEAM',

@@ -14,9 +14,10 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | Edoras (Rohan's capital) | v2, after the film (`edoras.jpg`): a great crag with a jointed sheer face over dry tussock slopes, ~100 weathered longhouses under heavy thatch on its foot, the log wall with wall-walk, watchtowers and gatehouse, a stone stair up a spur to Meduseld's compound (antique-gold thatch, horse-head gables, lesser and spired halls), barrows with simbelmynë, the Snowbourn; the banner of the Mark swings. The plain is the game's own ground | `vendor/landmarks/Edoras` (model `tools/landmarks/models/edoras.py`) |
 | Erebor (the Dwarves' capital) | First draft, after the films' prologue: the Lonely Mountain (snow-capped summit, gullies, arms), the Front Gate cut in a dressed face at the head of its valley (stepped portal, gable head with the gilded crown and seven stars, pilasters, a gallery of lit windows, blue-and-gold banners), the doors ajar with a warm additive gold glow, two colossal dwarf warriors leaning on their axes, the River Running from culverts under the threshold, a dwarven bridge, Ravenhill's guard-post, five braziers; fits its own hex | `vendor/landmarks/Erebor` (model `tools/landmarks/models/erebor.py`) |
 | Isengard (Saruman's capital) | First draft: the Ring of Isengard cut by its gate (pylons, iron doors, banners of the White Hand), the plain torn into fiery pits with scaffolds, treadwheel cranes, chimneys, felled trees, the pillared road; Orthanc in black glossy stone (four faceted piers, knife-edged roots, fins, lancet windows, stair, door, balcony, four horns) and **Saruman on the summit** (7.8 high, above slimmer 7-unit horns: user's touch-up) with his staff (an additive white light) and the palantír glowing bright orange (after `screenshots/saruman.webp`); six pit fires; fits its own hex | `vendor/landmarks/Orthanc` (model `tools/landmarks/models/orthanc.py`) |
+| The Shire (the Hobbits' capital) | v4, after `screenshots/bag-end.webp`: the tile is Bag End's garden at ground level with the white picket fence on it near the edge; the big Hill (covering the middle, where the stock houses stand) in grass tufts with the great tree and the brick chimney; the arched stone front, the green round door (10.8 across), two round windows glowing warm; stepping stones, sunflowers; **Bilbo and Gandalf sitting on the grass, their pipes puffing in turn** (timed one-shot musket smoke), the chimney smoking and billowing | `vendor/landmarks/BagEnd` (model `tools/landmarks/models/bag_end.py`) |
 | Every other city and city-state | Stock art | |
 
-**Next:** the user's in-game verdict on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires), then the other 8 capitals one at a time (§7).
+**Next:** the user's in-game verdict on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires) and Bag End (chimney smoke size, window glow), then the other 7 capitals one at a time (§7).
 
 **Size rule (user, 2026-11-25):** a landmark fits its OWN hex and does not overlap the neighbouring tiles (Moria v4
 at ±54 looked overwhelming next to stock mountains; at `Scale` 0.134 it is "perfect"). New models are authored 1:1
@@ -35,9 +36,12 @@ GameEvents (synced, every client)      MEC_LandmarkImprovements.lua            t
 native houses + buildings (engine, untouched) ---------------------->    drawn together on the city tile
 ```
 
-- **Which city:** a city gets a landmark when its name **key** is in the row's `name_keys` (the same with or without
-  Dynamic City Naming), or a player typed one of its `aliases` (case-insensitive). The landmark follows the name,
-  not the owner: a captured Barad-dûr keeps the Eye; a city renamed away loses it on the next turn.
+- **Which city:** a city gets a landmark when its name **key** is in the row's `name_keys`, or a player typed one of
+  its `aliases` (case-insensitive), or it is the **original capital** of the row's `civ` whatever it is called
+  (`City:IsOriginalCapital()`, `City:GetOriginalOwner()`, both used by stock scripts). The last rule exists because
+  the Third Age maps' dynamic city names rename a city by its founding tile (2026-11-25: the Hobbits' capital
+  founded as The Shire became Bag End and lost its landmark). A captured capital keeps its landmark; any other city
+  renamed away loses it on the next turn.
 - **The improvement:** no gameplay (no yields, no Build row, `Permanent`), so workers can never build it. Founding and
   capture clear a city plot's improvement (`CvCity::init` in the game DLL), so the script re-applies it on those
   events and checks every city on every turn. Syncing twice changes nothing.
@@ -138,6 +142,25 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   fire on one quad; a glow line may carry its own colour as a 6th item, `glow.texture`); pit fires reuse
   `TOWER_FIRE` (Barad-dûr's proven braziers); `loft_poly`/`wall_poly` in `orthanc.py` build hard-edged faceted solids
   from horizontal sections (counter-clockwise from above) and panels on an octagon's faces.
+- *Bag End:* glow key `WINDOW_GLOW` (`MEC_BagEndGlow`); chimney smoke `CHIMNEY_SMOKE` = the stock BNW particle
+  `ART_DEF_PEFFECT_DROMON_IDLE_SMOKE` at VisEffect `Scale` 1.2 (a guess); `PIPE_SMOKE` the same at 0.3 (v2's pipes). Holes are built in their own frame through
+  `bag_end.Local` (a builder proxy that applies a matrix), each with a mound behind and a level yard cut in front of a
+  curved front. Budget lesson: flat-shaded pieces roughly double their vertices when baked; `build_models.py` now
+  prints both parts' counts before checking them.
+- *Timed one-shot effects* (Bag End v4): a rig entry may carry a 5th item, trigger times in seconds of the idle loop;
+  `build_models.py` then writes one trigger per time with `duration="0"` (as the stock artillery fires
+  `CW_CANNON_SMOKE` at `time="0.844"`), so the effect plays once per loop: puffs of `ART_DEF_PEFFECT_RIFLE_SMOKE`
+  from the pipes, `CANNON_SMOKE` billows from the chimney. Untested in game: whether triggers re-fire on every loop
+  of the idle animation, and the sizes.
+- *Particle files:* `.psb` (binary, in the `.fpk` packs; the fpk record is `(0, 0, size, offset)`). Not edited yet:
+  the stock particles are used as they are.
+- *Hiding the stock houses:* they can't be removed for one city (culture-wide, decided in the exe), but they are
+  drawn at the game's ground level, so a landmark whose land stands above them (about 6 units) hides them, the way
+  Erebor's mountain does. Bag End v3 raised its whole garden 6.5 for this; the user rejected the look ("a hexagonal
+  pile of dirt"), so v4 is at ground level and only its big Hill covers the tile's middle. Units on the city tile are hidden the same way (their flags
+  stay).
+- *Grass tufts* (`bag_end.grass_tufts`): three-bladed tufts, each blade two faces a hair apart (one per side; the
+  preview's red back-face marking then only shows as slivers at the edges).
 - *Braziers* (`BRAZIER`): the Great Lighthouse fire at VisEffect `Scale` 0.35 (a guess; untested).
 - *A skinned part with no effects* is fine: `rig()` may return `[]` (Minas Tirith: only its banner moves); the
   improvement row then has an animation but no `bones`/`trigger`, and its `FX_Triggers_*` file is not vendored.
@@ -191,7 +214,7 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 | Goblins | Moria (`MEC_MORIA`) | `moria_v4.py`, `Scale` 0.134 = fits its own hex (v3 `moria.py` kept in `vendor/landmarks/Moria`) | **v4 approved**, size final (2026-11-25); doors redesigned for legibility, awaiting test |
 | Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | `minas_tirith.py`, `Scale` 0.25, fits its hex (started from the draft `tools/capitals/models/gondor.py`) | **Done** (user: "amazing") |
 | Dwarves | Erebor (`MEC_EREBOR`) | `erebor.py`, `Scale` 0.25, fits its hex (ideas from the draft `dwarves.py`) | **First draft installed** 2026-11-25, awaiting test |
-| Hobbits | The Shire (`MEC_THE_SHIRE`) | draft `hobbits.py` (Bag End) | To build |
+| Hobbits | The Shire (`MEC_THE_SHIRE`) | `bag_end.py` v4, `Scale` 0.25, fills its hex at ground level | **v4 installed** 2026-11-25, awaiting test |
 | High Elves | Rivendell (`MEC_RIVENDELL`) | draft `high_elves.py` | To build |
 | Wood Elves | Northern Mirkwood (`MEC_NORTHERN_MIRKWOOD`) | draft `wood_elves.py` | To build |
 | Isengard | Isengard (`MEC_ISENGARD`) | `orthanc.py`, `Scale` 0.25, fits its hex (ideas from the draft `isengard.py`); Saruman on the summit | **First draft installed** 2026-11-25, awaiting test |

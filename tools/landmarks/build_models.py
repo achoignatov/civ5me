@@ -44,7 +44,7 @@ GAME_SREF = 256
 BAKED_DIFF = 1024        # baked models (module BAKE = True): 1024 DIFF / 512 SREF, like the larger stock wonders
 BAKED_SREF = 512
 WORK = os.path.join(os.path.dirname(PREVIEW), 'work')
-GLOW_KEYS = ('DOOR_GLOW', 'GATE_GLOW', 'STAFF_GLOW')   # rig effect keys drawn as a still additive picture (glow.py, glow_effect())
+GLOW_KEYS = ('DOOR_GLOW', 'GATE_GLOW', 'STAFF_GLOW', 'WINDOW_GLOW')   # rig effect keys drawn as a still additive picture (glow.py, glow_effect())
 
 
 def in_hex(x, y, slack=0.05, env=ENVELOPE):
@@ -169,6 +169,8 @@ def build_one(lm, do_preview=True):
             tdn, tsn = _textures(tower, name)
             eye = _make(mod.build_eye, seed)
             edn, esn = _textures(eye, name + '_Eye', 256, 128)
+        print('%-20s parts: static %d verts, skinned %d verts (limit %d each)' % (
+            name, len(tower.verts), len(eye.verts), env['max_verts']))
         for part, r in (('tower', tower), ('eye', eye)):
             assert len(r.verts) <= env['max_verts'] and len(r.tris) <= env['max_tris'], (part, len(r.verts))
         check_envelope(name + ' (tower)', tower.verts, tower.tris, env)
@@ -178,7 +180,9 @@ def build_one(lm, do_preview=True):
             _bbox(tower.verts + eye.verts)))
         if res is None:
             preview_res, preview_dn = tower, tdn
-        rig = mod.rig()
+        rig_raw = mod.rig()     # (bone, parent, position, effect key[, trigger times]): times = timed one-shot effects
+        rig = [tuple(r[:4]) for r in rig_raw]
+        times = {r[0]: r[4] for r in rig_raw if len(r) > 4 and r[4]}
         pivot = tuple(c * k for c in mod.EYE_C)
         bones = [(bn_, parent, tuple(c * k for c in pos)) for bn_, parent, pos, _ in rig]
         size, bone_list = lmodel.write_building(
@@ -190,7 +194,13 @@ def build_one(lm, do_preview=True):
         verify_animation(os.path.join(OUT, idle), name, bone_list, mod.GAZE)
         # effects
         from landmarks import EFFECTS, BEAM_TILT
-        fire = [(bn_, EFFECTS[key]['name']) for bn_, _, _, key in rig if key and key != 'EYE_BEAM']
+        fire = []
+        for bn_, _, _, key in rig:
+            if key and key != 'EYE_BEAM':
+                if bn_ in times:        # one-shot bursts at these seconds of the idle loop (like stock cannon smoke)
+                    fire += [(bn_, EFFECTS[key]['name'], t_, 0) for t_ in times[bn_]]
+                else:
+                    fire.append((bn_, EFFECTS[key]['name']))
         beam_trig = [(bn_, EFFECTS[key]['name']) for bn_, _, _, key in rig if key == 'EYE_BEAM']
         trig_full, trig_fire = 'FX_Triggers_%s.ftsxml' % name, 'FX_Triggers_%s_Fire.ftsxml' % name
         lmodel.write_triggers(os.path.join(OUT, trig_full), fire + beam_trig)
@@ -233,7 +243,7 @@ def build_one(lm, do_preview=True):
         try:
             overlays = []
             if animated and glow_fx:        # the additive glow, at its bone, in in-game units
-                gpos = next(pos for bn_, _, pos, key in mod.rig() if key in GLOW_KEYS)
+                gpos = next(r[2] for r in mod.rig() if r[3] in GLOW_KEYS)
                 for (x0, x1, z0, z1, y) in glow_fx['quads']:
                     P = [(gpos[0] + x / k, gpos[1] + y / k, gpos[2] + z / k) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
                     overlays.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)],

@@ -17,9 +17,9 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 SCRIPT = os.path.join(ROOT, 'dist', 'DLC', 'MiddleEarth', 'UI', improvements.LUA)
 
 MOCK = r'''
-GameDefines = { MAX_PLAYERS = 4, MAX_MAJOR_CIVS = 3 }
+GameDefines = { MAX_PLAYERS = 5, MAX_MAJOR_CIVS = 3 }
 local imps = { { ID = 0, Type = "IMPROVEMENT_FARM" }, @@IMPS@@ }
-local civs = { { ID = 0, Type = "CIVILIZATION_MEC_GONDOR" }, { ID = 7, Type = "CIVILIZATION_MEC_MORDOR" } }
+local civs = { { ID = 0, Type = "CIVILIZATION_MEC_ARNOR" }, @@CIVS@@ }
 local function rows(t) return setmetatable({}, {
   __call = function() local i = 0; return function() i = i + 1; return t[i] end end,
   __index = function(_, k) error("direct GameInfo lookup [" .. tostring(k) .. "] (unreliable in game)", 2) end }) end
@@ -64,8 +64,9 @@ Map = {
   end }
 
 Players = {}
-for i = 0, 3 do
-  local p = { id = i, cities = {}, civ = (i == 1) and 7 or 0 }
+-- player 1 = Mordor, player 4 = the Hobbits, the others a civilization without a landmark
+for i = 0, 4 do
+  local p = { id = i, cities = {}, civ = (i == 1) and @@MORDOR@@ or ((i == 4) and @@HOBBITS@@ or 0) }
   function p:IsAlive() return true end
   function p:IsHuman() return self.id == 0 end
   function p:GetTeam() return self.id end
@@ -77,8 +78,10 @@ end
 -- like CvCity::init: the plot's improvement is cleared, then PlayerCityFounded fires
 function Found(owner, x, y, key)
   local pl = Plots[y * W + x]
-  local c = { owner = owner, plot = pl, key = key }
+  local c = { owner = owner, plot = pl, key = key, orig = owner, first = #Players[owner].cities == 0 }
   function c:GetNameKey() return self.key end
+  function c:GetOriginalOwner() return self.orig end
+  function c:IsOriginalCapital() return self.first end
   function c:GetX() return self.plot.x end
   function c:GetY() return self.plot.y end
   function c:Plot() return self.plot end
@@ -104,7 +107,12 @@ def run(script, anchor_present=True):
     lua.globals().print = lambda *a: out.append(' '.join(str(x) for x in a))
     imps = ', '.join('{ ID = %d, Type = "%s" }' % (10 + i, improvements.improvement(r))
                      for i, r in enumerate(improvements.IMPROVEMENTS))
-    lua.execute(MOCK.replace('@@IMPS@@', imps))
+    civ_types = sorted({r['civ'] for r in improvements.IMPROVEMENTS if r.get('civ')})
+    civ_id = {c: 20 + i for i, c in enumerate(civ_types)}
+    civs = ', '.join('{ ID = %d, Type = "%s" }' % (i, c) for c, i in civ_id.items())
+    lua.execute(MOCK.replace('@@IMPS@@', imps).replace('@@CIVS@@', civs)
+                .replace('@@MORDOR@@', str(civ_id['CIVILIZATION_MEC_MORDOR']))
+                .replace('@@HOBBITS@@', str(civ_id['CIVILIZATION_MEC_HOBBITS'])))
     if not anchor_present:
         lua.execute('rawget(_G, "Players")[1].civ = 0')
     lua.execute(script)
@@ -151,6 +159,21 @@ def main():
     assert g.SetCalls == n, (n, g.SetCalls)
     lua.execute('Fire("SetPopulation", 5, 5, 1, 2)')
     assert imp(5, 5) == ids['BARAD_DUR']
+    # the Third Age maps rename by founding tile (game of 2026-11-25): the Hobbits' capital, founded as The Shire,
+    # becomes Bag End and keeps its landmark as their original capital; their 2nd city (The Shire -> Longcleave)
+    # gets none; captured, the capital keeps it
+    lua.execute('Found(4, 7, 7, "TXT_KEY_CITY_NAME_MEC_THE_SHIRE")')
+    lua.execute('Found(4, 7, 9, "TXT_KEY_CITY_NAME_MEC_THE_SHIRE")')
+    assert imp(7, 7) == ids['BAG_END'] and imp(7, 9) == ids['BAG_END']
+    lua.execute('Map.GetPlot(7, 7).city.key = "TXT_KEY_CITY_NAME_MEC_BAG_END"')
+    lua.execute('Map.GetPlot(7, 9).city.key = "TXT_KEY_CITY_NAME_MEC_LONGCLEAVE"')
+    lua.execute('Fire("PlayerDoTurn", 4)')
+    assert imp(7, 7) == ids['BAG_END'] and imp(7, 9) == other(7, 9), (imp(7, 7), imp(7, 9))
+    lua.execute('Capture(Players[4].cities[1], 0)')
+    assert imp(7, 7) == ids['BAG_END'], imp(7, 7)
+    # a later city of a landmark civilization stays stock (only the original capital)
+    lua.execute('Found(1, 4, 7, "TXT_KEY_CITY_NAME_MEC_UDUN")')
+    assert imp(4, 7) == other(4, 7), imp(4, 7)
     assert g.Revealed == (144 if improvements.REVEAL_MAP else 0), g.Revealed
     # every other capital with a landmark gets its own (by name key, and by a typed alias)
     for k, (x, y) in zip([r['key'] for r in improvements.IMPROVEMENTS if r['key'] not in ('MORIA', 'BARAD_DUR')],
