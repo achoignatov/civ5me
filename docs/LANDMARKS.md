@@ -16,6 +16,7 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | Isengard (Saruman's capital) | First draft: the Ring of Isengard cut by its gate (pylons, iron doors, banners of the White Hand), the plain torn into fiery pits with scaffolds, treadwheel cranes, chimneys, felled trees, the pillared road; Orthanc in black glossy stone (four faceted piers, knife-edged roots, fins, lancet windows, stair, door, balcony, four horns) and **Saruman on the summit** (7.8 high, above slimmer 7-unit horns: user's touch-up) with his staff (an additive white light) and the palantír glowing bright orange (after `screenshots/saruman.webp`); six pit fires; fits its own hex | `vendor/landmarks/Orthanc` (model `tools/landmarks/models/orthanc.py`) |
 | The Shire (the Hobbits' capital) | v4, after `screenshots/bag-end.webp`: the tile is Bag End's garden at ground level with the white picket fence on it near the edge; the big Hill (covering the middle, where the stock houses stand) in ~1,600 cut-out tufts of painted grass and flowers, the great tree (branches and ~600 cut-out leaf clusters) and the brick chimney; the arched stone front, the green round door (10.8 across), two round windows glowing with flickering candlelight; stepping stones, sunflowers; **Bilbo and Gandalf sitting on the grass, puffing in turn** (Gandalf in a long grey robe draped to the grass, belt, scarf, bell sleeves, battered hat, gnarled staff; both with hands, faces and hair in detail): soft clouds rise before each face, spread and thin away in 1.6 s, every 4.3-5.5 s, never together (our animated model effect `puffs.py`); the chimney smoking | `vendor/landmarks/BagEnd` (model `tools/landmarks/models/bag_end.py`) |
 | Entwood (city-state) | v2 (2026-11-25, after `screenshots/treebeard.webp`, the book and the film; v1's size and sway approved in game): **Treebeard** filling his hex, 110 high, with a high-resolution face (its own mesh: wrinkles, knots, crow's feet, irises) and a denser beard (its own mesh); Merry and Pippin small and detailed (seated ~7 units: jackets, waistcoats with buttons, open Lórien cloaks with leaf brooches, faces, curls, hands, toes) on his shoulders; gnarled limbs of twisted bark cords, a hunched trunk, the tall head with the heavy brow, deep eyes under hooded lids, the long knotted nose, the lichen beard "twiggy at the roots, mossy at the ends", ram-like horns and a crown of branches with leaves (some turning), hanging moss; seven-toed feet running on as roots over a forest floor of ferns. **He leans slowly back and forth like a tree in the wind** (24 s loop, the whole body bending from the ankles) | `vendor/landmarks/Treebeard` (model `tools/landmarks/models/treebeard.py`) |
+| Smaug's Lair (city-state) | First draft (2026-11-26): **the hoard of Erebor spilling into all six neighbouring hexes** (the first landmark beyond its own hex: a 19-high heap, a floor of gold with lobes flowing out and fading into the neighbours' ground, loose coins) with ~95 treasures and the Arkenstone; **Smaug asleep on it**: neck, body and tail coiled over the heap, painted scales that follow the body (crimson back, golden belly plates), folded wings with membranes, horns, fangs, dorsal spikes. Still for now (animation later) | `vendor/landmarks/Smaug` (model `tools/landmarks/models/smaug.py`) |
 | Every other city and city-state | Stock art | |
 
 **Next:** the user's in-game verdict on Treebeard (does the blended multi-mesh skin draw and sway?), on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires) and Bag End (chimney smoke size, window glow), then the other 7 capitals one at a time (§7).
@@ -204,6 +205,23 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   mesh's smooth normals: simple subdivision is faceted, which gave dark blotches), lit from the sun's side, multiplies
   the albedo. Fine bark
   fissures in the texture at no vertex cost (the building shader has no normal map).
+- *Painted relief* (Smaug, `tools/landmarks/treasure.py` + `bake.py`): a palette entry `heightimg=dict(key, height,
+  albedo, map='top'|'param', period, bump, cavity)` takes a painted colour map as the albedo and a height map that
+  darkens the hollows and drives a Bump node; when any material has one, the bake compares object-space normals with
+  and without the bumps (lit from the sun's side, a builder's `b.emboss`) and multiplies the albedo: every coin rim
+  and scale edge in the texture, at no vertex cost. `map='top'` = object x, y / period (the coin heap, from above);
+  `map='param'` = the builder's BODY COORDINATES (`b.param_uv[face] = [(u, v)]`, a `PARAM` UV layer; Smaug's
+  `loft_param`: u = one scale row per perimeter / nv of length, v = angle / 2pi, so the scale count round the body
+  is constant and scales shrink on the neck, the tail and the head). `treasure.dragon_scales` tiles in both
+  directions (painted on an extended canvas and cropped).
+- *A skinned model must not hang on the root bone alone* (Smaug v1, 2026-11-26: six meshes bound only to the root of
+  a one-bone skeleton with no curve drew NOTHING in game, while the static part drew). Use a root plus a child bone
+  carrying the vertices, driven by a real curve (`MOTIONS`), as Treebeard does, even when nothing should move yet.
+- *Smaug v2 drew no skinned part either* (root + child bone with a curve, 5 meshes, spanning +-74): the cause is still
+  open (left: a skinned part reaching beyond the own hex, or the number/size of textures). v3 ships the gold as ONE
+  static mesh (`STATIC_PX` 2048); the dragon's meshes (`smaug.DRAGON_PARTS`) wait for a small skinned test.
+- *Beyond the own hex:* Smaug's envelope `hex_in` 77.3 (about 2.3 hexes); the gold heightfield is split along the
+  city's hexagon on ONE grid (the main heap a skinned mesh, the spills the static part), so the seam is exact.
 - *Sprites:* `sprites.hanging_moss` (beard lichen / hanging moss, ragged top), `sprites.fern`,
   `leaf_cluster(autumn=)` (some leaves ochre and rust).
 - *City-states:* a row's `minor` (a `MinorCivilizations` type) gives that city-state's ORIGINAL capital the
@@ -271,6 +289,7 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 | Easterlings | Rhûn (`MEC_RHUN`) | draft `easterlings.py` | To build |
 | Southrons | Harad (`MEC_HARAD`) | draft `southrons.py` | To build |
 | Umbar | Umbar (`MEC_UMBAR`) | draft `umbar.py` | To build |
+| (city-state) Smaug's Lair | Smaug's Lair (`TXT_KEY_CITYSTATE_MECS_SMAUGS_LAIR`, minor `MINOR_CIV_MECS_SMAUGS_LAIR`) | `smaug.py`, `Scale` 0.25, spills into the 6 neighbours | v1 and v2: the spills drew, the skinned model never did; **v3 (the gold alone, one static mesh) installed** 2026-11-26, awaiting test; the dragon later |
 | (city-state) Entwood | Entwood (`TXT_KEY_CITYSTATE_MECS_ENTWOOD`, minor `MINOR_CIV_MECS_ENTWOOD`) | `treebeard.py`, `Scale` 0.25, fits its hex | v1 size and sway approved; **v2 (detail) installed** 2026-11-25, awaiting test |
 
 The drafts in `tools/capitals/models/` are first-generation, low-detail scripts for the old pipeline: use them for

@@ -163,6 +163,14 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=110.0, min_z=-3.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-25: Smaug's Lair (models/smaug.py), the city-state's landmark: the hoard of Erebor with Smaug asleep on
+    # it; THE FIRST TO REACH INTO THE NEIGHBOURING HEXES (the gold spills into all six), so its envelope is ~2.3 hexes
+    # (hex_in 77); in-game units written x4 (scale 0.25); static part = the spills; one skinned model of five meshes
+    # (still for now): the main heap, the treasure, Smaug's body, head and limbs.
+    dict(key='SMAUG', title="Smaug's Lair", module='smaug', model='MEC_LM_Smaug', scale=0.25,
+         envelope=dict(hex_in=77.3, hex_out=77.3 / 0.8660254, max_height=70.0, min_z=-3.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=False, enabled=False),     # v3: one static mesh (no skinned part)
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.

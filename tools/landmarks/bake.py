@@ -320,6 +320,40 @@ def _material(name, glow=None):
         Lk.new(comb.outputs[0], tex.inputs[0])
         gc = _lin(p.get('glow_color', blib.hexcol('9fd8ff')))
         col = mix(col, gc, tex.outputs['Color'], 'SCREEN')
+    if p.get('heightimg'):
+        # a PAINTED map (treasure.py: coins from above, dragon scales in body coordinates): its colour image is the
+        # albedo, its height image darkens the hollows and drives a bump (baked as relief lighting, see process)
+        hi = p['heightimg']
+        if hi.get('map') == 'param':
+            uvn = N.new('ShaderNodeUVMap')
+            uvn.uv_map = 'PARAM'
+            vec = uvn.outputs['UV']
+        else:
+            vm = N.new('ShaderNodeVectorMath')
+            vm.operation = 'SCALE'
+            Lk.new(tc.outputs['Object'], vm.inputs[0])
+            vm.inputs['Scale'].default_value = 1.0 / hi['period']
+            vec = vm.outputs['Vector']
+        imgs = []
+        for kind in ('albedo', 'height'):
+            tex = N.new('ShaderNodeTexImage')
+            tex.image = _np_image(hi['key'] + '_' + kind, hi[kind], kind == 'albedo')
+            tex.extension = 'REPEAT'
+            tex.interpolation = 'Linear'
+            Lk.new(vec, tex.inputs['Vector'])
+            imgs.append(tex)
+        col = mix(col, imgs[0].outputs['Color'], hi.get('mix', 1.0))
+        cav = maprange(imgs[1].outputs['Color'], 0.0, hi.get('cav_top', 0.6), 1.0 - hi.get('cavity', 0.45), 1.0)
+        cc = N.new('ShaderNodeCombineColor')
+        for i in range(3):
+            Lk.new(cav, cc.inputs[i])
+        col = mix(col, cc.outputs[0], 1.0, 'MULTIPLY')
+        bump = N.new('ShaderNodeBump')
+        bump.name = 'BUMP'
+        bump.inputs['Strength'].default_value = 1.0
+        bump.inputs['Distance'].default_value = hi.get('bump', 0.1)
+        Lk.new(imgs[1].outputs['Color'], bump.inputs['Height'])
+        Lk.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
     Lk.new(col, bsdf.inputs['Base Color'])
     # SREF source and AO weight: emission colour = (specular strength, reflection, AO weight), read by an EMIT bake
     spec = p.get('spec') if p.get('spec') is not None else 0.3
@@ -330,6 +364,24 @@ def _material(name, glow=None):
     target.name = 'BAKE_TARGET'
     N.active = target
     return mat
+
+
+def _np_image(name, arr, srgb):
+    """A Blender image from a numpy array (HxW float 0..1 or HxWx3 uint8 sRGB, top row first), made once."""
+    im = bpy.data.images.get(name)
+    if im is not None:
+        return im
+    a = np.asarray(arr)
+    if a.ndim == 2:
+        a = np.repeat(a[..., None], 3, axis=2)
+    a = a.astype(np.float32) / (255.0 if a.dtype == np.uint8 or a.max() > 1.5 else 1.0)
+    h, w = a.shape[:2]
+    im = bpy.data.images.new(name, w, h, alpha=True, float_buffer=not srgb)
+    im.colorspace_settings.name = 'sRGB' if srgb else 'Non-Color'
+    rgba = np.concatenate([np.flipud(a[..., :3]), np.ones((h, w, 1), np.float32)], -1)
+    im.pixels.foreach_set(rgba.ravel())
+    im.pack()
+    return im
 
 
 # --------------------------------------------------------------------------- object
@@ -359,9 +411,20 @@ def _object(b, glow):
     me.polygons.foreach_set('material_index', fmat)
     me.polygons.foreach_set('use_smooth', fsm)
     me.update()
-    if spr:     # the cards' own coordinates, carried through the clean-up below on a second UV layer
+    pu = getattr(b, 'param_uv', None)
+    if spr or pu:
         me.uv_layers.new(name='UVMap')
+    if pu:      # body coordinates (b.param_uv[face] = [(u, v) per corner]) for painted maps that follow a surface
+        pl = me.uv_layers.new(name='PARAM')
+        for poly in me.polygons:
+            uvs = pu.get(orig[poly.index])
+            if uvs:
+                for li, uv in zip(poly.loop_indices, uvs):
+                    pl.data[li].uv = uv
+        me.uv_layers.active = me.uv_layers['UVMap']
+    if spr:     # the cards' own coordinates, carried through the clean-up below on a second UV layer
         sl = me.uv_layers.new(name='SPRITE')
+        me.uv_layers.active = me.uv_layers['UVMap']
         su = getattr(b, 'sprite_uv', {})
         for poly in me.polygons:
             uvs = su.get(orig[poly.index])
@@ -504,6 +567,22 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     bpy.context.scene.world = bpy.data.worlds.new('W')
     bpy.context.scene.world.light_settings.distance = getattr(b, 'ao_distance', 3.0)
     diff = _bake(ob, 'DIFFUSE', px, 'Linear Rec.709')       # linear albedo
+    bump_nodes = [sl.material.node_tree.nodes['BUMP'] for sl in ob.material_slots
+                  if 'BUMP' in sl.material.node_tree.nodes]
+    if bump_nodes:
+        # painted relief: normals with the bumps against the same without them, lit from the game's sun side
+        e = getattr(b, 'emboss', {})
+        n_b = _bake(ob, 'NORMAL', px, 'Non-Color')[..., :3] * 2.0 - 1.0
+        for nd in bump_nodes:
+            nd.inputs['Strength'].default_value = 0.0
+        n_0 = _bake(ob, 'NORMAL', px, 'Non-Color')[..., :3] * 2.0 - 1.0
+        for nd in bump_nodes:
+            nd.inputs['Strength'].default_value = 1.0
+        L = np.array(e.get('light', (0.35, -0.55, 0.76)), np.float32)
+        L /= np.linalg.norm(L)
+        shade = np.clip(1.0 + e.get('k', 1.1) * ((n_b * L).sum(-1) - (n_0 * L).sum(-1)), *e.get('clip', (0.45, 1.5)))
+        diff[..., :3] *= shade[..., None]
+        print('bake: painted relief on %d materials, shade %.2f..%.2f' % (len(bump_nodes), shade.min(), shade.max()))
     hi = _relief(ob, b) if getattr(b, 'relief', None) else None
     ao = _bake(ob, 'AO', px, 'Non-Color', samples=ao_samples, src=hi)[..., 0:1]
     if hi is not None:

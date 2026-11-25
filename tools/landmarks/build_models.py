@@ -77,7 +77,7 @@ def check_envelope(name, verts, tris, env=ENVELOPE):
         raise SystemExit('%s is OUTSIDE the render envelope: %s' % (name, '; '.join(errs)))
 
 
-def _make(mod_fn, seed, baked=False):
+def _make(mod_fn, seed, baked=False, px=BAKED_DIFF):
     """Run a model function into a fresh Builder and texture it.
     baked=False: flat shading + the swatch atlas (tools/capitals/atlas.py);
     baked=True: the model's own smooth shading + a real unwrap and baked textures (bake.py, high fidelity)."""
@@ -88,7 +88,7 @@ def _make(mod_fn, seed, baked=False):
     mod_fn(b)
     if baked:
         import bake
-        return bake.process(b, px=BAKED_DIFF)
+        return bake.process(b, px=px)
     b.fsmooth = [False] * len(b.faces)          # flat shading everywhere (see module docstring)
     return atlas.process(b)
 
@@ -234,14 +234,15 @@ def build_one(lm, do_preview=True):
     args = lm.get('build_args', {})          # e.g. Moria's size variants (landmarks.py)
     baked = getattr(mod, 'BAKE', False)
     bake_px = getattr(mod, 'BAKE_PX', BAKED_DIFF)             # module override (Barad-dur v5: 2048)
-    res = _make(lambda b: mod.build(b, **args), seed, baked) if not (animated and baked) else None
+    static_px = getattr(mod, 'STATIC_PX', BAKED_DIFF)     # a module may ask for a bigger static texture (Smaug: 2048)
+    res = _make(lambda b: mod.build(b, **args), seed, baked, static_px) if not (animated and baked) else None
     env = envelope(lm)
     sname = name + '_Static' if animated else name
     cut = lm.get('tree_cut')
     glow_fx = None
     if res is not None:     # the whole landmark as one static model (skipped for baked animated models: their
         check_envelope(name, res.verts, res.tris, env)          # tower and Eye are baked and checked below)
-        dn, sn = _textures(res, sname, *((BAKED_DIFF, BAKED_SREF) if baked else (GAME_DIFF, GAME_SREF)))
+        dn, sn = _textures(res, sname, *((static_px, static_px // 2) if baked else (GAME_DIFF, GAME_SREF)))
         size = civ5model.write_model(OUT, sname, _model_units(res.verts, k), res.tris, dn, sn, fx=(), wonder=True,
                                      hex_cut=False, tree_cut=cut * k if cut else None)
         files += [sname + '.gr2', dn, sn]

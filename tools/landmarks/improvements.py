@@ -173,6 +173,26 @@ IMPROVEMENTS = [
          scale=0.25,
          name_keys=['TXT_KEY_CITYSTATE_MECS_ENTWOOD'],
          aliases=['Entwood', 'Treebeard']),
+    # Smaug's Lair (tools/landmarks/models/smaug.py, 2026-11-26, first draft): the hoard of Erebor with Smaug asleep on
+    # it. THE FIRST LANDMARK REACHING INTO THE NEIGHBOURING HEXES: the main heap (19 high) on the city's hex, a floor
+    # of gold with lobes flowing into all six neighbours (fading into their ground, loose coins round the edges). Coins
+    # and scales are PAINTED RELIEF (tools/landmarks/treasure.py + bake.py heightimg): a coin heap mapped from above,
+    # a scale sheet in body coordinates; ~95 treasures (goblets, crowns, swords, shields, helms, chests, gems, the
+    # Arkenstone), ~700 loose coins. Smaug: neck, body and tail lofted along a spine coiled over the heap, folded wings
+    # with membranes, tucked hind legs, horns, teeth, dorsal spikes. Static part 24.3k vertices (the spills); one
+    # skinned model of five meshes on a child bone driven by a still curve (Treebeard's proven layout: the first test,
+    # six meshes bound only to the root of a one-bone skeleton without a curve, drew the static part only). v2: the
+    # central heap 25 high, Smaug bigger, the film's umber-red hide with ember flecks, the crest round his head.
+    # v3 (2026-11-26, after the v2 test drew the spills again but still not the skinned model): THE GOLD ALONE, AS ONE
+    # STATIC MESH like every proven static landmark: the central heap (24 high, lumpy) and the spills are one height
+    # field and one coin texture (2048), 120 loose coins, 26 treasures; 29.5k vertices. The dragon comes later.
+    # About +-73 x (-83..+77), 28 high.
+    dict(key='SMAUG', minor='MINOR_CIV_MECS_SMAUGS_LAIR', title="Smaug's Lair", dir='Smaug',
+         gr2='MEC_LM_Smaug.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Smaug_DIFF.dds', 'MEC_LM_Smaug_SREF.dds'],
+         scale=0.25,
+         name_keys=['TXT_KEY_CITYSTATE_MECS_SMAUGS_LAIR'],
+         aliases=["Smaug's Lair", 'Smaug']),
     # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
     # spire with clinging turrets + the two-pronged crown, baked 2048, 30.5k vertices; a skinned Eye (6.3k vertices)
     # with the 6 s look-around loop, a ring of fire + a blaze round it, the searching beam, six braziers on the
