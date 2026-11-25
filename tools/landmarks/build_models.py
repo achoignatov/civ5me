@@ -44,6 +44,7 @@ GAME_SREF = 256
 BAKED_DIFF = 1024        # baked models (module BAKE = True): 1024 DIFF / 512 SREF, like the larger stock wonders
 BAKED_SREF = 512
 WORK = os.path.join(os.path.dirname(PREVIEW), 'work')
+GLOW_KEYS = ('DOOR_GLOW', 'GATE_GLOW')   # rig effect keys drawn as a still additive picture (glow.py, glow_effect())
 
 
 def in_hex(x, y, slack=0.05, env=ENVELOPE):
@@ -197,7 +198,7 @@ def build_one(lm, do_preview=True):
         if beam_trig:                       # only the Eye has the beam (it follows that model's GAZE)
             files += beam.write(OUT, mod.GAZE, getattr(mod, 'BEAM_TILT', BEAM_TILT))
         glow_fx = None
-        if any(key == 'DOOR_GLOW' for _, _, _, key in rig):     # a still, additive glowing picture (glow.py)
+        if any(key in GLOW_KEYS for _, _, _, key in rig):     # a still, additive glowing picture (glow.py)
             import glow
             glow_fx = mod.glow_effect(k)
             files += glow.write(OUT, **glow_fx)
@@ -232,7 +233,7 @@ def build_one(lm, do_preview=True):
         try:
             overlays = []
             if animated and glow_fx:        # the additive glow, at its bone, in in-game units
-                gpos = next(pos for bn_, _, pos, key in mod.rig() if key == 'DOOR_GLOW')
+                gpos = next(pos for bn_, _, pos, key in mod.rig() if key in GLOW_KEYS)
                 for (x0, x1, z0, z1, y) in glow_fx['quads']:
                     P = [(gpos[0] + x / k, gpos[1] + y / k, gpos[2] + z / k) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
                     overlays.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)],

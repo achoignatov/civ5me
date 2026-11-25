@@ -89,6 +89,23 @@ IMPROVEMENTS = [
          scale=0.25,
          name_keys=['TXT_KEY_CITY_NAME_MEC_EDORAS'],
          aliases=['Edoras', 'Meduseld']),
+    # Erebor (tools/landmarks/models/erebor.py, 2026-11-25), the Dwarves' capital, fitting its own hex: the Lonely
+    # Mountain (snow-capped summit, ribbed gullies, arms; the gate valley between the southern ones), the Front Gate
+    # cut in a dressed face (stepped portal, gable head with the gilded crown and seven stars, pilasters, a gallery of
+    # lit windows, blue-and-gold banners), the doors ajar with a warm additive glow (model effect MEC_EreborGlow on
+    # bone fxglow), two colossal dwarf warriors leaning on their axes, the River Running from culverts under the
+    # threshold, a dwarven bridge, Ravenhill's guard-post; five braziers (fire0..4: gate x2, bridge x2, Ravenhill).
+    # Nothing moves. Static part 23.1k vertices, skinned 10.7k; 2 x 2048 baked. About +-31.5 x (-37..+36), 59 high.
+    dict(key='EREBOR', title='Erebor', dir='Erebor',
+         gr2='MEC_LM_Erebor.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Erebor_DIFF.dds', 'MEC_LM_Erebor_SREF.dds',
+                   'MEC_LM_Erebor_Eye_DIFF.dds', 'MEC_LM_Erebor_Eye_SREF.dds'],
+         animation=('MEC_LM_Erebor_Idle.gr2', 'Idle'),
+         bones=['fxglow'] + ['fire%d' % i for i in range(5)],
+         trigger=('FX_Triggers_MEC_LM_Erebor.ftsxml', 'MEC_LM_Erebor_Eye'),
+         scale=0.25,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_EREBOR'],
+         aliases=['Erebor', 'Lonely Mountain', 'The Lonely Mountain']),
     # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
     # spire with clinging turrets + the two-pronged crown, baked 2048, 30.5k vertices; a skinned Eye (6.3k vertices)
     # with the 6 s look-around loop, a ring of fire + a blaze round it, the searching beam, six braziers on the
@@ -116,9 +133,14 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_EYE_BEAM', 0.0, 29.0, None, 'ART_DEF_MEFFECT_MEC_EYE_BEAM'),
     # Moria v4: the ithildin glow; its quads are written in the model's file units, so Scale 1.0
     ('ART_DEF_VEFFECT_MEC_DOOR_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_DOOR_GLOW'),
+    # Erebor: the Front Gate's gold light (file units, Scale 1.0) and its braziers (a guess, about half the tower's
+    # braziers of Barad-dur in file units; tune after the in-game test)
+    ('ART_DEF_VEFFECT_MEC_GATE_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_GATE_GLOW'),
+    ('ART_DEF_VEFFECT_MEC_BRAZIER', 90.0, 0.35, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
 ]
 VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
-              ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml')]   # file in vendor/landmarks/Moria4
+              ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml'),   # file in vendor/landmarks/Moria4
+              ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml')]  # file in vendor/landmarks/Erebor
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).

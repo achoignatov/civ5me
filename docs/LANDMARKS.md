@@ -12,9 +12,10 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | Moria (the Goblins' capital) | v4 (first draft, awaiting the in-game test): the Walls of Moria under Caradhras, Celebdil and Fanuidhol; the Doors of Durin with a real additive ithildin glow; holly trees, the lake, the Watcher's swaying tentacles | `vendor/landmarks/Moria4` (model `tools/landmarks/models/moria_v4.py`) |
 | Minas Tirith (Gondor's capital) | The seven circles cut into Mount Mindolluin, the prow, ~350 houses, the Citadel with the Tower of Ecthelion, the Court of the Fountain with the White Tree in blossom, the King's banner swinging in the wind; fits its own hex | `vendor/landmarks/MinasTirith` (model `tools/landmarks/models/minas_tirith.py`) |
 | Edoras (Rohan's capital) | v2, after the film (`edoras.jpg`): a great crag with a jointed sheer face over dry tussock slopes, ~100 weathered longhouses under heavy thatch on its foot, the log wall with wall-walk, watchtowers and gatehouse, a stone stair up a spur to Meduseld's compound (antique-gold thatch, horse-head gables, lesser and spired halls), barrows with simbelmynë, the Snowbourn; the banner of the Mark swings. The plain is the game's own ground | `vendor/landmarks/Edoras` (model `tools/landmarks/models/edoras.py`) |
+| Erebor (the Dwarves' capital) | First draft, after the films' prologue: the Lonely Mountain (snow-capped summit, gullies, arms), the Front Gate cut in a dressed face at the head of its valley (stepped portal, gable head with the gilded crown and seven stars, pilasters, a gallery of lit windows, blue-and-gold banners), the doors ajar with a warm additive gold glow, two colossal dwarf warriors leaning on their axes, the River Running from culverts under the threshold, a dwarven bridge, Ravenhill's guard-post, five braziers; fits its own hex | `vendor/landmarks/Erebor` (model `tools/landmarks/models/erebor.py`) |
 | Every other city and city-state | Stock art | |
 
-**Next:** the user's in-game verdict on Edoras, then the other 10 capitals one at a time (§7).
+**Next:** the user's in-game verdict on Erebor (glow, braziers' size), then the other 9 capitals one at a time (§7).
 
 **Size rule (user, 2026-11-25):** a landmark fits its OWN hex and does not overlap the neighbouring tiles (Moria v4
 at ±54 looked overwhelming next to stock mountains; at `Scale` 0.134 it is "perfect"). New models are authored 1:1
@@ -127,6 +128,12 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   small beside the landmark's main mass), thickness (roofs as slabs with eaves and ridge rolls, footings into the
   slope), and density; drop toy-like props (blob trees, tube horses). `vcracks` (bake) paints vertical joints on
   steep rock; `uv_boost` keeps a small but important texture (the banner's emblem) sharp in a crowded atlas.
+- *More than one glowing picture:* `build_models.GLOW_KEYS` lists the rig keys drawn by `glow.py` (`DOOR_GLOW`
+  Moria, `GATE_GLOW` Erebor); each has its own model effect (`VIS_MODELS`) and file name (`glow_effect()['name']`),
+  and its colour comes from `glow_effect()['tex_args']['color']` (Erebor: warm gold).
+- *A skinned part where nothing moves* (Erebor: `PIVOT_MATS = set()`, `GAZE` fn = 0): everything is on the still
+  bone; the part is just a second 32k budget that carries the effect bones (`fxglow`, `fire0..4`).
+- *Braziers* (`BRAZIER`): the Great Lighthouse fire at VisEffect `Scale` 0.35 (a guess; untested).
 - *A skinned part with no effects* is fine: `rig()` may return `[]` (Minas Tirith: only its banner moves); the
   improvement row then has an animation but no `bones`/`trigger`, and its `FX_Triggers_*` file is not vendored.
 
@@ -178,12 +185,12 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 | Mordor | Barad-dûr (`MEC_BARAD_DUR`) | `barad_dur_v5.py`, `Scale` 0.5 | **Done** |
 | Goblins | Moria (`MEC_MORIA`) | `moria_v4.py`, `Scale` 0.134 = fits its own hex (v3 `moria.py` kept in `vendor/landmarks/Moria`) | **v4 approved**, size final (2026-11-25); doors redesigned for legibility, awaiting test |
 | Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | `minas_tirith.py`, `Scale` 0.25, fits its hex (started from the draft `tools/capitals/models/gondor.py`) | **Done** (user: "amazing") |
-| Dwarves | Erebor (`MEC_EREBOR`) | draft `dwarves.py` | To build |
+| Dwarves | Erebor (`MEC_EREBOR`) | `erebor.py`, `Scale` 0.25, fits its hex (ideas from the draft `dwarves.py`) | **First draft installed** 2026-11-25, awaiting test |
 | Hobbits | The Shire (`MEC_THE_SHIRE`) | draft `hobbits.py` (Bag End) | To build |
 | High Elves | Rivendell (`MEC_RIVENDELL`) | draft `high_elves.py` | To build |
 | Wood Elves | Northern Mirkwood (`MEC_NORTHERN_MIRKWOOD`) | draft `wood_elves.py` | To build |
 | Isengard | Isengard (`MEC_ISENGARD`) | draft `isengard.py` | To build |
-| Rohan | Edoras (`MEC_EDORAS`) | `edoras.py` v2, `Scale` 0.25, fits its hex (v1 from the draft `rohan.py` was "cartoonish": rebuilt after the film still `edoras.jpg`) | **v2 installed**, awaiting test |
+| Rohan | Edoras (`MEC_EDORAS`) | `edoras.py` v2, `Scale` 0.25, fits its hex (v1 from the draft `rohan.py` was "cartoonish": rebuilt after the film still `edoras.jpg`) | **Done** (user: "look incredible") |
 | Arnor | Annúminas (`MEC_ANNUMINAS`) | draft `arnor.py` | To build |
 | Angmar | Carn Dûm (`MEC_CARN_DUN`) | draft `angmar.py` | To build |
 | Easterlings | Rhûn (`MEC_RHUN`) | draft `easterlings.py` | To build |
