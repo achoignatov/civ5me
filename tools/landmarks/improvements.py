@@ -155,17 +155,20 @@ IMPROVEMENTS = [
     # Treebeard with Merry and Pippin (tools/landmarks/models/treebeard.py, 2026-11-25, after the user's
     # screenshots/treebeard.webp, the book and the film): the landmark of the city-state of Entwood. The forest floor
     # (root mound, seven-toed feet running on as roots, ferns, stones) is static; Treebeard is ONE skinned model of
-    # three meshes (bark body / crown, horns and leaves / lichen beard, hanging moss and the two hobbits in their Lorien
-    # cloaks), every vertex weighted along a chain of bones from the ankles up: the whole Ent bends slowly like a tree
-    # in the wind (24 s loop, two sways back and forth and a side roll; the top travels about 6 units). Static part
-    # 14.9k vertices, skins 27.1k / 19.4k / 21.3k; 4 x 2048 baked (high-resolution bark relief baked in). About
+    # five meshes (bark body / the head and face at high resolution / crown, horns and leaves / lichen beard and
+    # hanging moss / Merry and Pippin, small and detailed: v2 after the user's first test), every vertex weighted along
+    # a chain of bones from the ankles up: the whole Ent bends slowly like a tree in the wind (24 s loop, two sways back
+    # and forth and a side roll; the top travels about 7 units; user: "size and animation perfect"). Static part
+    # 14.9k vertices, skins 23.1k / 24.4k / 19.4k / 23.0k / 31.6k; 5 x 2048 + 1024 baked (bark relief baked in). About
     # +-32 x +-34, 110 high. No effects. minor = the city-state's ORIGINAL capital gets it whatever it is called.
     dict(key='TREEBEARD', minor='MINOR_CIV_MECS_ENTWOOD', title='Treebeard', dir='Treebeard',
          gr2='MEC_LM_Treebeard.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_Treebeard_DIFF.dds', 'MEC_LM_Treebeard_SREF.dds',
                    'MEC_LM_Treebeard_Eye_DIFF.dds', 'MEC_LM_Treebeard_Eye_SREF.dds',
                    'MEC_LM_Treebeard_Eye2_DIFF.dds', 'MEC_LM_Treebeard_Eye2_SREF.dds',
-                   'MEC_LM_Treebeard_Eye3_DIFF.dds', 'MEC_LM_Treebeard_Eye3_SREF.dds'],
+                   'MEC_LM_Treebeard_Eye3_DIFF.dds', 'MEC_LM_Treebeard_Eye3_SREF.dds',
+                   'MEC_LM_Treebeard_Eye4_DIFF.dds', 'MEC_LM_Treebeard_Eye4_SREF.dds',
+                   'MEC_LM_Treebeard_Eye5_DIFF.dds', 'MEC_LM_Treebeard_Eye5_SREF.dds'],
          animation=('MEC_LM_Treebeard_Idle.gr2', 'Idle'),
          scale=0.25,
          name_keys=['TXT_KEY_CITYSTATE_MECS_ENTWOOD'],

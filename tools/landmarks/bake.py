@@ -446,6 +446,16 @@ def _relief(ob, b):
     d.mid_level = r.get('mid', 0.35)
     d.vertex_group = 'R'
     hi.select_set(False)
+    # the reference: the same subdivision without the displacement. Relief shading compares the high copy's normals
+    # with THIS copy's (not the game mesh's smooth ones: simple subdivision is faceted, and that difference showed as
+    # dark blotches on curved faces, Treebeard v2, 2026-11-25)
+    ref = bpy.data.objects.new('relief_ref', me)
+    bpy.context.scene.collection.objects.link(ref)
+    s2 = ref.modifiers.new('S', 'SUBSURF')
+    s2.subdivision_type = 'SIMPLE'
+    s2.levels = s2.render_levels = sub.levels
+    ref.select_set(False)
+    hi['ref'] = ref.name
     return hi
 
 
@@ -500,7 +510,7 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
         # relief shading: the high copy's normals against the game mesh's own, lit from the game's sun side, so the
         # fissures read in the texture (the building shader has no normal map)
         n_hi = _bake(ob, 'NORMAL', px, 'Non-Color', src=hi)[..., :3] * 2.0 - 1.0
-        n_lo = _bake(ob, 'NORMAL', px, 'Non-Color')[..., :3] * 2.0 - 1.0
+        n_lo = _bake(ob, 'NORMAL', px, 'Non-Color', src=bpy.data.objects[hi['ref']])[..., :3] * 2.0 - 1.0
         L = np.array(b.relief.get('light', (0.35, -0.55, 0.76)), np.float32)
         L /= np.linalg.norm(L)
         k = b.relief.get('emboss', 0.9)

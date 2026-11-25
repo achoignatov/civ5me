@@ -181,7 +181,9 @@ def build_skins(lm, mod, do_preview=True):
             pv += [(v[0], v[1], v[2], v[3], ((j + v[4][0]) / n, v[4][1])) for v in r.verts]
             pt += [(a + o, b + o, c + o) for a, b, c in r.tris]
             pims.append(dds.decode_dxt3(os.path.join(OUT, dn)))
-        pimg = np.concatenate(pims, axis=1)
+        H = max(im.shape[0] for im in pims)           # smaller textures (the riders' 1024) blown up to match
+        pimg = np.concatenate([np.repeat(np.repeat(im, H // im.shape[0], 0), H // im.shape[0], 1) for im in pims],
+                              axis=1)
         hin, hout = blib.HEX_IN, blib.HEX_OUT
         pipeline.PREVIEW, pipeline.WORK = PREVIEW, WORK
         blib.HEX_IN, blib.HEX_OUT = env['hex_in'], env['hex_out']

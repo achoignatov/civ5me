@@ -15,7 +15,7 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | Erebor (the Dwarves' capital) | First draft, after the films' prologue: the Lonely Mountain (snow-capped summit, gullies, arms), the Front Gate cut in a dressed face at the head of its valley (stepped portal, gable head with the gilded crown and seven stars, pilasters, a gallery of lit windows, blue-and-gold banners), the doors ajar with a warm additive gold glow, two colossal dwarf warriors leaning on their axes, the River Running from culverts under the threshold, a dwarven bridge, Ravenhill's guard-post, five braziers; fits its own hex | `vendor/landmarks/Erebor` (model `tools/landmarks/models/erebor.py`) |
 | Isengard (Saruman's capital) | First draft: the Ring of Isengard cut by its gate (pylons, iron doors, banners of the White Hand), the plain torn into fiery pits with scaffolds, treadwheel cranes, chimneys, felled trees, the pillared road; Orthanc in black glossy stone (four faceted piers, knife-edged roots, fins, lancet windows, stair, door, balcony, four horns) and **Saruman on the summit** (7.8 high, above slimmer 7-unit horns: user's touch-up) with his staff (an additive white light) and the palantír glowing bright orange (after `screenshots/saruman.webp`); six pit fires; fits its own hex | `vendor/landmarks/Orthanc` (model `tools/landmarks/models/orthanc.py`) |
 | The Shire (the Hobbits' capital) | v4, after `screenshots/bag-end.webp`: the tile is Bag End's garden at ground level with the white picket fence on it near the edge; the big Hill (covering the middle, where the stock houses stand) in ~1,600 cut-out tufts of painted grass and flowers, the great tree (branches and ~600 cut-out leaf clusters) and the brick chimney; the arched stone front, the green round door (10.8 across), two round windows glowing with flickering candlelight; stepping stones, sunflowers; **Bilbo and Gandalf sitting on the grass, puffing in turn** (Gandalf in a long grey robe draped to the grass, belt, scarf, bell sleeves, battered hat, gnarled staff; both with hands, faces and hair in detail): soft clouds rise before each face, spread and thin away in 1.6 s, every 4.3-5.5 s, never together (our animated model effect `puffs.py`); the chimney smoking | `vendor/landmarks/BagEnd` (model `tools/landmarks/models/bag_end.py`) |
-| Entwood (city-state) | First draft (2026-11-25, after `screenshots/treebeard.webp`, the book and the film): **Treebeard** filling his hex, 110 high, Merry and Pippin in their Lórien cloaks on his shoulders; gnarled limbs of twisted bark cords, a hunched trunk, the tall head with the heavy brow, deep eyes under hooded lids, the long knotted nose, the lichen beard "twiggy at the roots, mossy at the ends", ram-like horns and a crown of branches with leaves (some turning), hanging moss; seven-toed feet running on as roots over a forest floor of ferns. **He leans slowly back and forth like a tree in the wind** (24 s loop, the whole body bending from the ankles) | `vendor/landmarks/Treebeard` (model `tools/landmarks/models/treebeard.py`) |
+| Entwood (city-state) | v2 (2026-11-25, after `screenshots/treebeard.webp`, the book and the film; v1's size and sway approved in game): **Treebeard** filling his hex, 110 high, with a high-resolution face (its own mesh: wrinkles, knots, crow's feet, irises) and a denser beard (its own mesh); Merry and Pippin small and detailed (seated ~7 units: jackets, waistcoats with buttons, open Lórien cloaks with leaf brooches, faces, curls, hands, toes) on his shoulders; gnarled limbs of twisted bark cords, a hunched trunk, the tall head with the heavy brow, deep eyes under hooded lids, the long knotted nose, the lichen beard "twiggy at the roots, mossy at the ends", ram-like horns and a crown of branches with leaves (some turning), hanging moss; seven-toed feet running on as roots over a forest floor of ferns. **He leans slowly back and forth like a tree in the wind** (24 s loop, the whole body bending from the ankles) | `vendor/landmarks/Treebeard` (model `tools/landmarks/models/treebeard.py`) |
 | Every other city and city-state | Stock art | |
 
 **Next:** the user's in-game verdict on Treebeard (does the blended multi-mesh skin draw and sway?), on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires) and Bag End (chimney smoke size, window glow), then the other 7 capitals one at a time (§7).
@@ -190,7 +190,7 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   preview's red back-face marking then only shows as slivers at the edges).
 - *Braziers* (`BRAZIER`): the Great Lighthouse fire at VisEffect `Scale` 0.35 (a guess; untested).
 - *Blended skins of several meshes* (Treebeard, `lmodel.write_building(skins=...)`, `build_models.build_skins`;
-  untested in game until the user's test): ONE skinned model `<name>_Eye` holding SEVERAL meshes (each its own
+  **proven in game 2026-11-25** with 3 meshes; v2 has 5): ONE skinned model `<name>_Eye` holding SEVERAL meshes (each its own
   32k budget and 2048 texture: `<name>_Eye`, `_Eye2`, `_Eye3` textures), every vertex with up to 4 bone weights
   (uint8, summing to 255) indexing the mesh's own BoneBindings, exactly the layout of the stock polder
   (`anc_polder.gr2`: 3 skinned meshes, 2 bindings each, weights 250/5). A module declares `SKIN_PARTS`, `BONES`
@@ -200,7 +200,9 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   curves) at several times and renders them: always run it before shipping a skin.
 - *Relief bake* (`bake.py`, a builder's `b.relief`): a copy of the model, its bark faces subdivided ~64x and
   displaced by stretched Voronoi plates (F2-F1), is the source of the AO bake and of an object-space normal bake;
-  the difference of its normals from the game mesh's, lit from the sun's side, multiplies the albedo. Fine bark
+  the difference of its normals from those of an undisplaced copy with the same subdivision (not the game
+  mesh's smooth normals: simple subdivision is faceted, which gave dark blotches), lit from the sun's side, multiplies
+  the albedo. Fine bark
   fissures in the texture at no vertex cost (the building shader has no normal map).
 - *Sprites:* `sprites.hanging_moss` (beard lichen / hanging moss, ragged top), `sprites.fern`,
   `leaf_cluster(autumn=)` (some leaves ochre and rust).
@@ -269,7 +271,7 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 | Easterlings | Rhûn (`MEC_RHUN`) | draft `easterlings.py` | To build |
 | Southrons | Harad (`MEC_HARAD`) | draft `southrons.py` | To build |
 | Umbar | Umbar (`MEC_UMBAR`) | draft `umbar.py` | To build |
-| (city-state) Entwood | Entwood (`TXT_KEY_CITYSTATE_MECS_ENTWOOD`, minor `MINOR_CIV_MECS_ENTWOOD`) | `treebeard.py`, `Scale` 0.25, fits its hex | **First draft installed** 2026-11-25, awaiting test |
+| (city-state) Entwood | Entwood (`TXT_KEY_CITYSTATE_MECS_ENTWOOD`, minor `MINOR_CIV_MECS_ENTWOOD`) | `treebeard.py`, `Scale` 0.25, fits its hex | v1 size and sway approved; **v2 (detail) installed** 2026-11-25, awaiting test |
 
 The drafts in `tools/capitals/models/` are first-generation, low-detail scripts for the old pipeline: use them for
 ideas and layout, and build the real model in `tools/landmarks/models/` by §5.
