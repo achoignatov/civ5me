@@ -287,6 +287,16 @@ def life_palette():
     blib.PALETTE['b_breech'].update(scale=3.0, cavity=0.6)
     material('b_hair', h('5a3d24'), h('4b321d'))
     blib.PALETTE['b_hair'].update(scale=6.0, cavity=0.8)
+    material('belt', h('4a3a2c'), h('3d3024'))
+    blib.PALETTE['belt'].update(scale=4.0, vcracks=(0.6, 0.3), cavity=0.6)
+    material('g_scarf', h('8f98a2'), h('808994'))
+    blib.PALETTE['g_scarf'].update(scale=4.0, cavity=0.7, vcracks=(0.4, 0.2))
+    material('g_band', h('3e4652'), h('363d48'))
+    blib.PALETTE['g_band'].update(scale=4.0, cavity=0.6)
+    material('eye', h('2a2421'))
+    blib.PALETTE['eye'].update(solid=True)
+    material('staffwood', h('5a4a38'), h('4a3c2d'))
+    blib.PALETTE['staffwood'].update(scale=2.5, vcracks=(0.8, 0.5), cavity=0.8)
     material('pipe', h('4a3524'), spec=0.5, refl=50)
     blib.PALETTE['pipe'].update(solid=True)
     material('ember', h('ff8a32'), ao=False)
@@ -668,87 +678,213 @@ GANDALF_BOWL = (-0.38, -1.45, 2.0)
 BILBO_BOWL = (-0.22, -0.72, 1.12)
 
 
+def hand(b, wrist, toward, size, curl=0.6, mat='skin'):
+    """A hand: a palm and four fingers curling round towards `toward` (e.g. a pipe's stem), and a thumb."""
+    W, T_ = Vector(wrist), Vector(toward)
+    d = (T_ - W).normalized()
+    side = d.cross(Vector((0, 0, 1)))
+    if side.length < 1e-3:
+        side = Vector((1, 0, 0))
+    side.normalize()
+    up = side.cross(d)
+    palm = W + d * size * 0.55
+    blob(b, mat, palm.x, palm.y, palm.z - size * 0.35, size * 0.42, n=8, rings=4, squash=0.75, jitter=0.0)
+    for f in range(4):
+        o = side * (f - 1.5) * size * 0.2
+        p0 = palm + d * size * 0.35 + o
+        p1 = p0 + d * size * 0.35 - up * size * 0.25 * curl
+        p2 = p1 + (d * (1 - curl) - up * curl) * size * 0.3
+        tube(b, mat, [tuple(p0), tuple(p1), tuple(p2)], [size * 0.1, size * 0.09, size * 0.075], n=5)
+    t0 = palm + side * size * 0.38
+    tube(b, mat, [tuple(t0), tuple(t0 + (d + up * 0.3) * size * 0.35)], [size * 0.11, size * 0.085], n=5)
+
+
+def strands(b, mat, roots, rng, length, r0, wave=0.06, droop=(0.0, 0.0, -1.0), n=5):
+    """Locks of hair / a beard: tapering wavy tubes from roots, falling along droop."""
+    D = Vector(droop).normalized()
+    for (p, ln) in roots:
+        P = Vector(p)
+        side = D.cross(Vector((0.0, 1.0, 0.0)))
+        if side.length < 1e-3:
+            side = Vector((1.0, 0.0, 0.0))
+        side.normalize()
+        ph = rng.uniform(0, 6.3)
+        pts = [tuple(P + D * (length * ln * t) + side * wave * math.sin(ph + t * 7.0) + Vector((0, -0.04 * t, 0)))
+               for t in (0.0, 0.25, 0.5, 0.75, 1.0)]
+        tube(b, mat, spline(pts, 10), [r0 * (1.0 - 0.85 * i / 10) + 0.008 for i in range(11)], n=n)
+
+
+def robe_drape(b):
+    """Gandalf's robe falling over his outstretched legs to the grass: a smooth cloth over both knees, sagging
+    between them, falling in folds at the sides and the hem (the legs themselves are under it)."""
+    def zc(y):                                   # the top of a leg (thigh, knee, shin) along y
+        pts = [(0.25, 0.45), (-0.1, 0.62), (-1.3, 1.02), (-2.35, 0.42), (-2.7, 0.2)]
+        for (y0, z0), (y1, z1) in zip(pts, pts[1:]):
+            if y1 <= y <= y0:
+                t = (y - y0) / (y1 - y0)
+                return z0 + (z1 - z0) * (t * t * (3 - 2 * t))
+        return 0.2 if y < -2.7 else 0.45
+    nx, ny = 30, 36
+    X0, X1, Y0, Y1 = -1.2, 1.2, -2.85, 0.3
+    v, f = [], []
+    for j in range(ny + 1):
+        y = Y0 + (Y1 - Y0) * j / ny
+        for i in range(nx + 1):
+            x = X0 + (X1 - X0) * i / nx
+            z = 0.03
+            for e in (-1, 1):
+                dx = abs(x - e * 0.4)
+                top = zc(y) + 0.36
+                if dx < 0.5:
+                    h = top - 0.36 * (1 - math.sqrt(max(0.0, 1 - (dx / 0.58) ** 2)))
+                else:
+                    h = (top - 0.22) * math.exp(-((dx - 0.5) / 0.3) ** 2) + 0.03
+                z = max(z, h)
+            z -= 0.14 * math.exp(-(x / 0.22) ** 2) * smooth((zc(y) - 0.3) / 0.4)         # sagging between the knees
+            z += 0.035 * math.sin(x * 11.0 + y * 1.3) * smooth((1.1 - abs(x)) / 0.5)     # folds
+            if y < -2.45:
+                z = 0.03 + (z - 0.03) * smooth((y + 2.85) / 0.4)                         # the hem on the grass
+            v.append((x, y, max(0.03, z)))
+    for j in range(ny):
+        for i in range(nx):
+            a = j * (nx + 1) + i
+            f.append((a, a + 1, a + nx + 2, a + nx + 1))
+    b.add(v, oriented(v, f, (0, 0, 1)), 'g_robe', smooth=True)
+
+
 def gandalf(b):
-    """Gandalf the Grey sitting on the grass: legs stretched out under the grey robe, the blue-grey cloak spread
-    behind him on the ground, his long beard, the tall pointed hat with its wide brim and bent tip, the long pipe at
-    his mouth in his right hand, the left hand on his knee, the staff leaning on his left shoulder."""
-    folds = (lambda a: 1.0 + 0.06 * math.cos(7 * a))
-    # the cloak, spread on the grass behind him and over his shoulders
-    loft(b, 'g_cloak', [(0, 0.75, 0.04, 1.15, 0.6, folds), (0, 0.55, 0.6, 0.95, 0.48, folds),
-                        (0, 0.4, 1.5, 0.82, 0.42, folds), (0, 0.32, 2.15, 0.78, 0.38, None),
-                        (0, 0.28, 2.35, 0.5, 0.3, None)], n=20)
-    # the body in the robe, leaning back a little
-    loft(b, 'g_robe', [(0, 0.1, 0.05, 0.85, 0.72, folds), (0, 0.1, 0.5, 0.8, 0.62, folds),
-                       (0, 0.14, 1.2, 0.64, 0.46, None), (0, 0.2, 1.8, 0.66, 0.44, None),
-                       (0, 0.24, 2.15, 0.7, 0.42, None), (0, 0.24, 2.38, 0.36, 0.3, None)], n=18)
-    # legs stretched out, knees a little up; the robe draped over them; boots
+    """Gandalf the Grey sitting on the grass (books and films): a long grey robe draped over his outstretched legs to
+    the ground, the toes of his boots at its hem; a rope belt; wide bell sleeves; a silver-grey scarf wound round his
+    neck; the blue-grey cloak spread on the grass behind him; long grey hair and a long wavy beard, bushy brows, a big
+    nose; the battered pointed hat with a wide wavy brim, a band and a bent tip; the long pipe at his mouth in his
+    right hand, the left hand on his knee; a gnarled staff leaning on his left shoulder."""
+    rng = random.Random(7)
+    folds = (lambda a: 1.0 + 0.07 * math.cos(7 * a) + 0.03 * math.cos(13 * a + 1.0))
+    soft = (lambda a: 1.0 + 0.035 * math.cos(9 * a))
+    # the cloak, spread on the grass behind him and up over his shoulders
+    loft(b, 'g_cloak', [(0, 0.85, 0.03, 1.25, 0.7, folds), (0, 0.6, 0.5, 1.02, 0.52, folds),
+                        (0, 0.45, 1.4, 0.86, 0.44, folds), (0, 0.34, 2.1, 0.8, 0.39, soft),
+                        (0, 0.3, 2.33, 0.52, 0.31, None)], n=30)
+    # the robe: the body, leaning back a little, and its skirt over the legs
+    loft(b, 'g_robe', [(0, 0.1, 0.05, 0.9, 0.74, folds), (0, 0.1, 0.5, 0.84, 0.64, folds),
+                       (0, 0.14, 1.2, 0.66, 0.48, soft), (0, 0.2, 1.8, 0.66, 0.44, soft),
+                       (0, 0.24, 2.15, 0.7, 0.42, None), (0, 0.24, 2.38, 0.36, 0.3, None)], n=26)
+    robe_drape(b)
+    for e in (-1, 1):                                                 # the toes of his boots at the hem
+        loft(b, 'boot', [(e * 0.42, -2.62, 0.02, 0.17, 0.2, None), (e * 0.42, -2.68, 0.2, 0.16, 0.17, None),
+                         (e * 0.42, -2.66, 0.3, 0.09, 0.1, None)], n=10)
+    loft(b, 'belt', [(0, 0.15, 1.2, 0.69, 0.51, None), (0, 0.15, 1.33, 0.69, 0.51, None)], n=26)    # rope belt
+    tube(b, 'belt', [(0.15, -0.36, 1.25), (0.2, -0.42, 0.95), (0.18, -0.45, 0.62)], [0.05, 0.045, 0.04], n=5)
+    # the scarf: wound round the neck, its ends down his chest
+    loft(b, 'g_scarf', [(0, 0.2, 2.18, 0.46, 0.36, soft), (0, 0.2, 2.42, 0.4, 0.33, soft)], n=18)
     for e in (-1, 1):
-        limb(b, 'g_robe', [(e * 0.36, -0.1, 0.38), (e * 0.4, -1.3, 0.82), (e * 0.4, -2.35, 0.34)], [0.42, 0.3], n=10)
-        loft(b, 'boot', [(e * 0.4, -2.45, 0.05, 0.2, 0.32, None), (e * 0.4, -2.5, 0.35, 0.2, 0.3, None),
-                         (e * 0.4, -2.55, 0.5, 0.12, 0.2, None)], n=8)
-    # arms: the right raises the long pipe to his mouth, the left rests on his knee
-    limb(b, 'g_robe', [(-0.66, 0.22, 2.1), (-0.85, -0.3, 1.45), (-0.32, -0.62, 2.02)], [0.22, 0.34], n=9)
-    blob(b, 'skin', -0.24, -0.68, 1.98, 0.13, n=8, rings=4, squash=1.1, jitter=0.0)
-    limb(b, 'g_robe', [(0.66, 0.22, 2.1), (0.86, -0.4, 1.35), (0.5, -1.15, 1.02)], [0.22, 0.34], n=9)
-    blob(b, 'skin', 0.45, -1.32, 0.92, 0.14, n=8, rings=4, squash=0.8, jitter=0.0)
+        tube(b, 'g_scarf', spline([(e * 0.18, -0.15, 2.3), (e * 0.22, -0.38, 1.9), (e * 0.2, -0.43, 1.45)], 8),
+             [0.11, 0.11, 0.1, 0.1, 0.1, 0.09, 0.09, 0.08, 0.07], n=6)
+    # wide bell sleeves: the right raises the long pipe to his mouth, the left lies on his knee
+    for pts, wr in (([(-0.66, 0.22, 2.1), (-0.85, -0.3, 1.45), (-0.36, -0.6, 1.95)], (-0.28, -0.66, 2.0)),
+                    ([(0.66, 0.22, 2.1), (0.86, -0.4, 1.35), (0.52, -1.1, 1.08)], (0.47, -1.25, 1.02))):
+        P = spline(pts, 10)
+        tube(b, 'g_robe', P, [0.22 + 0.2 * (i / 10) ** 2 for i in range(len(P))], n=12, tip=False)
+        a, c = Vector(P[-2]), Vector(P[-1])                           # the sleeve's mouth hanging open below
+        loft(b, 'g_robe', [(c.x, c.y, c.z - 0.55, 0.12, 0.16, None), (c.x, c.y, c.z - 0.25, 0.34, 0.36, folds),
+                           (c.x, c.y, c.z, 0.42, 0.42, None)], n=12)
+        del a
+    hand(b, (-0.3, -0.64, 1.98), (-0.05, -0.62, 2.18), 0.3, curl=0.8)
+    hand(b, (0.48, -1.22, 1.02), (0.42, -1.62, 0.95), 0.32, curl=0.5)
     pipe(b, (-0.02, -0.4, 2.52), GANDALF_BOWL)
-    # the head, the beard and the long grey hair
+    # the head: face, big nose, bushy brows, eyes; beard, moustache, long hair
     loft(b, 'skin', [(0, 0.0, 2.36, 0.2, 0.22, None), (0, -0.01, 2.55, 0.25, 0.27, None),
-                     (0, 0.0, 2.78, 0.26, 0.28, None), (0, 0.02, 2.95, 0.2, 0.22, None)], n=14)
-    box(b, 'skin', 0, 0, -0.07, 0.08, 0.14, 0.2, M=T(0.0, -0.28, 2.66))                 # the nose
-    box(b, 'g_beard', 0, 0, -0.03, 0.4, 0.09, 0.07, M=T(0.0, -0.25, 2.78))               # brows
-    beard = (lambda a: 1.0 + 0.1 * math.cos(9 * a))
-    loft(b, 'g_beard', [(0, -0.42, 1.45, 0.05, 0.04, None), (0, -0.44, 1.75, 0.2, 0.1, beard),
-                        (0, -0.4, 2.1, 0.3, 0.14, beard), (0, -0.3, 2.42, 0.3, 0.15, beard),
-                        (0, -0.18, 2.6, 0.27, 0.15, beard)], n=14)
+                     (0, 0.0, 2.78, 0.26, 0.28, None), (0, 0.02, 2.95, 0.2, 0.22, None)], n=16)
+    loft(b, 'skin', [(0, -0.25, 2.58, 0.05, 0.04, None), (0, -0.31, 2.66, 0.065, 0.07, None),
+                     (0, -0.27, 2.76, 0.04, 0.05, None)], n=8)                                   # the nose
+    for e in (-1, 1):
+        blob(b, 'eye', e * 0.1, -0.235, 2.7, 0.035, n=6, rings=3, squash=1.0, jitter=0.0)
+        tube(b, 'g_beard', [(e * 0.03, -0.27, 2.77), (e * 0.13, -0.29, 2.8), (e * 0.24, -0.25, 2.79)],
+             [0.045, 0.05, 0.035], n=6)                                                          # bushy brows
+    beard = (lambda a: 1.0 + 0.12 * math.cos(9 * a))
+    loft(b, 'g_beard', [(0, -0.42, 1.5, 0.06, 0.04, None), (0, -0.44, 1.78, 0.2, 0.1, beard),
+                        (0, -0.4, 2.1, 0.29, 0.14, beard), (0, -0.3, 2.42, 0.29, 0.15, beard),
+                        (0, -0.2, 2.58, 0.26, 0.15, beard)], n=16)
+    strands(b, 'g_beard', [((x, -0.36, 2.35), rng.uniform(0.7, 1.0)) for x in (-0.2, -0.12, -0.04, 0.04, 0.12, 0.2)],
+            rng, 0.85, 0.07, droop=(0.0, -0.12, -1.0))
+    for e in (-1, 1):                                                 # the moustache, drooping into the beard
+        tube(b, 'g_beard', spline([(e * 0.03, -0.32, 2.6), (e * 0.16, -0.33, 2.55), (e * 0.24, -0.33, 2.38)], 6),
+             [0.06, 0.06, 0.055, 0.05, 0.045, 0.04, 0.03], n=6)
     loft(b, 'g_beard', [(0, 0.3, 1.95, 0.42, 0.12, None), (0, 0.24, 2.35, 0.42, 0.18, None),
-                        (0, 0.1, 2.8, 0.32, 0.26, None), (0, 0.04, 2.95, 0.25, 0.25, None)], n=14)
-    # the hat: a wide brim, the tall cone bending back at its tip
-    lathe(b, 'g_hat', [(0.0, 0.0), (0.98, -0.04), (1.0, 0.0), (0.4, 0.07), (0.0, 0.07)], 24, 0.0, 0.02, 2.9,
-          smooth=True)
-    tube(b, 'g_hat', spline([(0.0, 0.02, 2.92), (0.0, 0.06, 3.35), (0.0, 0.14, 3.85), (0.04, 0.34, 4.3),
-                             (0.1, 0.7, 4.55)], 12),
-         [0.4, 0.38, 0.35, 0.31, 0.27, 0.23, 0.19, 0.15, 0.11, 0.08, 0.05, 0.03, 0.02], n=12)
-    # the staff, leaning on his left shoulder
-    limb(b, 'timber', [(1.2, -0.05, 0.0), (1.08, 0.2, 2.2), (0.95, 0.42, 4.35)], [0.07, 0.055], n=6)
-    blob(b, 'timber', 0.93, 0.44, 4.3, 0.15, n=7, rings=4, squash=1.2, jitter=0.3)
+                        (0, 0.1, 2.8, 0.32, 0.26, None), (0, 0.04, 2.95, 0.25, 0.25, None)], n=16)
+    strands(b, 'g_beard', [((e * 0.26, -0.02, 2.82), 1.0) for e in (-1, 1)] +
+            [((e * 0.3, 0.1, 2.78), 0.9) for e in (-1, 1)], rng, 0.9, 0.08, droop=(0.0, 0.15, -1.0))
+    # the hat: a wide wavy brim, a band, the crown rising and bending back at its tip, a little crumpled
+    wavy = (lambda a: 1.0 + 0.045 * math.sin(5 * a + 0.4) + 0.02 * math.sin(11 * a))
+    loft(b, 'g_hat', [(0, 0.02, 2.88, 1.05, 1.02, wavy), (0, 0.02, 2.92, 1.08, 1.05, wavy),
+                      (0, 0.02, 2.95, 0.42, 0.41, None), (0, 0.02, 2.97, 0.4, 0.39, None)], n=32)
+    loft(b, 'g_band', [(0, 0.03, 2.95, 0.41, 0.4, None), (0, 0.04, 3.1, 0.39, 0.38, None)], n=20)
+    crump = [0.4, 0.38, 0.36, 0.32, 0.28, 0.24, 0.2, 0.16, 0.12, 0.09, 0.06, 0.04, 0.02]
+    tube(b, 'g_hat', spline([(0.0, 0.02, 2.94), (0.02, 0.07, 3.4), (-0.03, 0.15, 3.88), (0.04, 0.36, 4.3),
+                             (0.12, 0.72, 4.52)], 12), crump, n=14)
+    # the staff: gnarled, a knot at its head, leaning on his left shoulder
+    sp = [(1.2, -0.05, 0.0), (1.16, 0.05, 1.1), (1.1, 0.18, 2.2), (1.02, 0.32, 3.3), (0.95, 0.42, 4.35)]
+    sp = [(x + 0.03 * math.sin(z * 4.0), y, z) for x, y, z in sp]
+    tube(b, 'staffwood', spline(sp, 16), [0.075 - 0.012 * i / 16 + 0.01 * math.sin(i * 1.7) for i in range(17)],
+         n=7, tip=False)
+    tube(b, 'staffwood', spline([(0.95, 0.42, 4.3), (0.82, 0.48, 4.6), (0.98, 0.55, 4.78), (1.08, 0.45, 4.55)], 10),
+         [0.08, 0.1, 0.11, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03], n=7)
 
 
 def bilbo(b):
-    """Bilbo sitting on the grass, knees up: white shirt with full sleeves, the red waistcoat, brown breeches to the
-    knee, bare hairy feet, curly brown hair, his pipe in his right hand."""
+    """Bilbo sitting on the grass, knees up: white shirt with full sleeves and collar points, a neckerchief, the red
+    waistcoat with brass buttons and a watch chain, brown breeches banded at the knee, big bare hairy feet with toes,
+    curly brown hair, pointed ears; his pipe in his right hand, the left on his knee."""
+    rng = random.Random(3)
     for e in (-1, 1):
         limb(b, 'b_breech', [(e * 0.2, 0.0, 0.25), (e * 0.24, -0.38, 0.6), (e * 0.26, -0.66, 0.82)], [0.17, 0.14],
-             n=8)
+             n=10)
+        loft(b, 'belt', [(e * 0.26, -0.67, 0.74, 0.145, 0.13, None), (e * 0.26, -0.69, 0.83, 0.145, 0.13, None)],
+             n=10)                                                                             # the knee band
         limb(b, 'skin', [(e * 0.26, -0.68, 0.8), (e * 0.27, -0.85, 0.45), (e * 0.28, -0.95, 0.15)], [0.1, 0.085],
-             n=7)
-        loft(b, 'skin', [(e * 0.28, -0.95, 0.02, 0.12, 0.2, None), (e * 0.28, -1.05, 0.12, 0.13, 0.22, None),
-                         (e * 0.28, -1.1, 0.2, 0.09, 0.15, None)], n=8)          # the big hobbit feet
-        blob(b, 'b_hair', e * 0.28, -1.02, 0.15, 0.1, n=6, rings=3, squash=0.6, jitter=0.4)   # ...and their hair
-    loft(b, 'b_breech', [(0, 0.02, 0.05, 0.36, 0.32, None), (0, 0.02, 0.32, 0.38, 0.3, None)], n=12)
+             n=8)
+        loft(b, 'skin', [(e * 0.28, -0.95, 0.02, 0.13, 0.21, None), (e * 0.28, -1.05, 0.12, 0.14, 0.23, None),
+                         (e * 0.28, -1.1, 0.2, 0.1, 0.16, None)], n=10)       # the big hobbit feet
+        for t in range(5):                                                     # toes
+            tx = e * 0.28 + (t - 2) * 0.05
+            blob(b, 'skin', tx, -1.25 + 0.012 * abs(t - 2), 0.02, 0.035 if t else 0.045, n=6, rings=3, squash=0.8,
+                 jitter=0.0)
+        for k in range(5):                                                     # ...and the hair on them
+            blob(b, 'b_hair', e * 0.28 + rng.uniform(-0.08, 0.08), -1.02 + rng.uniform(-0.08, 0.08), 0.16, 0.045,
+                 n=6, rings=3, squash=0.6, jitter=0.4)
+    loft(b, 'b_breech', [(0, 0.02, 0.05, 0.36, 0.32, None), (0, 0.02, 0.32, 0.38, 0.3, None)], n=14)
     loft(b, 'b_coat', [(0, 0.03, 0.3, 0.37, 0.29, None), (0, 0.04, 0.7, 0.36, 0.27, None),
-                       (0, 0.06, 1.02, 0.36, 0.25, None)], n=14)                  # the waistcoat
+                       (0, 0.06, 1.02, 0.36, 0.25, None)], n=16)                  # the waistcoat
+    for k in range(4):                                                            # brass buttons
+        blib.sphere(b, 'brass', 0.03, -0.24 + 0.01 * k, 0.42 + 0.17 * k, 0.03, n=6, rings=4)
+    tube(b, 'brass', spline([(0.04, -0.25, 0.62), (0.16, -0.27, 0.55), (0.28, -0.22, 0.6)], 6), [0.012] * 7, n=4)
     loft(b, 'b_shirt', [(0, 0.06, 1.0, 0.35, 0.24, None), (0, 0.07, 1.16, 0.38, 0.24, None),
-                        (0, 0.07, 1.25, 0.18, 0.15, None)], n=14)
-    box(b, 'b_shirt', 0, 0, -0.06, 0.2, 0.06, 0.32, M=T(0.0, -0.22, 1.02))             # the open collar
-    for pts in ([(-0.34, 0.07, 1.15), (-0.46, -0.22, 0.78), (-0.16, -0.4, 1.12)],
-                [(0.34, 0.07, 1.15), (0.44, -0.3, 0.8), (0.27, -0.66, 0.9)]):
-        limb(b, 'b_shirt', pts, [0.13, 0.15], n=8)
-    blob(b, 'skin', -0.14, -0.45, 1.1, 0.08, n=6, rings=4, squash=1.1, jitter=0.0)
-    blob(b, 'skin', 0.25, -0.73, 0.86, 0.08, n=6, rings=4, squash=1.0, jitter=0.0)
+                        (0, 0.07, 1.25, 0.18, 0.15, None)], n=16)
+    for e in (-1, 1):                                                             # collar points
+        slab_xz(b, 'b_shirt', [(e * 0.02, 1.1), (e * 0.16, 1.2), (e * 0.12, 0.98)][::e], -0.2, 0.03)
+    loft(b, 'b_coat', [(0, -0.02, 1.16, 0.2, 0.17, None), (0, -0.02, 1.24, 0.19, 0.16, None)], n=12)   # neckerchief
+    for e, pts in ((-1, [(-0.34, 0.07, 1.15), (-0.46, -0.22, 0.78), (-0.16, -0.4, 1.12)]),
+                   (1, [(0.34, 0.07, 1.15), (0.44, -0.3, 0.8), (0.27, -0.66, 0.9)])):
+        P = spline(pts, 8)
+        tube(b, 'b_shirt', P, [0.13 + 0.035 * math.sin(math.pi * i / (len(P) - 1)) for i in range(len(P))], n=10,
+             tip=False)                                                            # full sleeves
+    hand(b, (-0.16, -0.42, 1.1), (-0.04, -0.4, 1.28), 0.15, curl=0.8)
+    hand(b, (0.26, -0.68, 0.9), (0.24, -0.95, 0.86), 0.15, curl=0.5)
     loft(b, 'skin', [(0, 0.0, 1.23, 0.12, 0.13, None), (0, -0.01, 1.35, 0.2, 0.21, None),
-                     (0, 0.0, 1.52, 0.21, 0.22, None), (0, 0.01, 1.66, 0.16, 0.17, None)], n=12)
-    box(b, 'skin', 0, 0, -0.04, 0.06, 0.08, 0.1, M=T(0.0, -0.22, 1.47))
-    for e in (-1, 1):                                                             # pointed ears
-        blib.strut(b, 'skin', (e * 0.19, 0.02, 1.47), (e * 0.29, 0.06, 1.6), 0.05, 0.0, n=5)
-    rng = random.Random(3)
-    for k in range(16):                                                           # the curls
-        a = 2 * math.pi * k / 16
-        zz = 1.5 + 0.17 * rng.uniform(0.3, 1.0)
+                     (0, 0.0, 1.52, 0.21, 0.22, None), (0, 0.01, 1.66, 0.16, 0.17, None)], n=14)
+    loft(b, 'skin', [(0, -0.2, 1.42, 0.035, 0.03, None), (0, -0.24, 1.47, 0.045, 0.05, None),
+                     (0, -0.21, 1.53, 0.03, 0.035, None)], n=8)                  # the nose
+    for e in (-1, 1):
+        blob(b, 'eye', e * 0.075, -0.185, 1.52, 0.025, n=6, rings=3, squash=1.0, jitter=0.0)
+        tube(b, 'b_hair', [(e * 0.03, -0.19, 1.565), (e * 0.1, -0.19, 1.575)], [0.018, 0.015], n=4)    # brows
+        blib.strut(b, 'skin', (e * 0.19, 0.02, 1.47), (e * 0.3, 0.07, 1.62), 0.055, 0.0, n=6)        # pointed ears
+    for k in range(22):                                                           # the curls
+        a = 2 * math.pi * k / 22
+        zz = 1.5 + 0.18 * rng.uniform(0.3, 1.0)
         rr = 0.17 if zz > 1.58 else 0.2
         blob(b, 'b_hair', rr * math.cos(a), 0.03 + rr * math.sin(a) * 0.95 + (0.04 if math.sin(a) > 0 else 0.0), zz,
-             0.08, n=6, rings=3, squash=1.0, jitter=0.35)
-    blob(b, 'b_hair', 0.0, 0.03, 1.6, 0.18, n=8, rings=4, squash=0.6, jitter=0.25)
+             0.075, n=7, rings=4, squash=1.0, jitter=0.35)
+    blob(b, 'b_hair', 0.0, 0.03, 1.6, 0.18, n=10, rings=5, squash=0.6, jitter=0.25)
     pipe(b, (-0.02, -0.21, 1.42), BILBO_BOWL, stem=0.028)
 
 
@@ -942,4 +1078,6 @@ PREVIEW = [((0, -95, 80), (0, 0, 10), 34),                                      
            ((7, -58, BAG['z'] + 20), (0, BAG['y'] - 7.0, BAG['z'] + 5.0), 40),     # Bag End and the two friends
            ((-58, -50, 50), (0, 0, 10), 32),                                        # from the south-west
            ((-13, -33, BAG['z'] + 9), (0, BAG['y'] - 8.0, BAG['z'] + 4.5), 40)]     # close: Bilbo and Gandalf
-PREVIEW_EYE = [((3.0, -36.0, BAG['z'] + 8.0), (0.3, BAG['y'] - 8.0, BAG['z'] + 4.8), 42)]
+PREVIEW_EYE = [((3.0, -36.0, BAG['z'] + 8.0), (0.3, BAG['y'] - 8.0, BAG['z'] + 4.8), 42),
+               ((5.0, -29.0, BAG['z'] + 10.0), (9.4, BAG['y'] - 9.4, BAG['z'] + 5.2), 34),     # Gandalf
+               ((-12.0, -24.0, BAG['z'] + 6.0), (-9.4, BAG['y'] - 8.6, BAG['z'] + 2.8), 30)]   # Bilbo

@@ -137,8 +137,10 @@ IMPROVEMENTS = [
     # 4.3-5.5 s, the two friends never together (24 s schedule). The landmark itself does not move. v8: the great
     # tree (branches + ~600 cut-out leaf-cluster cards) and ~1,600 cut-out grass tufts: painted sprites with alpha,
     # drawn like the stock Hanging Gardens' plants (BuildingShader, AlphaRef 128); figures as before. v9: candlelight
-    # flickers in the windows (fxflick, WINDOW_FLICKER = MEC_BagEndFlicker: puffs.py glow cards, width = light). Static
-    # part 29.8k vertices, skinned 24.6k; 2 x 2048 baked. 51 high (the tree).
+    # flickers in the windows (fxflick, WINDOW_FLICKER = MEC_BagEndFlicker: puffs.py glow cards, width = light), the
+    # windows lie along the curved front (v10). v11: Gandalf in a long grey robe (no trousers), Bilbo and he in more
+    # detail (hands, faces, hair, clothes). Static
+    # part 29.8k vertices, skinned 29.3k; 2 x 2048 baked. 51 high (the tree).
     dict(key='BAG_END', civ='CIVILIZATION_MEC_HOBBITS', title='Bag End', dir='BagEnd',
          gr2='MEC_LM_BagEnd.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_BagEnd_DIFF.dds', 'MEC_LM_BagEnd_SREF.dds',
