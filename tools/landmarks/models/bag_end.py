@@ -301,6 +301,18 @@ def wall_top(l):
     return max(raw_h(x, y), hd['z'] + 1.0) - hd['z'] + 0.1
 
 
+def win_turn(e):
+    """The windows lie along the curved front (its tangent at their centre: y = c l^2, slope 2 c l), so no part of the
+    round window sinks behind the wall (v9: the inner half was hidden). e = -1 left, +1 right; degrees about z."""
+    return e * math.degrees(math.atan(2 * BAG['c'] * WIN_X))
+
+
+def win_light_y():
+    """The plane of the windows' light: just before the front at the windows' inner edges (the nearest part of the
+    wall round them), so the glow is never clipped by the wall."""
+    return BAG['y'] + BAG['c'] * (WIN_X - WIN_R) ** 2 - 0.4
+
+
 def disc(b, mat, x, y, z, r, depth, n=24):
     cyl(b, mat, 0, 0, 0, r, depth, n=n, M=T(x, y, z, rx=90))
 
@@ -581,7 +593,8 @@ def build(b, eye=False):
     slab_xz(L, 'dstone', [(-4.5, -0.8), (4.5, -0.8), (4.5, 0.35), (-4.5, 0.35)], -0.05, 2.2)
     ring(L, 'dstone', DOOR_R + 0.5, DOOR_R + 1.95, 0.0, 0.3, n=23, M=T(0, 0.02, DOOR_ZC, rx=90))
     for e in (-1, 1):
-        ring(L, 'dstone', WIN_R + 0.45, WIN_R + 1.25, 0.0, 0.2, n=17, M=T(e * WIN_X, c * WIN_X ** 2 + 0.02, WIN_Z, rx=90))
+        ring(L, 'dstone', WIN_R + 0.45, WIN_R + 1.25, 0.0, 0.2, n=17,
+             M=T(e * WIN_X, c * WIN_X ** 2 - 0.03, WIN_Z, rz=win_turn(e), rx=90))
     # stepping stones from the door to the gate
     path = path_pts()
     for i in range(0, len(path), 2):
@@ -611,8 +624,9 @@ def build_eye(b):
     W, c = hd['W'], hd['c']
     round_door(L, 0.0, DOOR_ZC, DOOR_R)
     for e in (-1, 1):
-        round_window(L, e * WIN_X, c * WIN_X ** 2, WIN_Z, WIN_R)
-        box(L, 'timber', e * WIN_X, c * WIN_X ** 2 - 0.65, WIN_Z - WIN_R - 1.55, 5.1, 1.05, 0.4)   # the sill
+        Wn = Local(b, M_of(hd) @ T(e * WIN_X, c * WIN_X ** 2 - 0.05, 0.0, rz=win_turn(e)))   # along the wall
+        round_window(Wn, 0.0, 0.0, WIN_Z, WIN_R)
+        box(Wn, 'timber', 0.0, -0.65, WIN_Z - WIN_R - 1.55, 5.1, 1.05, 0.4)                     # the sill
     # the great tree on the hill above the door, its roots running down over the turf
     tx, ty = to_world(hd, *TREE)
     great_tree(b, rng, tx, ty, raw_h(tx, ty), 24.0, 12.0)
@@ -741,7 +755,7 @@ def bilbo(b):
 # ----------------------------------------------------------------------------------------------- rig
 def glow_frame():
     hd = BAG
-    return (hd['x'], hd['y'] + hd['c'] * WIN_X ** 2 - 0.2, hd['z'] + WIN_Z), (hd['x'] - WIN_X - WIN_R - 2.0,
+    return (hd['x'], win_light_y(), hd['z'] + WIN_Z), (hd['x'] - WIN_X - WIN_R - 2.0,
                                                                            hd['x'] + WIN_X + WIN_R + 2.0,
                                                                            hd['z'] + WIN_Z - WIN_R - 2.0,
                                                                            hd['z'] + WIN_Z + WIN_R + 2.0)
@@ -833,13 +847,69 @@ def preview_overlays(out_dir):
         x, y, z = x + bx, y + by, z + bz
         P = [(x - hs, y, z - hs), (x + hs, y, z - hs), (x + hs, y, z + hs), (x - hs, y, z + hs)]
         out.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)], img))
+    # the candlelight at 0.3 s into the loop (its width = its light)
+    gimg = dds.decode_dxt3(os.path.join(out_dir, 'MEC_BagEndFlicker_DIFF.dds'))
+    fx, fy, fz = flick_pos()
+    for hs, fn, yaw_fn in flicker_cards(1.0):
+        x, y, z = fn(0.3)
+        x, y, z = x + fx, y + fy, z + fz
+        wv = hs * math.cos(math.radians(yaw_fn(0.3)))
+        P = [(x - wv, y, z - hs), (x + wv, y, z - hs), (x + wv, y, z + hs), (x - wv, y, z + hs)]
+        out.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)], gimg))
     return out
 
 
+def candle(seed):
+    """Brightness 0.3..1 of a candle in a window over the loop: slow breathing, quicker wavering, a fast shimmer and
+    a few brief gutterings (frequencies rounded so the loop is seamless)."""
+    rng = random.Random(seed)
+    waves = [(round(rng.uniform(lo, hi) * LOOP) / LOOP, rng.uniform(0, 2 * math.pi), amp)
+             for lo, hi, amp in ((0.25, 0.5, 0.06), (1.2, 2.2, 0.10), (4.0, 6.0, 0.07), (8.0, 11.0, 0.05))]
+    dips = [(rng.uniform(0, LOOP), rng.uniform(0.25, 0.4), rng.uniform(0.08, 0.16)) for _ in range(4)]
+
+    def b(t):
+        v = 0.74 + sum(a * math.sin(2 * math.pi * f * t + p) for f, p, a in waves)
+        for (t0, depth, w) in dips:
+            d = min(abs(t - t0), LOOP - abs(t - t0))
+            v -= depth * math.exp(-(d / w) ** 2)
+        return min(1.0, max(0.3, v))
+    return b
+
+
+def flicker_cards(k):
+    """[(half size, fn, yaw_fn)]: three warm glow layers before each window's panes (puffs.write). The width of a
+    card is its light (additive): yaw = acos(brightness). The wide halo breathes slowly, the core flickers and drifts
+    a little as a flame does; each window has its own candle."""
+    hd = BAG
+    bx, by, bz = flick_pos()
+    out = []
+    for e, seed in ((-1, 31), (1, 47)):
+        wx, wy, wz = hd['x'] + e * WIN_X, win_light_y() - 0.1, hd['z'] + WIN_Z
+        slow, fast = candle(seed), candle(seed + 1)
+        for li, (hs, br, jig) in enumerate(((WIN_R * 1.5, slow, 0.0), (WIN_R * 1.05, fast, 0.08))):
+            def fn(t, wx=wx, wy=wy, wz=wz, jig=jig, li=li, seed=seed):
+                dz = jig * math.sin(2 * math.pi * round(1.3 * LOOP) / LOOP * t + seed)
+                dx = jig * 0.6 * math.sin(2 * math.pi * round(0.7 * LOOP) / LOOP * t + 2 * seed)
+                return ((wx + dx - bx) * k, (wy - 0.05 * li - by) * k, (wz + dz - bz) * k)
+
+            def yaw_fn(t, br=br):
+                return math.degrees(math.acos(br(t)))
+            out.append((hs * k, fn, yaw_fn))
+    return out
+
+
+def flick_pos():
+    hd = BAG
+    return (hd['x'], win_light_y() - 0.1, hd['z'] + WIN_Z)
+
+
 def model_effects(out_dir, k):
-    """Our animated model effects besides the glow (build_models.py): the puffs of the pipes."""
+    """Our animated model effects besides the glow (build_models.py): the puffs of the pipes, the candlelight."""
     import puffs
-    return puffs.write(out_dir, 'MEC_BagEndPuffs', puff_cards(k), LOOP, tex_args=dict(strength=0.62))
+    files = puffs.write(out_dir, 'MEC_BagEndPuffs', puff_cards(k), LOOP, tex_args=dict(strength=0.62))
+    files += puffs.write(out_dir, 'MEC_BagEndFlicker', flicker_cards(k), LOOP, tex_fn=puffs.glow_texture,
+                         yaw_spans=1200)
+    return files
 
 
 def rig():
@@ -848,6 +918,7 @@ def rig():
     for name, p, key in smoke_spots():
         bones.append((name, 'eyeroot', p, key))
     bones.append(('fxpuff', 'eyeroot', (PUFF_FX[0], PUFF_FX[1], ground(*PUFF_FX)), 'PIPE_PUFFS'))
+    bones.append(('fxflick', 'eyeroot', flick_pos(), 'WINDOW_FLICKER'))
     return bones
 
 

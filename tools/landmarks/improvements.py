@@ -136,14 +136,15 @@ IMPROVEMENTS = [
     # tools/landmarks/puffs.py): soft cloud cards that rise before each face, spread and thin away in 1.6 s, every
     # 4.3-5.5 s, the two friends never together (24 s schedule). The landmark itself does not move. v8: the great
     # tree (branches + ~600 cut-out leaf-cluster cards) and ~1,600 cut-out grass tufts: painted sprites with alpha,
-    # drawn like the stock Hanging Gardens' plants (BuildingShader, AlphaRef 128); figures as before. Static
+    # drawn like the stock Hanging Gardens' plants (BuildingShader, AlphaRef 128); figures as before. v9: candlelight
+    # flickers in the windows (fxflick, WINDOW_FLICKER = MEC_BagEndFlicker: puffs.py glow cards, width = light). Static
     # part 29.8k vertices, skinned 24.6k; 2 x 2048 baked. 51 high (the tree).
     dict(key='BAG_END', civ='CIVILIZATION_MEC_HOBBITS', title='Bag End', dir='BagEnd',
          gr2='MEC_LM_BagEnd.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_BagEnd_DIFF.dds', 'MEC_LM_BagEnd_SREF.dds',
                    'MEC_LM_BagEnd_Eye_DIFF.dds', 'MEC_LM_BagEnd_Eye_SREF.dds'],
          animation=('MEC_LM_BagEnd_Idle.gr2', 'Idle'),
-         bones=['fxglow', 'smoke0', 'fxpuff'],
+         bones=['fxglow', 'smoke0', 'fxpuff', 'fxflick'],
          trigger=('FX_Triggers_MEC_LM_BagEnd.ftsxml', 'MEC_LM_BagEnd_Eye'),
          scale=0.25,
          name_keys=['TXT_KEY_CITY_NAME_MEC_THE_SHIRE'],
@@ -188,13 +189,16 @@ VIS_EFFECTS = [
     # Bag End: the puffs of Bilbo's and Gandalf's pipes: our animated model effect (tools/landmarks/puffs.py, soft
     # cloud cards in file units, Scale 1.0). (v4's musket smoke "like ballistic missiles"; v5's ship smoke did not show.)
     ('ART_DEF_VEFFECT_MEC_PIPE_PUFFS', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_PIPE_PUFFS'),
+    # Bag End: candlelight flickering in its windows (puffs.py cards: width = light), file units
+    ('ART_DEF_VEFFECT_MEC_WINDOW_FLICKER', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_WINDOW_FLICKER'),
 ]
 VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
               ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml'),   # file in vendor/landmarks/Moria4
               ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml'),  # file in vendor/landmarks/Erebor
               ('ART_DEF_MEFFECT_MEC_STAFF_GLOW', 'MEC_OrthancGlow.fxsxml'),  # file in vendor/landmarks/Orthanc
               ('ART_DEF_MEFFECT_MEC_WINDOW_GLOW', 'MEC_BagEndGlow.fxsxml'),  # file in vendor/landmarks/BagEnd
-              ('ART_DEF_MEFFECT_MEC_PIPE_PUFFS', 'MEC_BagEndPuffs.fxsxml')]  # file in vendor/landmarks/BagEnd
+              ('ART_DEF_MEFFECT_MEC_PIPE_PUFFS', 'MEC_BagEndPuffs.fxsxml'),  # file in vendor/landmarks/BagEnd
+              ('ART_DEF_MEFFECT_MEC_WINDOW_FLICKER', 'MEC_BagEndFlicker.fxsxml')]  # file in vendor/landmarks/BagEnd
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).

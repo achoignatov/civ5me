@@ -82,6 +82,19 @@ def greville(T, ticks=255):
     return [(U[i + 1] + U[i + 2]) / 2 for i in range(ticks + 2)]
 
 
+def glow_texture(path, px=256, color=(255, 166, 78), core=(255, 226, 170), strength=0.55):
+    """A soft round warm light (candlelight in a window): a wide halo round a whiter core, in the alpha."""
+    yy, xx = np.mgrid[0:px, 0:px]
+    r = np.hypot((xx + 0.5) / px * 2 - 1, (yy + 0.5) / px * 2 - 1)
+    a = strength * (0.65 * np.exp(-(r / 0.42) ** 2) + 0.35 * np.exp(-(r / 0.16) ** 2))
+    a *= np.clip((1.0 - r) / 0.2, 0, 1)
+    k = np.exp(-(r / 0.25) ** 2)[..., None]
+    img = np.zeros((px, px, 4), np.float32)
+    img[..., :3] = np.array(color, np.float32) * (1 - k) + np.array(core, np.float32) * k
+    img[..., 3] = 255 * np.clip(a, 0, 1)
+    dds.write_dxt3(path, np.clip(img, 0, 255).astype(np.uint8))
+
+
 def _yaw_curve(yaw_fn, T, spans=600):
     """D4nK16uC15u curve dict (lmodel.Curves.yaw) for a turn about +Z of yaw_fn(t) degrees: controls sampled at the
     Greville points of a clamped quadratic B-spline (no least-squares fit: it is far too slow at this many spans)."""
@@ -97,7 +110,7 @@ def _yaw_curve(yaw_fn, T, spans=600):
                 degrees=ctrl)
 
 
-def write(out_dir, name, cards, T, tex_args=None):
+def write(out_dir, name, cards, T, tex_args=None, tex_fn=None, yaw_spans=600):
     """cards: [(half_size, fn, yaw_fn)] where fn(t) -> (x, y, z) in FILE units relative to the effect's bone at time t
     of the loop (T seconds) and yaw_fn(t) -> degrees about the vertical (90 = edge-on to the camera = hidden). Writes <name>.gr2/.fxsxml, <name>_IdleA.gr2, <name>_DIFF.dds; returns the file names."""
     assert len(cards) <= 30, 'FXShader_Skinned: at most 32 bones (World + cards)'
@@ -148,7 +161,7 @@ def write(out_dir, name, cards, T, tex_args=None):
     root['FromFileName'] = name + '.blend'
     os.makedirs(out_dir, exist_ok=True)
     gr2.write(os.path.join(out_dir, name + '.gr2'), f.root_type, root, f.tag)
-    texture(os.path.join(out_dir, tex), **(tex_args or {}))
+    (tex_fn or texture)(os.path.join(out_dir, tex), **(tex_args or {}))
 
     # the animation: the stock IdleA's track group, a track per bone; card positions on D3K8uC8u curves
     a = gr2.read(lmodel.ANIM_TEMPLATE)
@@ -160,7 +173,7 @@ def write(out_dir, name, cards, T, tex_args=None):
     ts = greville(T)
     tracks = [lmodel.track(curves, 'World')]
     for n, (_, fn, yaw_fn) in zip(names, cards):
-        tr = lmodel.track(curves, n, yaw=_yaw_curve(yaw_fn, T))
+        tr = lmodel.track(curves, n, yaw=_yaw_curve(yaw_fn, T, yaw_spans))
         tr['PositionCurve'] = {'CurveData': _curve_d3k8(m_d3k8, [fn(t) for t in ts], T)}
         tracks.append(tr)
     tg = ar['TrackGroups'][0]

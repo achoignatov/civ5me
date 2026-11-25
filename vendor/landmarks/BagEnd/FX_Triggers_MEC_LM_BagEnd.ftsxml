@@ -10,5 +10,6 @@
     <trigger type="FTimedTriggerEffect" id="1" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_WINDOW_GLOW" bone="fxglow" />
     <trigger type="FTimedTriggerEffect" id="2" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_CHIMNEY_SMOKE" bone="smoke0" />
     <trigger type="FTimedTriggerEffect" id="3" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_PIPE_PUFFS" bone="fxpuff" />
+    <trigger type="FTimedTriggerEffect" id="4" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_WINDOW_FLICKER" bone="fxflick" />
   </triggers>
 </trigger_system>

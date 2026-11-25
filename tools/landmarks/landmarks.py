@@ -246,6 +246,8 @@ EFFECTS = {
     'CHIMNEY_SMOKE': dict(name='ART_DEF_VEFFECT_MEC_CHIMNEY_SMOKE', particle='ART_DEF_PEFFECT_DROMON_IDLE_SMOKE',
                           scale=1.0, rotation=(90.0, 0.0, 0.0)),
     # Bag End: the puffs of Bilbo's and Gandalf's pipes, our animated model effect (puffs.py), drawn in file units
+    'WINDOW_FLICKER': dict(name='ART_DEF_VEFFECT_MEC_WINDOW_FLICKER', model='ART_DEF_MEFFECT_MEC_WINDOW_FLICKER',
+                           file='MEC_BagEndFlicker.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),   # Bag End's candles
     'PIPE_PUFFS': dict(name='ART_DEF_VEFFECT_MEC_PIPE_PUFFS', model='ART_DEF_MEFFECT_MEC_PIPE_PUFFS',
                        file='MEC_BagEndPuffs.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'BRAZIER': dict(name='ART_DEF_VEFFECT_MEC_BRAZIER', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
