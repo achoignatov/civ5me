@@ -94,10 +94,15 @@ def _make(mod_fn, seed, baked=False):
 
 
 def _textures(res, base, diff_px=GAME_DIFF, sref_px=GAME_SREF):
-    alpha = np.full(res.image.shape[:2] + (1,), 255, np.uint8)
+    if getattr(res, 'has_sprites', False):      # cut-out cards (bake.py SPRITES): the alpha is the cut-out
+        alpha = res.alpha[..., None]
+    else:
+        alpha = np.full(res.image.shape[:2] + (1,), 255, np.uint8)
     diff = np.concatenate([res.image, alpha], -1)
     dn, sn = base + '_DIFF.dds', base + '_SREF.dds'
-    dds.write_dxt3(os.path.join(OUT, dn), pipeline._shrink(diff, diff_px))
+    # cut-outs: smaller mip levels keep part of the max alpha, so foliage doesn't erode into nothing in the distance
+    dds.write_dxt3(os.path.join(OUT, dn), pipeline._shrink(diff, diff_px),
+                   alpha_keep=0.35 if getattr(res, 'has_sprites', False) else 0.0)
     dds.write_dxt3(os.path.join(OUT, sn), pipeline._shrink(res.sref, sref_px))
     return dn, sn
 

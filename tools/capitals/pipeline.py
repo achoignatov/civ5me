@@ -157,7 +157,9 @@ def preview(name, verts, tris, img_top_first, size=(900, 640), extra=(), fx=(), 
     bpy.context.scene.collection.objects.link(ob)
     h, w = img_top_first.shape[:2]
     im = bpy.data.images.new('tex', w, h)
-    px = np.concatenate([np.flipud(img_top_first[..., :3]).astype(np.float32) / 255.0, np.ones((h, w, 1), np.float32)], -1)
+    cutout = img_top_first.shape[2] == 4 and (img_top_first[..., 3] < 128).any()     # cut-out cards (bake SPRITES)
+    alpha = (np.flipud(img_top_first[..., 3:4]).astype(np.float32) / 255.0 if cutout else np.ones((h, w, 1), np.float32))
+    px = np.concatenate([np.flipud(img_top_first[..., :3]).astype(np.float32) / 255.0, alpha], -1)
     im.pixels.foreach_set(px.ravel())
     m = bpy.data.materials.new('m')
     m.use_nodes = True
@@ -172,6 +174,12 @@ def preview(name, verts, tris, img_top_first, size=(900, 640), extra=(), fx=(), 
     mix.inputs['B'].default_value = (1, 0, 0, 1)
     nt.links.new(mix.outputs['Result'], nt.nodes['Principled BSDF'].inputs['Base Color'])
     nt.nodes['Principled BSDF'].inputs['Roughness'].default_value = 0.9
+    if cutout:      # like the game's AlphaRef 128: a texel is drawn or not
+        gt = nt.nodes.new('ShaderNodeMath'); gt.operation = 'GREATER_THAN'; gt.inputs[1].default_value = 0.5
+        nt.links.new(tn.outputs['Alpha'], gt.inputs[0])
+        nt.links.new(gt.outputs[0], nt.nodes['Principled BSDF'].inputs['Alpha'])
+        if hasattr(m, 'blend_method'):
+            m.blend_method = 'CLIP'
     me.materials.append(m)
     # ground
     bpy.ops.mesh.primitive_plane_add(size=400, location=(0, 0, -0.02))

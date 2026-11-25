@@ -134,8 +134,10 @@ IMPROVEMENTS = [
     # additive glow (MEC_BagEndGlow on bone fxglow); stepping stones, sunflowers; Bilbo and Gandalf (x3) sitting on the
     # grass. Smoke: the chimney smokes (smoke0, CHIMNEY_SMOKE); the pipes puff (fxpuff, PIPE_PUFFS = MEC_BagEndPuffs,
     # tools/landmarks/puffs.py): soft cloud cards that rise before each face, spread and thin away in 1.6 s, every
-    # 4.3-5.5 s, the two friends never together (24 s schedule). The landmark itself does not move. Static
-    # part 31.6k vertices, skinned 31.0k; 2 x 2048 baked. 51 high (the tree).
+    # 4.3-5.5 s, the two friends never together (24 s schedule). The landmark itself does not move. v8: the great
+    # tree (branches + ~600 cut-out leaf-cluster cards) and ~1,600 cut-out grass tufts: painted sprites with alpha,
+    # drawn like the stock Hanging Gardens' plants (BuildingShader, AlphaRef 128); figures as before. Static
+    # part 29.8k vertices, skinned 24.6k; 2 x 2048 baked. 51 high (the tree).
     dict(key='BAG_END', civ='CIVILIZATION_MEC_HOBBITS', title='Bag End', dir='BagEnd',
          gr2='MEC_LM_BagEnd.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_BagEnd_DIFF.dds', 'MEC_LM_BagEnd_SREF.dds',

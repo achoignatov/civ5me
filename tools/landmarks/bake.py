@@ -13,6 +13,14 @@ flat, which reads as a blocky, "pixelated" patchwork in game. This path instead:
     for it (palette entry glow=True), e.g. the ithildin light around the Doors of Durin;
   * returns the same Result as atlas.process (verts (pos, nrm, tan, bin, uv), tris, image, sref), uv in DirectX
     convention (v = 0 at the top row), image rows top first.
+  * SPRITES (opt-in; Bag End's foliage and grass, 2026-11-25): a palette entry with sprite=<HxWx4 uint8 sRGB image> is
+    a painted cut-out, the way the stock Hanging Gardens draw their palms and bushes (BuildingShader, AlphaMode 8,
+    AlphaRef 128: texels with alpha < 128 are not drawn). Its faces (cards) carry their own 0..1 coordinates
+    (b.sprite_uv[face index] = [(u, v) per corner], v up); they are left out of the unwrap and all point at ONE copy
+    of the sprite in a strip reserved at the bottom of the texture (SPRITE_V of its height), so hundreds of cards
+    share one sharp painting. res.alpha carries the cut-out; everything else stays opaque. b.normal_fn(position,
+    material) may give custom normals (a tree's crown lit as one soft volume, grass lit like the lawn).
+    Without sprite materials nothing changes (no strip, same layout as before).
 """
 import math
 import os
@@ -325,14 +333,23 @@ def _material(name, glow=None):
 
 
 # --------------------------------------------------------------------------- object
+SPRITE_V = 1.0 / 4         # with sprites: the bottom quarter of the texture holds them (square slots side by side)
+
+
+def sprite_mats(b):
+    return [i for i, n in enumerate(b.mat_names) if blib.PALETTE[n].get('sprite') is not None]
+
+
 def _object(b, glow):
-    faces, fmat, fsm = [], [], []
-    for f, m, s in zip(b.faces, b.fmat, b.fsmooth):
+    faces, fmat, fsm, orig = [], [], [], []
+    for fi, (f, m, s) in enumerate(zip(b.faces, b.fmat, b.fsmooth)):
         if len(set(f)) < 3:
             continue
         faces.append(f)
         fmat.append(m)
         fsm.append(s)
+        orig.append(fi)
+    spr = set(sprite_mats(b))
     me = bpy.data.meshes.new('landmark')
     me.from_pydata([tuple(v) for v in b.verts], [], faces)
     me.update()
@@ -342,6 +359,16 @@ def _object(b, glow):
     me.polygons.foreach_set('material_index', fmat)
     me.polygons.foreach_set('use_smooth', fsm)
     me.update()
+    if spr:     # the cards' own coordinates, carried through the clean-up below on a second UV layer
+        me.uv_layers.new(name='UVMap')
+        sl = me.uv_layers.new(name='SPRITE')
+        su = getattr(b, 'sprite_uv', {})
+        for poly in me.polygons:
+            uvs = su.get(orig[poly.index])
+            if uvs and poly.material_index in spr:
+                for li, uv in zip(poly.loop_indices, uvs):
+                    sl.data[li].uv = uv
+        me.uv_layers.active = me.uv_layers['UVMap']
     ob = bpy.data.objects.new('landmark', me)
     bpy.context.scene.collection.objects.link(ob)
     bpy.context.view_layer.objects.active = ob
@@ -351,6 +378,11 @@ def _object(b, glow):
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.remove_doubles(threshold=1e-4)
     bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
+    if spr:     # unwrap everything but the cards
+        bpy.ops.object.mode_set(mode='OBJECT')
+        for poly in ob.data.polygons:
+            poly.select = poly.material_index not in spr
+        bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.uv.smart_project(angle_limit=math.radians(60), island_margin=0.004, area_weight=0.0,
                              correct_aspect=True, scale_to_bounds=False)
     bpy.ops.object.mode_set(mode='OBJECT')
@@ -365,14 +397,17 @@ def _object(b, glow):
                 for li in poly.loop_indices:
                     uvd[li].uv = uvd[li].uv * k
         bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
+        if not spr:
+            bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.uv.select_all(action='SELECT')
         bpy.ops.uv.pack_islands(rotate=True, margin=0.004)
         bpy.ops.object.mode_set(mode='OBJECT')
-    # the top strip of the texture is kept free for SWATCHES (see process): shrink the layout below it
+    # the top strip of the texture is kept free for SWATCHES (see process), the bottom one for SPRITES (if any):
+    # shrink the layout between them
     me = ob.data
+    lo = SPRITE_V if spr else 0.0
     for d in me.uv_layers.active.data:
-        d.uv = (d.uv[0], d.uv[1] * (1.0 - SWATCH_V))
+        d.uv = (d.uv[0], lo + d.uv[1] * (1.0 - SWATCH_V - lo))
     return ob
 
 
@@ -453,6 +488,8 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
             area_of[r] = area_of.get(r, 0.0) + farea[poly.index]
     for poly in me.polygons:
         p = blib.PALETTE[b.mat_names[poly.material_index]]
+        if p.get('sprite') is not None:
+            continue                                # cards: their own slot in the sprite strip (_sprites)
         if p.get('solid') or (tiny_px and area_of[find(poly.index)] < tiny_px):
             to_swatch[poly.index] = poly.material_index
     cells = sorted(set(to_swatch.values()))
@@ -473,6 +510,10 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
             uvd[li].uv = swatch_uv[mi]
     if tiny_px:
         print('bake: %d of %d faces on %d colour swatches' % (len(to_swatch), len(me.polygons), len(cells)))
+    alpha = np.ones((px, px), np.float32)
+    spr = sprite_mats(b)
+    if spr:
+        alpha = _sprites(b, me, px, spr, diff, ao, emit, alpha)
     spec, refl, aow = emit[..., 0:1], emit[..., 1:2], emit[..., 2:3]
     if os.environ.get('MEC_BAKE_DEBUG'):        # per material: faces whose baked colour is dark, by facing
         uvd = me.uv_layers.active.data
@@ -497,11 +538,16 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     cn = me.corner_normals
     uvl = me.uv_layers.active.data
     out, index, tris, vmat = [], {}, [], []
+    nfn = getattr(b, 'normal_fn', None)
     for lt in me.loop_triangles:
         ids = []
         for li in lt.loops:
             vi = me.loops[li].vertex_index
             n = cn[li].vector
+            if nfn is not None:        # custom normals (palette materials the model's normal_fn answers for)
+                cnn = nfn(tuple(me.vertices[vi].co), b.mat_names[lt.material_index])
+                if cnn is not None:
+                    n = Vector(cnn).normalized()
             u, v = uvl[li].uv
             key = (vi, round(n.x, 4), round(n.y, 4), round(n.z, 4), round(u, 6), round(v, 6))
             if key not in index:
@@ -516,9 +562,51 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     res.tris = tris
     res.vmat = vmat
     res.image = np.rint(srgb * 255).astype(np.uint8)
+    res.alpha = np.rint(np.clip(alpha, 0, 1) * 255).astype(np.uint8)
+    res.has_sprites = bool(spr)
     res.sref = np.concatenate([np.rint(np.clip(srgb * spec, 0, 1) * 255),
                                np.rint(np.clip(refl, 0, 1) * 255)], -1).astype(np.uint8)
     return res
+
+
+def _sprites(b, me, px, spr, diff, ao, emit, alpha):
+    """Paste each sprite material's painting into its square slot of the bottom strip (linear albedo, no AO, its own
+    spec/refl), its cut-out into the alpha, and point the cards' UVs at it. Transparent texels take the sprite's mean
+    colour, so the mip-maps don't grow dark fringes round the cut-out."""
+    sh = int(round(px * SPRITE_V))
+    assert len(spr) * sh <= px, 'at most %d sprite materials' % (px // sh)
+    sl = me.uv_layers['SPRITE'].data
+    uvd = me.uv_layers['UVMap'].data
+    pad = 2.0 / px
+    for k, mi in enumerate(spr):
+        p = blib.PALETTE[b.mat_names[mi]]
+        img = np.asarray(p['sprite'])
+        ys = (np.arange(sh) * img.shape[0] / sh).astype(int)
+        xs = (np.arange(sh) * img.shape[1] / sh).astype(int)
+        cell = img[ys][:, xs].astype(np.float32) / 255.0                  # nearest; the paintings are made at size
+        a = cell[..., 3]
+        rgb = cell[..., :3]
+        mean = (rgb * a[..., None]).sum((0, 1)) / max(1e-6, a.sum())
+        rgb = np.where(a[..., None] > 0.02, rgb, mean)
+        lin = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+        x0 = k * sh
+        rows = slice(px - sh, px)                                         # bottom rows (arrays are top row first)
+        diff[rows, x0:x0 + sh, :3] = lin
+        ao[rows, x0:x0 + sh] = 1.0
+        emit[rows, x0:x0 + sh, 0] = p.get('spec') if p.get('spec') is not None else 0.15
+        emit[rows, x0:x0 + sh, 1] = (p.get('refl') if p.get('refl') is not None else 6) / 255.0
+        emit[rows, x0:x0 + sh, 2] = 0.0
+        alpha[rows, x0:x0 + sh] = a
+        for poly in me.polygons:
+            if poly.material_index != mi:
+                continue
+            for li in poly.loop_indices:
+                su, sv = sl[li].uv
+                uvd[li].uv = ((x0 + pad * px + su * (sh - 2 * pad * px)) / px,
+                              (pad * px + sv * (sh - 2 * pad * px)) / px)
+    n = sum(1 for poly in me.polygons if poly.material_index in spr)
+    print('bake: %d card faces on %d sprite(s)' % (n, len(spr)))
+    return alpha
 
 
 def _tangents(verts, tris):

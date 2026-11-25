@@ -32,7 +32,10 @@ import math
 import os
 import random
 
+from mathutils import Vector
+
 import blib
+import sprites
 from blib import material, hexcol as h, box, cyl, lathe, blob, ring, T
 from moria_v4 import smooth, fbm, tube, _spline as spline
 from erebor import oriented, ribbon, hex_dist, seg_dist, slab_xz, bar_xz, loft
@@ -62,7 +65,11 @@ CHIM = (12.8, 12.0, 8.5)           # local (l, back), height above the turf
 BILBO = (-9.5, -8.2, 15.0)         # local (l, y, turn): sitting on the grass, a little turned towards Gandalf
 GANDALF = (10.0, -9.2, -18.0)
 FIG_S = 3.0                        # both figures: heroic scale, to read from the game's camera
-TUFTS_STATIC, TUFTS_EYE = 820, 220
+TUFTS = 1600                       # cut-out grass tufts (two crossed cards each), all in the static part
+# v8 (user: "the grass and the tree look bland... branches and leaves... astonishing, like it is made in 2026"):
+# the foliage and the grass are painted cut-out sprites on cards (tools/landmarks/sprites.py, bake.py SPRITES), the
+# way the stock Hanging Gardens draw their plants: many leaves / blades per card, see-through gaps, custom normals.
+CROWN = {}                         # the great tree's crown (centre, radii), for the leaves' normals
 LOOP = 24.0                        # the idle loop (s), = the puff effect's own loop
 # The pipes (user: "every 4-6 seconds a roundish cloud of smoke in front of their faces, dissipating gradually into
 # nothingness in 1-2 seconds; not at the same time"): our own model effect (tools/landmarks/puffs.py), six soft cloud
@@ -163,6 +170,45 @@ def setup():
 setup()
 
 
+# ----------------------------------------------------------------------------------------------- sprites and cards
+_SPRITES = {}
+
+
+def _sprite(name, make):
+    if name not in _SPRITES:
+        _SPRITES[name] = make()
+    return _SPRITES[name]
+
+
+def card(b, mat, c, facing, w, hgt, up=(0.0, 0.0, 1.0), roll=0.0):
+    """A cut-out card (bake.py SPRITES) centred on c, its face towards `facing` (single-sided: the game's camera never
+    turns), w x hgt, the sprite's top towards `up`, turned by roll degrees in its plane."""
+    f = Vector(facing).normalized()
+    U = Vector(up)
+    ey = (U - f * f.dot(U)).normalized()
+    ex = ey.cross(f)
+    r = math.radians(roll)
+    ex, ey = ex * math.cos(r) + ey * math.sin(r), -ex * math.sin(r) + ey * math.cos(r)
+    ex, ey = ex * (w / 2), ey * (hgt / 2)
+    C = Vector(c)
+    v = [tuple(C - ex - ey), tuple(C + ex - ey), tuple(C + ex + ey), tuple(C - ex + ey)]
+    b.add(v, [(0, 1, 2, 3)], mat)
+    if not hasattr(b, 'sprite_uv'):
+        b.sprite_uv = {}
+    b.sprite_uv[len(b.faces) - 1] = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+
+
+def normals(p, mat):
+    """Custom normals (bake.py): grass lit like the lawn (up); leaves lit as one soft crown (out from its middle)."""
+    if mat.startswith('grassS'):
+        return (0.0, 0.0, 1.0)
+    if mat.startswith('leafS') and CROWN:
+        (cx, cy, cz), (rx, ry, rz) = CROWN['c'], CROWN['r']
+        n = Vector(((p[0] - cx) / rx, (p[1] - cy) / ry, (p[2] - cz) / rz + 0.35))
+        return tuple(n.normalized()) if n.length > 1e-6 else (0.0, 0.0, 1.0)
+    return None
+
+
 # ----------------------------------------------------------------------------------------------- materials
 def land_palette():
     material('grass', h('6c8a3f'), h('5b7a35'), zramp=[(FLOOR, h('667f3b')), (6.0, h('6c8a40')), (18.0, h('76914a'))],
@@ -170,9 +216,10 @@ def land_palette():
     blib.PALETTE['grass'].update(scale=0.35, cavity=0.45,
                                  speckle=[(3.5, 0.05, h('dcd8c0')), (2.6, 0.04, h('c9ad3e')), (1.6, 0.22, h('4f6c2b')),
                                           (2.2, 0.16, h('82a052'))])
-    for name, c1 in (('tuftA', '5f7f33'), ('tuftB', '6f8f3c'), ('tuftC', '82a04a')):
-        material(name, h(c1))
-        blib.PALETTE[name].update(solid=True)
+    for name, img in (('grassS0', lambda: sprites.grass_tuft(21)), ('grassS1', lambda: sprites.grass_tuft(22, flowers=9)),
+                      ('grassS2', lambda: sprites.grass_tuft(23, dry=0.45))):
+        material(name, h('5b7a35'), ao=False, spec=0.12, refl=4)
+        blib.PALETTE[name].update(sprite=_sprite(name, img))
     material('earth', h('6d5e45'), h('5a4d39'))
     blib.PALETTE['earth'].update(scale=0.6, cracks=0.8, cavity=0.4, speckle=[(2.5, 0.2, h('5f7a3a'))])
     material('path', h('8f7b58'), h('7e6b4a'))
@@ -193,6 +240,11 @@ def land_palette():
 
 def life_palette():
     land_palette()
+    for name, img in (('leafS0', lambda: sprites.leaf_cluster(11, light=-0.12)),
+                      ('leafS1', lambda: sprites.leaf_cluster(12)),
+                      ('leafS2', lambda: sprites.leaf_cluster(13, light=0.12, base=(0.34, 0.46, 0.17)))):
+        material(name, h('4f6c2b'), ao=False, spec=0.15, refl=6)
+        blib.PALETTE[name].update(sprite=_sprite(name, img))
     material('door_green', h('2f5a33'), h('2a5230'), spec=0.45, refl=40)
     blib.PALETTE['door_green'].update(scale=3.0, vcracks=(0.5, 0.15), cavity=0.5)
     material('brass', h('c8a34e'), spec=0.9, refl=170, ao=False)
@@ -376,50 +428,38 @@ def picket_fence(b):
             rz=math.degrees(ga))
 
 
-def grass_tufts(b, rng, n, near=False):
-    """Tufts of long grass, three blades each, leaning out (the hill reads as grass, not a smooth green dome):
-    dense on the hill, sparser in the garden, none on the path, before the door or under Bilbo and Gandalf.
-    near=True: only the garden before the front (the skinned part's share)."""
+def grass_tufts(b, rng, n):
+    """Tufts of meadow grass: two crossed cut-out cards each (painted blades, sprites.grass_tuft), turned towards the
+    game's camera and leaning back a little; plain, flowering or dry. Dense on the hill, sparser in the garden, none on
+    the path, at the wall's foot or round Bilbo and Gandalf."""
     hd = BAG
-    (gx, gy), _ = gate_pos()
     path = path_pts()
     made = tries = 0
     while made < n and tries < n * 60:
         tries += 1
         x, y = rng.uniform(-HEX, HEX), rng.uniform(-HEX / 0.866, HEX / 0.866)
-        if hex_dist(x, y) < FENCE_IN + 0.8 and not (hex_dist(x, y) > 1.5 and rng.random() < 0.35):
+        if hex_dist(x, y) < FENCE_IN + 1.0:
             continue
         l, back = to_local(hd, x, y)
-        front = abs(l) < hd['W'] + 1.0 and -12.0 < back < hd['c'] * l * l + 1.2
-        if near != front:
-            continue
-        if abs(l) < hd['W'] + 0.5 and -2.0 < back < hd['c'] * l * l + 1.0:
+        if abs(l) < hd['W'] + 0.5 and -2.5 < back < hd['c'] * l * l + 1.0:
             continue                                               # the flower beds and the wall's foot
-        if seg_dist(x, y, path) < 1.3:
+        if seg_dist(x, y, path) < 1.6:
             continue
-        if any(math.hypot(l - fx, back - fy) < 4.5 for fx, fy, _ in (BILBO, GANDALF)):
+        if any(math.hypot(l - fx, back - fy) < 6.5 for fx, fy, _ in (BILBO, GANDALF)):
             continue
         hill = smooth((raw_h(x, y) - (G0 + PLAT) - 0.6) / 3.0)
-        if rng.random() > 0.3 + 0.7 * hill:
+        if rng.random() > 0.35 + 0.65 * hill:
             continue
-        z = ground(x, y) - 0.08
-        s = rng.uniform(0.7, 1.25) * (1.0 + 0.3 * hill)
-        m = rng.choice(('tuftA', 'tuftB', 'tuftC', 'tuftB'))
-        a0 = rng.uniform(0, 2 * math.pi)
-        for k in range(3):
-            a = a0 + 2 * math.pi * k / 3 + rng.uniform(-0.4, 0.4)
-            ca, sa = math.cos(a), math.sin(a)
-            w = 0.16 * s
-            hgt = rng.uniform(0.8, 1.4) * s
-            lean = rng.uniform(0.25, 0.5) * hgt
-            bx, by = x + ca * 0.12, y + sa * 0.12
-            v0 = (bx - sa * w, by + ca * w, z)
-            v1 = (bx + sa * w, by - ca * w, z)
-            tip = (bx + ca * lean, by + sa * lean, z + hgt)
-            for e in (-1, 1):                                      # two faces a hair apart, each facing out
-                nx, ny = ca * e * 0.025, sa * e * 0.025
-                tri = [(p_[0] + nx, p_[1] + ny, p_[2]) for p_ in (v0, v1, tip)]
-                b.add(tri, oriented(tri, [(0, 1, 2)], (ca * e, sa * e, 0.0)), m)
+        z = ground(x, y) - 0.12
+        s = rng.uniform(0.8, 1.2) * (1.0 + 0.25 * hill)
+        w, hgt = 3.0 * s, 1.9 * s
+        r = rng.random()
+        m = 'grassS1' if r < 0.22 else ('grassS2' if r < 0.37 else 'grassS0')
+        yaw = rng.uniform(-15, 15)
+        for e in (-1, 1):                                          # crossed, both facing the camera's side
+            a = math.radians(-90 + yaw + e * 38)
+            f = (math.cos(a), math.sin(a), 0.32)                   # leaning back: seen from above too
+            card(b, m, (x, y, z + hgt / 2), f, w, hgt)
         made += 1
     return made
 
@@ -432,53 +472,79 @@ def path_pts():
                                           (gx, gy + 0.6, 0.0)], 40)]
 
 
-def oak(b, rng, x, y, z, hgt, spread, clumps, roots=0, fine=True):
-    """A broad old tree: a stout trunk (with roots running down the slope), limbs spreading low, a crown of many
-    leaf clumps in three greens, the underside darker."""
-    tr = hgt * 0.065
-    trunk = [(x, y, z - 0.4), (x + 0.15, y, z + hgt * 0.16), (x + 0.3, y + 0.1, z + hgt * 0.3)]
-    tube(b, 'bark', spline(trunk, 6), [tr * 1.4, tr * 1.15, tr, tr * 0.95, tr * 0.9, tr * 0.85, tr * 0.8], n=10,
-         tip=False)
-    for k in range(roots):                                   # roots: over the turf, down the slope, into it
-        a = math.radians(-90 + (k - (roots - 1) / 2) * 34 + rng.uniform(-8, 8))
+def great_tree(b, rng, x, y, z, hgt, spread):
+    """The great tree above Bag End: a stout trunk whose roots run down over the turf; seven limbs from a third of
+    its height, two branches on each, two twigs on each branch (tapering bark tubes); a broad crown of cut-out leaf
+    clusters (sprites.leaf_cluster) round the branches' ends and over the crown's dome, shade clusters low and on the
+    far side, sunlit ones on top, all turned towards the game's camera; their normals make the crown one soft mass."""
+    tr = hgt * 0.06
+    trunk = [(x, y, z - 0.6), (x + 0.25, y + 0.1, z + hgt * 0.16), (x + 0.45, y + 0.15, z + hgt * 0.32)]
+    tube(b, 'bark', spline(trunk, 8), [tr * 1.45, tr * 1.2, tr * 1.05, tr, tr * 0.95, tr * 0.9, tr * 0.86, tr * 0.82,
+                                       tr * 0.8], n=12, tip=False)
+    for k in range(5):                                       # roots: over the turf, down the slope, into it
+        a = math.radians(-90 + (k - 2) * 34 + rng.uniform(-8, 8))
         pts = []
         for i in range(7):
             t = i / 6
-            px, py = x + math.cos(a) * (0.4 + 4.5 * t), y + math.sin(a) * (0.4 + 4.5 * t) + 0.3 * math.sin(t * 6 + k)
-            pts.append((px, py, ground(px, py) + 0.25 * (1.0 - t) + 0.6 * math.exp(-t * 5) - 0.05))
-        tube(b, 'bark', spline(pts, 12), [tr * 0.55 * (1.0 - 0.85 * i / 12) + 0.05 for i in range(13)], n=6)
-    cz = z + hgt * 0.56
-    ends = []
-    for k in range(6 if fine else 4):
-        a = 2 * math.pi * k / (6 if fine else 4) + rng.uniform(-0.3, 0.3)
-        rr = spread * rng.uniform(0.55, 0.8)
-        p1 = (x + math.cos(a) * rr * 0.45, y + math.sin(a) * rr * 0.45, z + hgt * rng.uniform(0.4, 0.5))
-        p2 = (x + math.cos(a) * rr, y + math.sin(a) * rr, z + hgt * rng.uniform(0.52, 0.66))
-        pts = spline([trunk[-1], p1, p2], 6)
-        tube(b, 'bark', pts, [tr * 0.6 * (1.0 - 0.75 * i / (len(pts) - 1)) + 0.04 for i in range(len(pts))],
-             n=6 if fine else 4)
-        ends.append(p2)
-    leaves = ('leafA', 'leafB', 'leafC')
-    for i in range(clumps):
+            px, py = x + math.cos(a) * (0.5 + 6.0 * t), y + math.sin(a) * (0.5 + 6.0 * t) + 0.4 * math.sin(t * 6 + k)
+            pts.append((px, py, ground(px, py) + 0.3 * (1.0 - t) + 0.8 * math.exp(-t * 5) - 0.05))
+        tube(b, 'bark', spline(pts, 12), [tr * 0.6 * (1.0 - 0.85 * i / 12) + 0.06 for i in range(13)], n=7)
+    cz, cr = z + hgt * 0.6, (spread, spread * 0.95, hgt * 0.34)
+    CROWN.update(c=(x + 0.3, y, cz), r=cr)
+    top = Vector(trunk[-1])
+    tips = []
+
+    def branch(p0, p1, p2, r0, r1, n):
+        pts = spline([p0, p1, p2], 8)
+        tube(b, 'bark', pts, [r0 + (r1 - r0) * i / (len(pts) - 1) for i in range(len(pts))], n=n)
+        return pts
+    for k in range(7):                                       # the limbs
+        a = 2 * math.pi * k / 7 + rng.uniform(-0.25, 0.25)
+        rr = spread * rng.uniform(0.6, 0.82)
+        h0 = top + Vector((0, 0, rng.uniform(-1.2, 0.6)))
+        p1 = Vector((x + math.cos(a) * rr * 0.42, y + math.sin(a) * rr * 0.42, z + hgt * rng.uniform(0.42, 0.5)))
+        p2 = Vector((x + math.cos(a) * rr, y + math.sin(a) * rr, z + hgt * rng.uniform(0.56, 0.7)))
+        pts = branch(tuple(h0), tuple(p1), tuple(p2), tr * 0.62, tr * 0.16, 7)
+        tips.append(p2)
+        for j, t in enumerate((0.45, 0.72)):                # branches off each limb
+            q = Vector(pts[int(t * (len(pts) - 1))])
+            b_ = a + (0.7 if j == 0 else -0.7) + rng.uniform(-0.3, 0.3)
+            L = spread * rng.uniform(0.28, 0.4)
+            e = q + Vector((math.cos(b_) * L, math.sin(b_) * L, L * rng.uniform(0.35, 0.7)))
+            mid = (q + e) / 2 + Vector((0, 0, L * 0.15))
+            bp = branch(tuple(q), tuple(mid), tuple(e), tr * 0.24, tr * 0.07, 5)
+            tips.append(e)
+            for t2 in (0.55, 1.0):                            # twigs
+                q2 = Vector(bp[int(t2 * (len(bp) - 1))])
+                c_ = b_ + rng.uniform(-1.2, 1.2)
+                L2 = L * rng.uniform(0.35, 0.55)
+                e2 = q2 + Vector((math.cos(c_) * L2, math.sin(c_) * L2, L2 * rng.uniform(0.2, 0.6)))
+                branch(tuple(q2), tuple((q2 + e2) / 2 + Vector((0, 0, 0.1))), tuple(e2), tr * 0.08, tr * 0.03, 4)
+                tips.append(e2)
+    cam = Vector((0.0, -0.62, 0.78))                          # towards the game's camera
+    spots = []
+    for tp in tips:                                          # clusters round the branches' ends
+        for _ in range(4):
+            spots.append(tp + Vector((rng.gauss(0, 1.4), rng.gauss(0, 1.4), rng.gauss(0.4, 1.0))))
+    for _ in range(110):                                     # and over the dome of the crown
         a = rng.uniform(0, 2 * math.pi)
-        if i < len(ends):
-            px, py, pz = ends[i]
-        elif fine and i % 4 == 0:                            # the underside, hiding the limbs
-            px = x + math.cos(a) * spread * rng.uniform(0.5, 0.9)
-            py = y + math.sin(a) * spread * rng.uniform(0.5, 0.9)
-            pz = cz - hgt * rng.uniform(0.06, 0.14)
-        else:
-            u = rng.uniform(0.0, 1.0) ** 0.6
-            px, py = x + math.cos(a) * spread * 0.95 * u, y + math.sin(a) * spread * 0.95 * u
-            pz = cz + hgt * 0.36 * math.sqrt(max(0.0, 1.0 - u * u)) * rng.uniform(0.6, 1.0) - hgt * 0.06
-        r = spread * (rng.uniform(0.16, 0.25) if fine else rng.uniform(0.26, 0.38))
-        m = leaves[min(2, max(0, int((pz - cz) / (hgt * 0.18) + 1 + rng.uniform(-0.6, 0.6))))]
-        blob(b, m, px, py, pz - r * 0.5, r, n=8 if fine else 6, rings=4 if fine else 3,
-             squash=rng.uniform(0.6, 0.85), jitter=0.32 if fine else 0.22)
+        el = rng.uniform(-0.25, 1.0)
+        u = math.cos(el * math.pi / 2)
+        spots.append(Vector((x + 0.3 + cr[0] * 0.92 * u * math.cos(a), y + cr[1] * 0.92 * u * math.sin(a),
+                             cz + cr[2] * 0.95 * math.sin(el * math.pi / 2))))
+    spots.sort(key=lambda p: p.y)                            # (no effect on the game: cut-outs need no sorting)
+    for p in spots:
+        rel = (p.z - (cz - cr[2])) / (2 * cr[2]) + 0.25 * (p.y - y) / cr[1] * -1
+        m = 'leafS0' if rel < 0.38 else ('leafS2' if rel > 0.72 else 'leafS1')
+        yaw = math.radians(rng.uniform(-40, 40))
+        f = Vector((cam.x * math.cos(yaw) - cam.y * math.sin(yaw), cam.x * math.sin(yaw) + cam.y * math.cos(yaw), cam.z))
+        sz = rng.uniform(4.6, 6.6)
+        card(b, m, tuple(p), tuple(f), sz, sz, roll=rng.uniform(-30, 30))
 
 
 # ----------------------------------------------------------------------------------------------- static part
 def build(b, eye=False):
+    b.normal_fn = normals
     b.tiny_px = 0
     b.ao_distance = 4.0
     land_palette()
@@ -531,11 +597,12 @@ def build(b, eye=False):
                        (1.15, ch + 0.7), (0.0, ch + 0.7)], 12, x, y, z, smooth=False)
     cyl(b, 'brick', x, y, z + ch + 0.7, 0.6, 1.0, n=10)
     # tufts of long grass over the hill and the garden
-    grass_tufts(b, random.Random(1954), TUFTS_STATIC)
+    grass_tufts(b, random.Random(1954), TUFTS)
 
 
 # ----------------------------------------------------------------------------------------------- skinned part
 def build_eye(b):
+    b.normal_fn = normals
     b.tiny_px = TINY_PX
     life_palette()
     rng = random.Random(1937)
@@ -548,7 +615,7 @@ def build_eye(b):
         box(L, 'timber', e * WIN_X, c * WIN_X ** 2 - 0.65, WIN_Z - WIN_R - 1.55, 5.1, 1.05, 0.4)   # the sill
     # the great tree on the hill above the door, its roots running down over the turf
     tx, ty = to_world(hd, *TREE)
-    oak(b, rng, tx, ty, raw_h(tx, ty), 24.0, 12.0, 100, roots=5)
+    great_tree(b, rng, tx, ty, raw_h(tx, ty), 24.0, 12.0)
     # the garden: sunflowers by the windows, clumps of flowers along the wall
     for (l, yy, hg) in ((-16.5, -2.7, 8.7), (-18.4, -5.1, 7.2), (-15.0, -5.1, 9.6), (16.5, -3.0, 8.1),
                         (18.3, -5.4, 9.3)):
@@ -557,7 +624,6 @@ def build_eye(b):
         m = rng.choice(('flowR', 'flowY', 'flowP', 'flowW'))
         blob(L, m, l, c * l * l - 1.35, -0.15, rng.uniform(1.05, 1.4), n=8, rings=4, squash=0.6, jitter=0.3)
     picket_fence(b)
-    grass_tufts(b, random.Random(1955), TUFTS_EYE, near=True)
     # Bilbo and Gandalf on the grass before the door
     for spot, fn in ((BILBO, bilbo), (GANDALF, gandalf)):
         fn(Local(b, fig_M(spot)))
