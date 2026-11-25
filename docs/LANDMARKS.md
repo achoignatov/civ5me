@@ -14,7 +14,7 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | Edoras (Rohan's capital) | v2, after the film (`edoras.jpg`): a great crag with a jointed sheer face over dry tussock slopes, ~100 weathered longhouses under heavy thatch on its foot, the log wall with wall-walk, watchtowers and gatehouse, a stone stair up a spur to Meduseld's compound (antique-gold thatch, horse-head gables, lesser and spired halls), barrows with simbelmynë, the Snowbourn; the banner of the Mark swings. The plain is the game's own ground | `vendor/landmarks/Edoras` (model `tools/landmarks/models/edoras.py`) |
 | Erebor (the Dwarves' capital) | First draft, after the films' prologue: the Lonely Mountain (snow-capped summit, gullies, arms), the Front Gate cut in a dressed face at the head of its valley (stepped portal, gable head with the gilded crown and seven stars, pilasters, a gallery of lit windows, blue-and-gold banners), the doors ajar with a warm additive gold glow, two colossal dwarf warriors leaning on their axes, the River Running from culverts under the threshold, a dwarven bridge, Ravenhill's guard-post, five braziers; fits its own hex | `vendor/landmarks/Erebor` (model `tools/landmarks/models/erebor.py`) |
 | Isengard (Saruman's capital) | First draft: the Ring of Isengard cut by its gate (pylons, iron doors, banners of the White Hand), the plain torn into fiery pits with scaffolds, treadwheel cranes, chimneys, felled trees, the pillared road; Orthanc in black glossy stone (four faceted piers, knife-edged roots, fins, lancet windows, stair, door, balcony, four horns) and **Saruman on the summit** (7.8 high, above slimmer 7-unit horns: user's touch-up) with his staff (an additive white light) and the palantír glowing bright orange (after `screenshots/saruman.webp`); six pit fires; fits its own hex | `vendor/landmarks/Orthanc` (model `tools/landmarks/models/orthanc.py`) |
-| The Shire (the Hobbits' capital) | v4, after `screenshots/bag-end.webp`: the tile is Bag End's garden at ground level with the white picket fence on it near the edge; the big Hill (covering the middle, where the stock houses stand) in grass tufts with the great tree and the brick chimney; the arched stone front, the green round door (10.8 across), two round windows glowing warm; stepping stones, sunflowers; **Bilbo and Gandalf sitting on the grass, their pipes puffing in turn** (timed one-shot musket smoke), the chimney smoking and billowing | `vendor/landmarks/BagEnd` (model `tools/landmarks/models/bag_end.py`) |
+| The Shire (the Hobbits' capital) | v4, after `screenshots/bag-end.webp`: the tile is Bag End's garden at ground level with the white picket fence on it near the edge; the big Hill (covering the middle, where the stock houses stand) in grass tufts with the great tree and the brick chimney; the arched stone front, the green round door (10.8 across), two round windows glowing warm; stepping stones, sunflowers; **Bilbo and Gandalf sitting on the grass, puffing in turn**: soft clouds rise before each face, spread and thin away in 1.6 s, every 4.3-5.5 s, never together (our animated model effect `puffs.py`); the chimney smoking | `vendor/landmarks/BagEnd` (model `tools/landmarks/models/bag_end.py`) |
 | Every other city and city-state | Stock art | |
 
 **Next:** the user's in-game verdict on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires) and Bag End (chimney smoke size, window glow), then the other 7 capitals one at a time (§7).
@@ -149,11 +149,25 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   prints both parts' counts before checking them.
 - *Timed one-shot effects* (Bag End v4): a rig entry may carry a 5th item, trigger times in seconds of the idle loop;
   `build_models.py` then writes one trigger per time with `duration="0"` (as the stock artillery fires
-  `CW_CANNON_SMOKE` at `time="0.844"`), so the effect plays once per loop: puffs of `ART_DEF_PEFFECT_RIFLE_SMOKE`
-  from the pipes, `CANNON_SMOKE` billows from the chimney. Untested in game: whether triggers re-fire on every loop
-  of the idle animation, and the sizes.
+  `CW_CANNON_SMOKE` at `time="0.844"`), so the effect plays once per loop. **Proven in game (v4 test): they re-fire
+  on every loop.** A time may be `(time, duration)`: a lasting particle (Bag End: the gentle `DROMON_IDLE_SMOKE`)
+  emitted for that long, then left to drift and fade. Lasting effects get `duration` = the loop's length (at least 10).
+  Don't use musket/cannon smoke for gentle puffs: they flash and jet sideways ("ballistic missiles", the user).
 - *Particle files:* `.psb` (binary, in the `.fpk` packs; the fpk record is `(0, 0, size, offset)`). Not edited yet:
   the stock particles are used as they are.
+- *Animated positions* (`tools/landmarks/puffs.py`, Bag End's pipe puffs): a model effect whose bones MOVE, on
+  `D3K8uC8u` position curves, the format of the stock oil rig's idle animation (`vendor/civ5/fx_oil_heavy_idlea.gr2`,
+  extracted from the game's packs): a clamped quadratic B-spline, 8-bit knots (`OneOverKnotScaleTrunc` = the top 16
+  bits of the float 255/duration) and 8-bit controls (byte * scale + offset per axis), one knot per tick. **Proven in
+  game (v6): the cards move.** But the spline blends every jump over ~0.2 s, so a card hidden under the ground was
+  seen rushing up to the face and back; v7 hides cards EDGE-ON (90 degrees about the vertical, on rotation curves; the
+  game's camera never turns, so they have no width) and moves them to/from their hiding place only while edge-on.
+  Scale is never animated (the stock game never does). `puffs.evaluate` + `granim.sample_quat_curve` decode written
+  curves: always read the schedule back before shipping (it caught a late-binding bug that gave Gandalf Bilbo's
+  times). The stock game has no gentle puff particle: musket/cannon smoke flash and jet ("ballistic missiles"), and
+  the ship's idle smoke emitted for 0.8 s did not show.
+- *Model effects of a module:* `model_effects(out_dir, k)` (files) and `preview_overlays(out_dir)` (additive quads
+  for the preview) are picked up by `build_models.py`.
 - *Hiding the stock houses:* they can't be removed for one city (culture-wide, decided in the exe), but they are
   drawn at the game's ground level, so a landmark whose land stands above them (about 6 units) hides them, the way
   Erebor's mountain does. Bag End v3 raised its whole garden 6.5 for this; the user rejected the look ("a hexagonal

@@ -29,6 +29,7 @@ tile's middle, where the city's stock houses stand (they can't be removed for on
 garden still shows).
 """
 import math
+import os
 import random
 
 import blib
@@ -62,8 +63,15 @@ BILBO = (-9.5, -8.2, 15.0)         # local (l, y, turn): sitting on the grass, a
 GANDALF = (10.0, -9.2, -18.0)
 FIG_S = 3.0                        # both figures: heroic scale, to read from the game's camera
 TUFTS_STATIC, TUFTS_EYE = 820, 220
-LOOP = 8.0                         # the idle loop (s): the timed puffs of smoke repeat with it
-PUFFS = dict(pipe0=(0.6, 1.3), pipe1=(4.6,), smoke1=(2.4, 6.4))   # Gandalf twice, Bilbo once; the chimney billows
+LOOP = 24.0                        # the idle loop (s), = the puff effect's own loop
+# The pipes (user: "every 4-6 seconds a roundish cloud of smoke in front of their faces, dissipating gradually into
+# nothingness in 1-2 seconds; not at the same time"): our own model effect (tools/landmarks/puffs.py), six soft cloud
+# cards per friend. Puff times in the 24 s loop: irregular gaps of 4.3-5.5 s each, the two never overlapping.
+# (v4's musket smoke flashed and jetted "like ballistic missiles"; v5's ship smoke, 0.8 s at a time, did not show.)
+PUFF_TIMES = dict(gandalf=(0.6, 5.4, 10.9, 15.6, 20.3), bilbo=(2.9, 8.1, 13.2, 17.9, 22.4))
+PUFF_LIFE = 1.6                    # s from the first wisp to the last one gone
+MOUTHS = dict(gandalf=(0.0, -0.95, 2.5), bilbo=(0.0, -0.5, 1.42))   # just in front of the face (figure units)
+PUFF_FX = (0.0, -26.0)             # world (x, y) of the effect's bone, at the ground between the two
 
 
 # ----------------------------------------------------------------------------------------------- frames
@@ -680,24 +688,100 @@ def glow_lines():
 
 
 def smoke_spots():
-    """The chimney's pot (continuous smoke; smoke1 = its timed billows) and the bowls of the two pipes (timed puffs):
-    (bone, position, effect key, trigger times or None)."""
-    from mathutils import Vector
+    """The chimney's pot: continuous smoke (bone, position, effect key)."""
     cl, cb, ch = CHIM
     x, y = to_world(BAG, cl, cb)
-    pot = (x, y, raw_h(x, y) + ch + 1.8)
-    spots = [('smoke0', pot, 'CHIMNEY_SMOKE', None), ('smoke1', pot, 'CHIMNEY_PUFF', PUFFS['smoke1'])]
-    for i, (spot, bowl) in enumerate(((GANDALF, GANDALF_BOWL), (BILBO, BILBO_BOWL))):
-        p = fig_M(spot) @ Vector((bowl[0], bowl[1], bowl[2] + 0.3))
-        spots.append(('pipe%d' % i, tuple(p), 'PIPE_PUFF', PUFFS['pipe%d' % i]))
-    return spots
+    return [('smoke0', (x, y, raw_h(x, y) + ch + 1.8), 'CHIMNEY_SMOKE')]
+
+
+def mouth(who):
+    from mathutils import Vector
+    return tuple(fig_M(GANDALF if who == 'gandalf' else BILBO) @ Vector(MOUTHS[who]))
+
+
+def puff_cards(k):
+    """[(half size, fn(t) -> FILE-unit position relative to the effect's bone, yaw_fn(t) -> degrees)]: six cards per
+    friend. Each puff: the cards open from edge-on slivers in a small cluster before the face (staggered by 40 ms),
+    drift apart, up and a little downwind, and close to slivers again between 0.9 s and PUFF_LIFE (each at its own
+    time). A card is edge-on (90 degrees: no width from the game's camera) whenever it is not puffing, and it travels
+    between its hiding place deep under the ground and a puff only while edge-on, PARK s before and after the puff,
+    so nothing visible ever crosses between the ground and the faces (v6: "the smoke rushes to the ground")."""
+    PARK = 0.6
+    bx, by = PUFF_FX
+    bz = ground(bx, by)
+    cards = []
+    for who, s in (('gandalf', 1.0), ('bilbo', 0.68)):
+        mx, my, mz = mouth(who)
+        for c in range(6):
+            a = 2 * math.pi * c / 6 + (0.5 if who == 'bilbo' else 0.0)
+            ox, oz = math.cos(a), math.sin(a) * 0.8                # a ring of wisps round the cloud's middle
+            t_on = 0.04 * c
+            t_off = 0.9 + (PUFF_LIFE - 0.9) * ((c * 4) % 6) / 5.0   # vanish order scrambled
+            hidden = (mx - bx, my - by, -30.0)
+
+            def path(u, mx=mx, my=my, mz=mz, ox=ox, oz=oz, s=s, c=c):
+                w = u / PUFF_LIFE
+                spread = (0.45 + 1.9 * math.sqrt(w)) * s
+                x = mx + ox * spread + 1.2 * s * w                     # downwind, to the east
+                y = my - 0.3 * s - 0.5 * s * w - 0.02 * c              # a little towards the camera
+                z = mz + 0.4 * s + oz * spread + 3.0 * s * w ** 0.8    # rising
+                return x, y, z
+
+            def phase(t, who=who):
+                """(u = time into the puff, or None) for the puff whose window (with its parking margins) holds t."""
+                for t0 in PUFF_TIMES[who]:
+                    for base in (t0, t0 - LOOP, t0 + LOOP):            # puffs late in the loop run over its start
+                        u = t - base
+                        if -PARK <= u <= PUFF_LIFE + PARK:
+                            return u
+                return None
+
+            def fn(t, path=path, phase=phase, t_on=t_on, t_off=t_off, hidden=hidden):
+                u = phase(t)
+                if u is None:
+                    x, y, z = hidden[0] + bx, hidden[1] + by, hidden[2] + bz
+                else:
+                    x, y, z = path(min(max(u, t_on), t_off))           # parked at the start / the end, edge-on
+                return ((x - bx) * k, (y - by) * k, (z - bz) * k)
+
+            def yaw_fn(t, phase=phase, t_on=t_on, t_off=t_off):
+                u = phase(t)
+                return 0.0 if (u is not None and t_on <= u <= t_off) else 90.0
+
+            cards.append(((1.45 if who == 'gandalf' else 1.0) * k, fn, yaw_fn))
+    return cards
+
+
+def preview_overlays(out_dir):
+    """The puffs for the preview (in-game units, additive): each friend's cards half a second into a puff."""
+    import dds
+    img = dds.decode_dxt3(os.path.join(out_dir, 'MEC_BagEndPuffs_DIFF.dds'))
+    bx, by = PUFF_FX
+    bz = ground(bx, by)
+    out = []
+    for i, (hs, fn, _) in enumerate(puff_cards(1.0)):
+        t = (PUFF_TIMES['gandalf'][0] if i < 6 else PUFF_TIMES['bilbo'][0]) + 0.5
+        x, y, z = fn(t)
+        if z < -5:
+            continue
+        x, y, z = x + bx, y + by, z + bz
+        P = [(x - hs, y, z - hs), (x + hs, y, z - hs), (x + hs, y, z + hs), (x - hs, y, z + hs)]
+        out.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)], img))
+    return out
+
+
+def model_effects(out_dir, k):
+    """Our animated model effects besides the glow (build_models.py): the puffs of the pipes."""
+    import puffs
+    return puffs.write(out_dir, 'MEC_BagEndPuffs', puff_cards(k), LOOP, tex_args=dict(strength=0.62))
 
 
 def rig():
     """Bones in in-game units: (name, parent, position, effect key or None)."""
     bones = [('fxglow', 'eyeroot', glow_frame()[0], 'WINDOW_GLOW')]
-    for name, p, key, times in smoke_spots():
-        bones.append((name, 'eyeroot', p, key, times) if times else (name, 'eyeroot', p, key))
+    for name, p, key in smoke_spots():
+        bones.append((name, 'eyeroot', p, key))
+    bones.append(('fxpuff', 'eyeroot', (PUFF_FX[0], PUFF_FX[1], ground(*PUFF_FX)), 'PIPE_PUFFS'))
     return bones
 
 

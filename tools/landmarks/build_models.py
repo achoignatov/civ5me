@@ -198,13 +198,15 @@ def build_one(lm, do_preview=True):
         for bn_, _, _, key in rig:
             if key and key != 'EYE_BEAM':
                 if bn_ in times:        # one-shot bursts at these seconds of the idle loop (like stock cannon smoke)
-                    fire += [(bn_, EFFECTS[key]['name'], t_, 0) for t_ in times[bn_]]
+                    fire += [(bn_, EFFECTS[key]['name']) + (tuple(t_) if isinstance(t_, (tuple, list)) else (t_, 0))
+                             for t_ in times[bn_]]          # (time, duration); a bare time = duration 0
                 else:
                     fire.append((bn_, EFFECTS[key]['name']))
         beam_trig = [(bn_, EFFECTS[key]['name']) for bn_, _, _, key in rig if key == 'EYE_BEAM']
         trig_full, trig_fire = 'FX_Triggers_%s.ftsxml' % name, 'FX_Triggers_%s_Fire.ftsxml' % name
-        lmodel.write_triggers(os.path.join(OUT, trig_full), fire + beam_trig)
-        lmodel.write_triggers(os.path.join(OUT, trig_fire), fire)
+        hold = max(10.0, mod.GAZE['T'])     # lasting effects span the whole idle loop
+        lmodel.write_triggers(os.path.join(OUT, trig_full), fire + beam_trig, hold)
+        lmodel.write_triggers(os.path.join(OUT, trig_fire), fire, hold)
         if beam_trig:                       # only the Eye has the beam (it follows that model's GAZE)
             files += beam.write(OUT, mod.GAZE, getattr(mod, 'BEAM_TILT', BEAM_TILT))
         glow_fx = None
@@ -212,6 +214,8 @@ def build_one(lm, do_preview=True):
             import glow
             glow_fx = mod.glow_effect(k)
             files += glow.write(OUT, **glow_fx)
+        if hasattr(mod, 'model_effects'):    # further animated model effects of the module (Bag End: the pipe puffs)
+            files += mod.model_effects(OUT, k)
         ename = name + '_Eye'
         tex = ['Generic_Grey_8.dds', tdn, tsn, edn, esn]
         fx_bones = [b_[0] for b_ in rig if b_[3]]
@@ -248,6 +252,8 @@ def build_one(lm, do_preview=True):
                     P = [(gpos[0] + x / k, gpos[1] + y / k, gpos[2] + z / k) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
                     overlays.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)],
                                      dds.decode_dxt3(os.path.join(OUT, glow_fx['name'] + '_DIFF.dds'))))
+            if animated and hasattr(mod, 'preview_overlays'):   # e.g. Bag End's puffs, frozen mid-puff
+                overlays += mod.preview_overlays(OUT)
             pv, pt, pimg = preview_res.verts, preview_res.tris, dds.decode_dxt3(os.path.join(OUT, preview_dn))
             if animated and baked and hasattr(mod, 'PIVOT_MATS'):
                 # the skinned part holds half the landmark: show both parts together (textures side by side)

@@ -247,15 +247,16 @@ def write_idle(out_dir, name, bones, gaze):
 
 
 # --------------------------------------------------------------------------- .fxsxml + triggers
-def write_triggers(path, triggers):
+def write_triggers(path, triggers, hold=10.0):
     """triggers: [(bone, visual effect name)] (from the loop's start, lasting) or [(bone, effect, time, duration)]:
-    a one-shot effect at `time` seconds of the animation (duration 0, like the stock cannon smoke)."""
+    a one-shot effect at `time` seconds of the animation (duration 0, like the stock cannon smoke). Lasting effects
+    run for `hold` seconds: at least the idle loop's length, or they go out before the loop restarts."""
     tl = ['<trigger_system type="FGrannyTimedTriggerSystem">', '  <event_tracks>', '    <event_track ec="1000">',
           '      <track id="1" name="Sound" />', '      <track id="2" name="Effect" />',
           '      <track id="3" name="Transfer" />', '    </event_track>', '  </event_tracks>', '  <triggers>']
     for i, tr in enumerate(triggers):
         bone, effect = tr[:2]
-        time_, dur = (tr[2], tr[3]) if len(tr) > 2 else (0, 10)
+        time_, dur = (tr[2], tr[3]) if len(tr) > 2 else (0, hold)
         tl.append('    <trigger type="FTimedTriggerEffect" id="%d" time="%s" duration="%s" repeat="0" ec="1000" '
                   'track="2" tier="0" event="%s" bone="%s" />' % (i + 1, ('%g' % time_), ('%g' % dur), effect, bone))
     tl += ['  </triggers>', '</trigger_system>']

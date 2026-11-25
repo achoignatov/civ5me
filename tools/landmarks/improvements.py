@@ -132,15 +132,16 @@ IMPROVEMENTS = [
     # the big Hill (25 high, covering the tile's middle and the stock houses there) in tufts of grass, the great tree,
     # the brick chimney; the arched stone front, the green round door (10.8 across), two round windows with a warm
     # additive glow (MEC_BagEndGlow on bone fxglow); stepping stones, sunflowers; Bilbo and Gandalf (x3) sitting on the
-    # grass. Smoke: the chimney smokes (smoke0, CHIMNEY_SMOKE) and billows (smoke1, CHIMNEY_PUFF at 2.4 and 6.4 s);
-    # the pipes puff (pipe0 Gandalf at 0.6 and 1.3 s, pipe1 Bilbo at 4.6 s, PIPE_PUFF): one-shot triggers in the 8 s
-    # idle loop. Nothing moves. Static part 31.6k vertices, skinned 31.0k; 2 x 2048 baked. 51 high (the tree).
+    # grass. Smoke: the chimney smokes (smoke0, CHIMNEY_SMOKE); the pipes puff (fxpuff, PIPE_PUFFS = MEC_BagEndPuffs,
+    # tools/landmarks/puffs.py): soft cloud cards that rise before each face, spread and thin away in 1.6 s, every
+    # 4.3-5.5 s, the two friends never together (24 s schedule). The landmark itself does not move. Static
+    # part 31.6k vertices, skinned 31.0k; 2 x 2048 baked. 51 high (the tree).
     dict(key='BAG_END', civ='CIVILIZATION_MEC_HOBBITS', title='Bag End', dir='BagEnd',
          gr2='MEC_LM_BagEnd.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_BagEnd_DIFF.dds', 'MEC_LM_BagEnd_SREF.dds',
                    'MEC_LM_BagEnd_Eye_DIFF.dds', 'MEC_LM_BagEnd_Eye_SREF.dds'],
          animation=('MEC_LM_BagEnd_Idle.gr2', 'Idle'),
-         bones=['fxglow', 'smoke0', 'smoke1', 'pipe0', 'pipe1'],
+         bones=['fxglow', 'smoke0', 'fxpuff'],
          trigger=('FX_Triggers_MEC_LM_BagEnd.ftsxml', 'MEC_LM_BagEnd_Eye'),
          scale=0.25,
          name_keys=['TXT_KEY_CITY_NAME_MEC_THE_SHIRE'],
@@ -182,17 +183,16 @@ VIS_EFFECTS = [
     # (BNW particle), its size a guess (tune after the in-game test)
     ('ART_DEF_VEFFECT_MEC_WINDOW_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_WINDOW_GLOW'),
     ('ART_DEF_VEFFECT_MEC_CHIMNEY_SMOKE', 90.0, 2.4, 'ART_DEF_PEFFECT_DROMON_IDLE_SMOKE', None),
-    # Bag End v4: one-shot puffs fired at set seconds of the 8 s idle loop (FX_Triggers time=t duration=0, like the
-    # stock cannon smoke): musket smoke from the pipes (a soldier's puff is 1.3 at unit scale; Gandalf is ~7x a
-    # soldier here), cannon smoke billowing from the chimney. Sizes are first guesses: tune after the test.
-    ('ART_DEF_VEFFECT_MEC_PIPE_PUFF', 90.0, 2.5, 'ART_DEF_PEFFECT_RIFLE_SMOKE', None),
-    ('ART_DEF_VEFFECT_MEC_CHIMNEY_PUFF', 90.0, 1.6, 'ART_DEF_PEFFECT_CANNON_SMOKE', None),
+    # Bag End: the puffs of Bilbo's and Gandalf's pipes: our animated model effect (tools/landmarks/puffs.py, soft
+    # cloud cards in file units, Scale 1.0). (v4's musket smoke "like ballistic missiles"; v5's ship smoke did not show.)
+    ('ART_DEF_VEFFECT_MEC_PIPE_PUFFS', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_PIPE_PUFFS'),
 ]
 VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
               ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml'),   # file in vendor/landmarks/Moria4
               ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml'),  # file in vendor/landmarks/Erebor
               ('ART_DEF_MEFFECT_MEC_STAFF_GLOW', 'MEC_OrthancGlow.fxsxml'),  # file in vendor/landmarks/Orthanc
-              ('ART_DEF_MEFFECT_MEC_WINDOW_GLOW', 'MEC_BagEndGlow.fxsxml')]  # file in vendor/landmarks/BagEnd
+              ('ART_DEF_MEFFECT_MEC_WINDOW_GLOW', 'MEC_BagEndGlow.fxsxml'),  # file in vendor/landmarks/BagEnd
+              ('ART_DEF_MEFFECT_MEC_PIPE_PUFFS', 'MEC_BagEndPuffs.fxsxml')]  # file in vendor/landmarks/BagEnd
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).
