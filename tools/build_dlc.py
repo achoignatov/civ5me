@@ -13,6 +13,7 @@ How the mod parts are translated (DLC packages only accept XML data, no SQL, no 
   * art & sounds: copied as loose files (as the original mods imported them into the VFS).
   * map scripts: self-contained files in Maps/ (<MapDirectory>).
   * in-game Lua: InGame.lua is overridden through a UISkin (like EUI / MP mod packs) to load the scripts.
+  * loading screen: LoadScreen.lua is overridden in the front-end skin so chosen Dawn of Man pictures fill the screen.
 """
 import os, re, sys, shutil, sqlite3, hashlib, zipfile, collections, uuid
 import xml.etree.ElementTree as ET
@@ -29,6 +30,7 @@ MOD = os.path.join(ROOT, 'dist', 'Middle Earth MP (v 1)')
 MODINFO = os.path.join(MOD, 'Middle Earth MP (v 1).modinfo')
 VANILLA = os.path.join(ROOT, 'vendor', 'civ5', 'vanilla_bnw.db')
 INGAME_BNW = os.path.join(ROOT, 'vendor', 'civ5', 'InGame_BNW.lua')
+LOADSCREEN_STOCK = os.path.join(ROOT, 'vendor', 'civ5', 'LoadScreen.lua')   # Assets/UI/FrontEnd/LoadScreen.lua
 SRC = os.path.join(ROOT, 'src')
 OUT = os.path.join(ROOT, 'dist', 'DLC', 'MiddleEarth')
 TMP = os.path.join(ROOT, 'build', 'tmp')
@@ -303,6 +305,21 @@ def build_lua():
         open(os.path.join(OUT, 'Art', 'SinglePlayer.lua'), 'w', encoding='latin-1').write(
             sp.replace(anchor2, rt + '\n' + anchor2 + '\n\tRT_SetupPlayers()', 1))
     open(os.path.join(ui, 'InGame.lua'), 'w', encoding='latin-1').write(ig.replace(anchor, hook, 1))
+    build_loadscreen()
+
+
+def build_loadscreen():
+    """Front-end override of LoadScreen.lua (Art/ is the pack's front-end <Skin> directory, like BNW's UI/Frontend):
+    the Dawn of Man pictures listed in tools/splash/MEDLC_FullscreenDOM.lua fill the whole screen."""
+    ls = open(LOADSCREEN_STOCK, encoding='latin-1', newline='').read()
+    fit = open(os.path.join(HERE, 'splash', 'MEDLC_FullscreenDOM.lua'), encoding='utf-8').read().replace('\n', '\r\n')
+    inc = 'include( "UniqueBonuses" );\r\n'
+    call = 'Controls.Image:SetTexture(civ.DawnOfManImage);'
+    assert ls.count(inc) == 1 and ls.count(call) == 1, 'stock LoadScreen.lua changed'
+    ls = ls.replace(inc, inc + '\r\n' + fit + '\r\n', 1)
+    ls = ls.replace(call, call + '\r\n\t\tMEDLC_FitDawnOfMan(civ.DawnOfManImage);', 1)
+    os.makedirs(os.path.join(OUT, 'Art'), exist_ok=True)
+    open(os.path.join(OUT, 'Art', 'LoadScreen.lua'), 'w', encoding='latin-1', newline='').write(ls)
 
 
 # --------------------------------------------------------------------------- landmarks

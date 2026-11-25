@@ -77,6 +77,7 @@ Everything except True Start Location (TSL) is plain database/art content. TSL w
 - **Dynamic city naming:** stores the text key, so each player sees the name in their own game language.
 - **Wood Elves script:** fixed an undefined range variable, a crash on dead units, a territory check that always tested player 0's territory, and logging on every unit move.
 - **One pack:** the database result was checked to be identical to loading the six originals in order.
+- **Hobbits loading screen:** a new 4K (3840×2160) picture of the Shire at sunset, rendered in Blender by `tools/splash/` (no AI image). It replaces `DOM_Hobbits.dds` and fills the whole screen: the pack overrides the front-end `LoadScreen.lua`, which stretches the pictures listed in `tools/splash/MEDLC_FullscreenDOM.lua` to cover the screen. Every other civ keeps its stock 1024×768 picture.
 
 ## What to check in a test game
 
@@ -114,10 +115,12 @@ tools/render.py       print a Civ5Map as text (terrain check)
 tools/dbreplay.py     replay mod XML/SQL on a copy of the game DB and report errors
 tools/mockciv.lua     mock of the Civ5 map Lua API   tools/simulate.py  run a map script through it (Lua 5.1 via lupa)
 tools/testmatrix.py / determinism.py / ingametest.py / dlctest.py   test runs
+tools/splash/         the Hobbits loading-screen picture: shire.py (Blender scene, Cycles) + post.py (haze, glow,
+                      tonemap, writes the DDS); the result is committed as src/MEC/Hobbits/Art/DOM_Hobbits.dds
 tools/landmarks/      capital landmark models and their pack integration (see below; tools/capitals/ = model library + drafts)
 vendor/landmarks/     the landmark art that ships (exact files that drew in game)
 src/                  new and replaced files (map scripts, METSL Lua, fixed Wood Elves script, art fixes)
-vendor/civ5/          files copied from the stock game (vanilla DB, InGame.lua, Upgrade1.Civ5Pkg, palace .gr2 template)
+vendor/civ5/          files copied from the stock game (vanilla DB, InGame.lua, LoadScreen.lua, Upgrade1.Civ5Pkg, palace .gr2 template)
 mods/                 the untouched original mods
 ui/                   the mod manager app (Electron), see ui/README.md
 build/, dist/         generated (not in git): venv, Blender output, temp DBs / built mod + DLC + zips
