@@ -78,10 +78,12 @@ def topology(tris):
 
 
 # --------------------------------------------------------------------------- building .gr2
-def write_building(out_dir, name, static, eye=None, rig=None):
+def write_building(out_dir, name, static, eye=None, rig=None, skins=None):
     """static / eye: dict(verts, tris, diffuse, sref) in MODEL units; verts = (pos, nrm, tan, bin, uv).
     rig: dict(pivot=(x,y,z), bones=[(name, parent_name, world_pos)]) for the skinned model; its bones
-    are 'eyeroot' (origin) and 'eyepivot' (at pivot) plus the extra ones. Returns the bone list."""
+    are 'eyeroot' (origin) and 'eyepivot' (at pivot) plus the extra ones. Returns the bone list.
+    skins (instead of eye/rig): ONE skinned model '<name>_Eye' with SEVERAL meshes and BLENDED weights, see
+    _skinned_model (Treebeard: the whole body bends on a chain of bones)."""
     f = gr2.read(BUILDING_TEMPLATE)
     root = f.root()
     tc_mat, b_tmpl = root['Materials'][0], root['Materials'][1]
@@ -165,6 +167,14 @@ def write_building(out_dir, name, static, eye=None, rig=None):
         mats.append(e_mat); skels.append(e_skel); vds.append(e_vd); topos.append(e_topo)
         meshes.append(e_mesh); models.append(e_model)
 
+    if skins is not None:
+        ename = name + '_Eye'
+        e_model, e_parts, bones_out = _skinned_model(tc_model, bone_proto, b_tmpl, ename, skins)
+        for e_mat, e_vd, e_topo, e_mesh in e_parts:
+            mats.append(e_mat); vds.append(e_vd); topos.append(e_topo); meshes.append(e_mesh)
+        skels.append(e_model['Skeleton'])
+        models.append(e_model)
+
     root['ArtToolInfo']['FromArtToolName'] = 'Blender'
     root['ExporterInfo']['ExporterName'] = 'civ5me tools/landmarks'
     root['FromFileName'] = name + '.blend'
@@ -173,6 +183,91 @@ def write_building(out_dir, name, static, eye=None, rig=None):
     os.makedirs(out_dir, exist_ok=True)
     size = gr2.write(os.path.join(out_dir, name + '.gr2'), f.root_type, root, f.tag)
     return size, bones_out
+
+
+def quantize_weights(ws, n=4):
+    """[(bone index, weight)] -> 4 uint8 weights summing to 255 + 4 indices (the stock skinned vertex format: the
+    polder's 250/5). The n largest weights are kept; unused slots repeat the first index with weight 0."""
+    ws = sorted([w for w in ws if w[1] > 0], key=lambda w: -w[1])[:n] or [(0, 1.0)]
+    tot = sum(w for _, w in ws)
+    q = [int(w / tot * 255) for _, w in ws]
+    q[0] += 255 - sum(q)
+    idx = [i for i, _ in ws]
+    keep = [(i, w) for i, w in zip(idx, q) if w > 0]
+    idx, q = [i for i, _ in keep], [w for _, w in keep]
+    while len(idx) < 4:
+        idx.append(idx[0])
+        q.append(0)
+    return q, idx
+
+
+def _skinned_model(tc_model, bone_proto, b_tmpl, ename, skins):
+    """skins = dict(bones=[(name, parent name or None, world position)] (parents first; the first bone is the
+    root), parts=[dict(verts, tris, diffuse, sref, weights=[[(bone name, w), ...] per vertex])]).
+    One skinned model, one mesh per part (its own material/texture); each mesh binds the bones its weights use,
+    BoneIndices index that list (as the stock polder's meshes do). Returns (model, [(mat, vd, topo, mesh)], bones)."""
+    index, world, bones, bones_out = {}, {}, [], []
+    for bname, parent, wpos in skins['bones']:
+        assert bname == bname.lower() and ' ' not in bname, 'bone names: lower case only (track order)'
+        pi = -1 if parent is None else index[parent]
+        local = tuple(wpos[i] - (world[parent][i] if parent else 0.0) for i in range(3))
+        bones.append(make_bone(bone_proto, bname, pi, local, wpos))
+        index[bname], world[bname] = len(bones) - 1, tuple(wpos)
+        bones_out.append((bname, parent, tuple(wpos), local))
+    assert len(bones) <= 32, 'at most 32 bones (SkinBoneCount)'
+    e_skel = {'Name': ename, 'Bones': bones, 'LODType': 0, 'ExtendedData': None}
+    fx = gr2.read(FX_TEMPLATE).root()
+    smembers = fx['Meshes'][0]['PrimaryVertexData']['Vertices'].members
+    assert [m.name for m in smembers] == ['Position', 'BoneWeights', 'BoneIndices', 'Normal', 'Tangent',
+                                          'Binormal', 'TextureCoordinates0'], [m.name for m in smembers]
+    parts, mesh_bindings = [], []
+    for k, part in enumerate(skins['parts']):
+        mname = ename if k == 0 else '%s_%d' % (ename, k + 1)
+        ev, et, ew = part['verts'], part['tris'], part['weights']
+        assert len(ev) < MAX_PART_VERTS and len(ew) == len(ev), (mname, len(ev), len(ew))
+        used = []
+        for ws in ew:
+            for bn, w in ws:
+                if w > 0 and bn not in used:
+                    used.append(bn)
+        used = used or [skins['bones'][0][0]]
+        slot = {bn: i for i, bn in enumerate(used)}
+        vb = bytearray()
+        members = {bn: [] for bn in used}
+        for (p, n, t, b, uv), ws in zip(ev, ew):
+            q, idx = quantize_weights([(slot[bn], w) for bn, w in ws if w > 0])
+            vb += struct.pack('<3f4B4B12f', *p, *q, *idx, *n, *t, *b, uv[0], uv[1], 0.0)
+            for bn, w in ws:
+                if w > 0:
+                    members[bn].append(p)
+        e_mat = building_material(b_tmpl, mname, part['diffuse'], part['sref'], skinned=True)
+        e_vd = {'Vertices': gr2.Variant(smembers, bytes(vb)),
+                'VertexComponentNames': [{'String': m.name} for m in smembers], 'VertexAnnotationSets': []}
+        e_topo = topology(et)
+        bb = []
+        for bn in used:
+            o = world[bn]
+            lo, hi = obb([tuple(v[i] - o[i] for i in range(3)) for v in members[bn]] or [(0.0, 0.0, 0.0)])
+            bb.append({'BoneName': bn, 'OBBMin': lo, 'OBBMax': hi, 'TriangleIndices': []})
+        e_mesh = {'Name': mname, 'PrimaryVertexData': e_vd, 'MorphTargets': [], 'PrimaryTopology': e_topo,
+                  'MaterialBindings': [{'Material': e_mat}], 'BoneBindings': bb, 'ExtendedData': None}
+        parts.append((e_mat, e_vd, e_topo, e_mesh))
+        mesh_bindings.append({'Mesh': e_mesh})
+    e_model = dict(tc_model)
+    e_model.update({'Name': ename, 'Skeleton': e_skel, 'MeshBindings': mesh_bindings})
+    return e_model, parts, bones_out
+
+
+def write_idle_tracks(out_dir, name, bones, motions, T, spans):
+    """Idle animation for a skins= model: every bone of '<name>_Eye' keeps its rest offset; the bones in motions
+    turn by motions[bone](t) = (pitch, roll, yaw) degrees (granim.rot_curve_value). Returns (file name, curves)."""
+    curves = Curves(gr2.read(ANIM_TEMPLATE).root())
+    cvals = {bn: granim.rot_curve_value(fn, T, spans) for bn, fn in motions.items()}
+    e_tracks = [track(curves, bname, local, yaw=cvals.get(bname)) for bname, parent, wpos, local in bones]
+    groups = [('Tree cut', [track(curves, 'Tree cut')]), (name, [track(curves, name)]), (name + '_Eye', e_tracks)]
+    fn = name + '_Idle.gr2'
+    write_animation(os.path.join(out_dir, fn), name + '_Idle', T, groups)
+    return fn, cvals
 
 
 # --------------------------------------------------------------------------- idle animation .gr2

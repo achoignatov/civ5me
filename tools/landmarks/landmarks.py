@@ -155,6 +155,14 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=64.0, min_z=-3.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-25: Treebeard with Merry and Pippin (models/treebeard.py), the landmark of the city-state of Entwood:
+    # fits its own hex, about 104 high, in-game units written x4 (scale 0.25); static part = the forest floor, the
+    # feet and roots; ONE skinned model of three meshes (body bark / crown and leaves / beard and hobbits) bending on a chain of bones
+    # (build_models.build_skins): the slow lean of a tree in the wind.
+    dict(key='TREEBEARD', title='Treebeard', module='treebeard', model='MEC_LM_Treebeard', scale=0.25,
+         envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=110.0, min_z=-3.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.

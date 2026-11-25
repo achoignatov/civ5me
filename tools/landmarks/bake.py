@@ -414,7 +414,42 @@ def _object(b, glow):
 SWATCH_V = 1.0 / 32        # top 1/32 of the texture: solid colour swatches for uniform materials (palette solid=True)
 
 
-def _bake(ob, kind, px, colorspace, samples=1):
+def _relief(ob, b):
+    """RELIEF (opt-in, b.relief; Treebeard 2026-11-25): a high-resolution copy of the model whose relief materials are
+    subdivided (simple, `levels`) and displaced by stretched Voronoi plates (F2 - F1: ridges with fissures between,
+    stretched `stretch` times along Z like bark), used only as the SOURCE of the AO and normal bakes (selected to
+    active). The game mesh keeps its vertex count; the fissures come back as baked occlusion and relief shading."""
+    r = b.relief
+    me = ob.data.copy()
+    hi = bpy.data.objects.new('relief_hi', me)
+    bpy.context.scene.collection.objects.link(hi)
+    vg = hi.vertex_groups.new(name='R')
+    mats = set(r['mats'])
+    idx = sorted({v for poly in me.polygons if b.mat_names[poly.material_index] in mats for v in poly.vertices})
+    vg.add(idx, 1.0, 'REPLACE')
+    sub = hi.modifiers.new('S', 'SUBSURF')
+    sub.subdivision_type = 'SIMPLE'
+    sub.levels = sub.render_levels = r.get('levels', 3)
+    tex = bpy.data.textures.new('RT', 'VORONOI')
+    tex.distance_metric = 'DISTANCE'
+    tex.weight_1, tex.weight_2 = -1.0, 1.0
+    tex.noise_scale = r.get('scale', 1.0)
+    tex.noise_intensity = r.get('intensity', 1.6)
+    em = bpy.data.objects.new('relief_space', None)
+    em.scale = (1.0, 1.0, r.get('stretch', 5.0))
+    bpy.context.scene.collection.objects.link(em)
+    d = hi.modifiers.new('D', 'DISPLACE')
+    d.texture = tex
+    d.texture_coords = 'OBJECT'
+    d.texture_coords_object = em
+    d.strength = r.get('strength', 0.4)
+    d.mid_level = r.get('mid', 0.35)
+    d.vertex_group = 'R'
+    hi.select_set(False)
+    return hi
+
+
+def _bake(ob, kind, px, colorspace, samples=1, src=None, extrusion=0.6):
     img = bpy.data.images.new('BK_' + kind, px, px, alpha=True, float_buffer=True)
     img.colorspace_settings.name = colorspace
     for slot in ob.material_slots:
@@ -432,9 +467,19 @@ def _bake(ob, kind, px, colorspace, samples=1):
         sc.render.bake.use_pass_indirect = False
         sc.render.bake.use_pass_color = True
         bpy.ops.object.bake(type='DIFFUSE', pass_filter={'COLOR'})
-    elif kind == 'AO':
+    elif kind in ('AO', 'NORMAL'):
         sc.world = sc.world or bpy.data.worlds.new('W')
-        bpy.ops.object.bake(type='AO')
+        kw = {}
+        if src is not None:         # from the high-resolution relief copy onto the game mesh
+            src.select_set(True)
+            ob.select_set(True)
+            bpy.context.view_layer.objects.active = ob
+            kw = dict(use_selected_to_active=True, cage_extrusion=extrusion, max_ray_distance=extrusion * 2)
+        if kind == 'NORMAL':
+            kw['normal_space'] = 'OBJECT'
+        bpy.ops.object.bake(type=kind, **kw)
+        if src is not None:
+            src.select_set(False)
     else:
         bpy.ops.object.bake(type='EMIT')
     a = np.empty(px * px * 4, np.float32)
@@ -449,7 +494,20 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     bpy.context.scene.world = bpy.data.worlds.new('W')
     bpy.context.scene.world.light_settings.distance = getattr(b, 'ao_distance', 3.0)
     diff = _bake(ob, 'DIFFUSE', px, 'Linear Rec.709')       # linear albedo
-    ao = _bake(ob, 'AO', px, 'Non-Color', samples=ao_samples)[..., 0:1]
+    hi = _relief(ob, b) if getattr(b, 'relief', None) else None
+    ao = _bake(ob, 'AO', px, 'Non-Color', samples=ao_samples, src=hi)[..., 0:1]
+    if hi is not None:
+        # relief shading: the high copy's normals against the game mesh's own, lit from the game's sun side, so the
+        # fissures read in the texture (the building shader has no normal map)
+        n_hi = _bake(ob, 'NORMAL', px, 'Non-Color', src=hi)[..., :3] * 2.0 - 1.0
+        n_lo = _bake(ob, 'NORMAL', px, 'Non-Color')[..., :3] * 2.0 - 1.0
+        L = np.array(b.relief.get('light', (0.35, -0.55, 0.76)), np.float32)
+        L /= np.linalg.norm(L)
+        k = b.relief.get('emboss', 0.9)
+        shade = np.clip(1.0 + k * ((n_hi * L).sum(-1) - (n_lo * L).sum(-1)), 0.5, 1.4)[..., None]
+        diff[..., :3] *= shade
+        print('bake: relief from %d high-resolution faces, shade %.2f..%.2f' % (
+            len(hi.evaluated_get(bpy.context.evaluated_depsgraph_get()).data.polygons), shade.min(), shade.max()))
     emit = _bake(ob, 'EMIT', px, 'Non-Color')
     # SWATCHES in the top strip: one cell of solid colour per material that needs it. A face points all its UVs at
     # its material's cell when the material is solid (palette solid=True, e.g. ithildin) or when the face is so small

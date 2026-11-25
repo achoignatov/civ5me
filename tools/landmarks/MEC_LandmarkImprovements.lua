@@ -2,8 +2,8 @@
 -- Landmark models as tile IMPROVEMENTS (docs/LANDMARKS.md).
 --
 -- A city whose name matches a landmark gets that purely visual improvement on its plot, and so does the ORIGINAL
--- capital of the landmark's civilization whatever it is called (the Third Age maps rename cities by their founding
--- tile: the Hobbits' capital becomes Bag End, Tuckborough...). Every other city keeps stock art. The city's own art
+-- capital of the landmark's civilization (or city-state) whatever it is called (the Third Age maps rename cities by
+-- their founding tile: the Hobbits' capital becomes Bag End, Tuckborough...). Every other city keeps stock art. The city's own art
 -- is never touched.
 -- Founding and capture clear a city plot's improvement (CvCity::init), so every sync re-applies it.
 --
@@ -41,6 +41,13 @@ for row in GameInfo.Civilizations() do
 	end
 end
 
+local g_ByMinor = {}     -- minor civilization ID -> improvement ID (for that city-state's original capital)
+for row in GameInfo.MinorCivilizations() do
+	for _, def in ipairs(g_LandmarkDefs) do
+		if def.Minor == row.Type and g_ID[def.Improvement] then g_ByMinor[row.ID] = g_ID[def.Improvement] end
+	end
+end
+
 local function Name(id)
 	if id == nil or id < 0 then return "none" end
 	return g_Type[id] or tostring(id)
@@ -67,6 +74,9 @@ local function LandmarkFor(city)
 		local founder = Players[city:GetOriginalOwner()]
 		local civ = founder and g_ByCiv[founder:GetCivilizationType()]
 		if civ then return civ end
+		-- ...or of a city-state with one (Entwood: Treebeard)
+		local minor = founder and founder:IsMinorCiv() and g_ByMinor[founder:GetMinorCivType()]
+		if minor then return minor end
 	end
 	-- size-ladder render test (improvements.TEST_LADDER): every other city gets a variant by its map position
 	if #g_Ladder > 0 then

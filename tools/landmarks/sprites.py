@@ -32,7 +32,7 @@ def _hsv(rgb, dh=0.0, ds=0.0, dv=0.0):
     return np.array(colorsys.hsv_to_rgb((hh + dh) % 1.0, min(1, max(0, ss + ds)), min(1, max(0, vv + dv))), np.float32)
 
 
-def leaf_cluster(seed, base=(0.30, 0.42, 0.16), light=0.0, px=512, n=950):
+def leaf_cluster(seed, base=(0.30, 0.42, 0.16), light=0.0, px=512, n=950, autumn=0.0):
     """A cluster of oak leaves: an irregular rounded mass of lobed leaves (darker midribs, a lit and a shaded half,
     each leaf its own hue), lighter towards the top (sunlit) and darker at the bottom and inside; a few twigs.
     light: -0.15 (a cluster deep in the crown) .. +0.15 (sunlit top)."""
@@ -84,11 +84,18 @@ def leaf_cluster(seed, base=(0.30, 0.42, 0.16), light=0.0, px=512, n=950):
         # colour: its own hue; lighter at the top of the cluster and towards the front; lit half and shaded half
         shade = 0.72 + 0.42 * (1.0 - y) + 0.22 * depth + light
         col = _hsv(base, rng.normal(0, 0.025), rng.normal(0, 0.06), rng.normal(0, 0.04)) * shade
+        if autumn > 0 and rng.uniform() < autumn:          # Treebeard's crown: some leaves turning ochre / rust
+            col = _hsv(AUTUMN[int(rng.integers(len(AUTUMN)))], rng.normal(0, 0.02), rng.normal(0, 0.05),
+                       rng.normal(0, 0.04)) * shade
         rgbimg = np.broadcast_to(col, xx.shape + (3,)).copy()
         rgbimg *= np.where(v > 0, 1.08, 0.9)[..., None]
         rgbimg *= np.where(np.abs(v) < 0.9 * s, 0.75, 1.0)[..., None]      # the midrib
         _over(img, np.clip(rgbimg, 0, 1), cov, int(x * px) - g, int(y * px) - g)
     return np.clip(np.rint(img * 255), 0, 255).astype(np.uint8)
+
+
+AUTUMN = [np.array(c, np.float32) for c in ((0.48, 0.42, 0.20), (0.47, 0.33, 0.16), (0.42, 0.40, 0.20),
+                                             (0.42, 0.29, 0.15))]      # ochre, rust, olive-gold, russet (muted)
 
 
 def grass_tuft(seed, px=512, n=300, dry=0.15, flowers=0, base=(0.22, 0.33, 0.12), tip=(0.52, 0.64, 0.30)):
@@ -144,4 +151,108 @@ def grass_tuft(seed, px=512, n=300, dry=0.15, flowers=0, base=(0.22, 0.33, 0.12)
         cov = np.clip(3.6 * s - np.hypot(xx, yy) + 0.5, 0, 1)
         _over(img, np.array((0.9, 0.7, 0.15), np.float32) if kind == 0 else np.array((0.85, 0.6, 0.1), np.float32),
               cov, int(x) - g, int(y) - g)
+    return np.clip(np.rint(img * 255), 0, 255).astype(np.uint8)
+
+
+def hanging_moss(seed, px=512, n=230, base=(0.42, 0.45, 0.33), tip=(0.62, 0.65, 0.5), twigs=14, taper=0.55,
+                 ragged=0.22):
+    """Beard lichen / hanging moss (Treebeard's beard: "bushy, almost twiggy at the roots, thin and mossy at the
+    ends"): many thin wavy strands from the top edge, falling with lengths 0.35..1, grey-green, lighter towards
+    the tips, each with short side filaments (like Usnea); a few brown twigs among them at the top. The bundle
+    narrows towards the bottom (taper: 0 = a curtain, 1 = a point)."""
+    rng = np.random.default_rng(seed)
+    img = np.zeros((px, px, 4), np.float32)
+    s = px / 512.0
+    base, tip = np.array(base, np.float32), np.array(tip, np.float32)
+
+    def dot(x, y, r, col):
+        g = int(r) + 2
+        yy, xx = np.mgrid[-g:g + 1, -g:g + 1]
+        cov = np.clip(r - np.hypot(xx - (x - int(x)), yy - (y - int(y))) + 0.5, 0, 1)
+        _over(img, np.clip(col, 0, 1), cov, int(x) - g, int(y) - g)
+    # twigs first (behind): thicker, brown-grey, short, from the top
+    for _ in range(twigs):
+        x0 = rng.uniform(0.12, 0.88)
+        L = rng.uniform(0.15, 0.42)
+        ang = rng.normal(0, 0.35)
+        col = np.array((0.33, 0.28, 0.22), np.float32) * rng.uniform(0.85, 1.15)
+        steps = int(L * px / 1.5)
+        for i in range(steps):
+            t = i / max(1, steps - 1)
+            x = (x0 + math.sin(ang) * L * t + 0.02 * math.sin(t * 9 + x0 * 20)) * px
+            y = (0.01 + math.cos(ang) * L * t) * px
+            dot(x, y, max(0.8, (3.4 - 2.4 * t) * s), col)
+    strands = []
+    locks = [(rng.uniform(0.06, 0.94), rng.uniform(0.45, 1.0)) for _ in range(max(6, n // 12))]
+    for _ in range(n):                                     # strands gather in locks (clumps), not a curtain
+        cx, lmax = locks[int(rng.integers(len(locks)))]
+        x0 = min(0.97, max(0.03, cx + rng.normal(0, 0.035)))
+        L = lmax * rng.uniform(0.45, 1.0) * 0.97
+        y0 = rng.uniform(0.0, ragged) * (0.4 + 0.6 * abs(x0 - 0.5) * 2)      # ragged top, higher in the middle
+        strands.append((min(L, 0.98 - y0), x0, cx, rng.uniform(0, 6.3), rng.uniform(0.55, 1.0), y0))
+    strands.sort(key=lambda q: -q[0])                     # long ones behind
+    for (L, x0, cx, ph, w, y0) in strands:
+        steps = int(L * px / 1.6)
+        drift = (0.5 - cx) * taper                        # the locks gather towards the middle as they fall
+        tcol = _hsv(tip, rng.normal(0, 0.02), rng.normal(0, 0.06), rng.normal(0, 0.08))
+        bcol = _hsv(base, rng.normal(0, 0.02), rng.normal(0, 0.06), rng.normal(0, 0.07))
+        twist = rng.uniform(0.01, 0.03)
+        for i in range(steps):
+            t = i / max(1, steps - 1)
+            x = (x0 + (cx - x0) * 0.6 * t + drift * t * L + twist * math.sin(ph + t * 9.0)) * px
+            y = (0.015 + y0 + t * L) * px
+            r = max(0.7, (2.0 * w - 1.1 * t) * s) * min(1.0, 0.4 + i / 12.0)
+            col = bcol * (1 - t) + tcol * t
+            dot(x, y, r, col * (0.9 + 0.2 * math.sin(ph * 3 + t * 23)))
+            if t > 0.2 and rng.uniform() < 0.035:         # side filaments, irregular, falling outwards
+                sgn = 1 if rng.uniform() < 0.5 else -1
+                fl = rng.uniform(4, 13) * s
+                dy = rng.uniform(0.6, 1.6)
+                for j in range(int(fl)):
+                    dot(x + sgn * j * 0.7, y + j * dy, max(0.55, 0.85 * s), col * 1.06)
+    return np.clip(np.rint(img * 255), 0, 255).astype(np.uint8)
+
+
+def fern(seed, px=512, fronds=9, base=(0.24, 0.36, 0.13), tip=(0.42, 0.55, 0.22), dry=0.15):
+    """A fern seen from the side and a little above: fronds arching out of the bottom middle, each a curved rachis
+    with paired leaflets shrinking towards the tip; a few fronds brown and dry."""
+    rng = np.random.default_rng(seed)
+    img = np.zeros((px, px, 4), np.float32)
+    s = px / 512.0
+    base, tip = np.array(base, np.float32), np.array(tip, np.float32)
+    drycol = np.array((0.50, 0.38, 0.20), np.float32)
+    angs = sorted(rng.uniform(-1.55, 1.55, fronds), key=lambda a: -abs(a))   # outer (low) fronds behind
+    for a in angs:
+        L = rng.uniform(0.55, 0.9) * (1.0 - 0.25 * abs(a))
+        isdry = rng.uniform() < dry
+        c0 = drycol if isdry else _hsv(base, rng.normal(0, 0.02), 0, rng.normal(0, 0.04))
+        c1 = drycol * 1.1 if isdry else _hsv(tip, rng.normal(0, 0.02), 0, rng.normal(0, 0.05))
+        steps = int(L * px / 2.0)
+        prev = None
+        for i in range(steps):
+            t = i / max(1, steps - 1)
+            th = a * (0.55 + 0.75 * t)                    # arching out, the tip drooping
+            x = 0.5 * px + math.sin(th) * L * px * t * 0.92
+            y = px * 0.98 - (math.cos(th) * t - 0.55 * abs(a) * t * t) * L * px * 0.95
+            col = c0 * (1 - t) + c1 * t
+            g = 3
+            yy, xx = np.mgrid[-g:g + 1, -g:g + 1]
+            cov = np.clip(1.4 * s - np.hypot(xx - (x - int(x)), yy - (y - int(y))) + 0.5, 0, 1)
+            _over(img, col, cov, int(x) - g, int(y) - g)
+            if prev is not None and i % 3 == 0 and t > 0.06:
+                dx, dy = x - prev[0], y - prev[1]
+                d = math.hypot(dx, dy) or 1.0
+                nx, ny = -dy / d, dx / d
+                ll = (1.0 - t) ** 0.8 * 40 * s * rng.uniform(0.85, 1.1)
+                for sgn in (-1, 1):                       # a pair of leaflets, swept towards the tip
+                    for j in range(int(ll)):
+                        u = j / max(1, ll - 1)
+                        lx = x + sgn * nx * j + dx / d * j * 0.35
+                        ly = y + sgn * ny * j + dy / d * j * 0.35
+                        rr = max(0.6, 3.6 * s * (1 - u) ** 0.6)
+                        gg = int(rr) + 2
+                        yy, xx = np.mgrid[-gg:gg + 1, -gg:gg + 1]
+                        cov = np.clip(rr - np.hypot(xx - (lx - int(lx)), yy - (ly - int(ly))) + 0.5, 0, 1)
+                        _over(img, np.clip(col * (0.9 + 0.2 * u), 0, 1), cov, int(lx) - gg, int(ly) - gg)
+            prev = (x, y)
     return np.clip(np.rint(img * 255), 0, 255).astype(np.uint8)

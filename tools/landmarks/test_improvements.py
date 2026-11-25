@@ -17,13 +17,14 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 SCRIPT = os.path.join(ROOT, 'dist', 'DLC', 'MiddleEarth', 'UI', improvements.LUA)
 
 MOCK = r'''
-GameDefines = { MAX_PLAYERS = 5, MAX_MAJOR_CIVS = 3 }
+GameDefines = { MAX_PLAYERS = 6, MAX_MAJOR_CIVS = 3 }
 local imps = { { ID = 0, Type = "IMPROVEMENT_FARM" }, @@IMPS@@ }
 local civs = { { ID = 0, Type = "CIVILIZATION_MEC_ARNOR" }, @@CIVS@@ }
+local minors = { { ID = 0, Type = "MINOR_CIV_MECS_DALE" }, @@MINORS@@ }
 local function rows(t) return setmetatable({}, {
   __call = function() local i = 0; return function() i = i + 1; return t[i] end end,
   __index = function(_, k) error("direct GameInfo lookup [" .. tostring(k) .. "] (unreliable in game)", 2) end }) end
-GameInfo = { Improvements = rows(imps), Civilizations = rows(civs) }
+GameInfo = { Improvements = rows(imps), Civilizations = rows(civs), MinorCivilizations = rows(minors) }
 local handlers = {}
 local function event(name) handlers[name] = {}; return { Add = function(f) table.insert(handlers[name], f) end } end
 GameEvents = { PlayerCityFounded = event("PlayerCityFounded"), CityCaptureComplete = event("CityCaptureComplete"),
@@ -64,9 +65,12 @@ Map = {
   end }
 
 Players = {}
--- player 1 = Mordor, player 4 = the Hobbits, the others a civilization without a landmark
-for i = 0, 4 do
-  local p = { id = i, cities = {}, civ = (i == 1) and @@MORDOR@@ or ((i == 4) and @@HOBBITS@@ or 0) }
+-- player 1 = Mordor, player 4 = the Hobbits, player 5 = the city-state of Entwood, the others without a landmark
+for i = 0, 5 do
+  local p = { id = i, cities = {}, civ = (i == 1) and @@MORDOR@@ or ((i == 4) and @@HOBBITS@@ or 0),
+              minor = (i == 5) and @@ENTWOOD@@ or -1 }
+  function p:IsMinorCiv() return self.minor >= 0 end
+  function p:GetMinorCivType() return self.minor end
   function p:IsAlive() return true end
   function p:IsHuman() return self.id == 0 end
   function p:GetTeam() return self.id end
@@ -110,7 +114,11 @@ def run(script, anchor_present=True):
     civ_types = sorted({r['civ'] for r in improvements.IMPROVEMENTS if r.get('civ')})
     civ_id = {c: 20 + i for i, c in enumerate(civ_types)}
     civs = ', '.join('{ ID = %d, Type = "%s" }' % (i, c) for c, i in civ_id.items())
-    lua.execute(MOCK.replace('@@IMPS@@', imps).replace('@@CIVS@@', civs)
+    minor_types = sorted({r['minor'] for r in improvements.IMPROVEMENTS if r.get('minor')})
+    minor_id = {c: 30 + i for i, c in enumerate(minor_types)}
+    minors = ', '.join('{ ID = %d, Type = "%s" }' % (i, c) for c, i in minor_id.items())
+    lua.execute(MOCK.replace('@@IMPS@@', imps).replace('@@CIVS@@', civs).replace('@@MINORS@@', minors)
+                .replace('@@ENTWOOD@@', str(minor_id['MINOR_CIV_MECS_ENTWOOD']))
                 .replace('@@MORDOR@@', str(civ_id['CIVILIZATION_MEC_MORDOR']))
                 .replace('@@HOBBITS@@', str(civ_id['CIVILIZATION_MEC_HOBBITS'])))
     if not anchor_present:
@@ -174,10 +182,14 @@ def main():
     # a later city of a landmark civilization stays stock (only the original capital)
     lua.execute('Found(1, 4, 7, "TXT_KEY_CITY_NAME_MEC_UDUN")')
     assert imp(4, 7) == other(4, 7), imp(4, 7)
+    # the city-state of Entwood's capital gets Treebeard whatever the map calls it; its later cities do not
+    lua.execute('Found(5, 2, 10, "TXT_KEY_CITY_NAME_MEC_SOMEWHERE_ELSE")')
+    lua.execute('Found(5, 4, 10, "TXT_KEY_CITY_NAME_MEC_ANOTHER")')
+    assert imp(2, 10) == ids['TREEBEARD'] and imp(4, 10) == other(4, 10), (imp(2, 10), imp(4, 10))
     assert g.Revealed == (144 if improvements.REVEAL_MAP else 0), g.Revealed
     # every other capital with a landmark gets its own (by name key, and by a typed alias)
     for k, (x, y) in zip([r['key'] for r in improvements.IMPROVEMENTS if r['key'] not in ('MORIA', 'BARAD_DUR')],
-                         [(10, 1), (10, 4), (10, 7), (10, 10), (6, 10), (1, 6)]):
+                         [(10, 1), (10, 4), (10, 7), (10, 10), (6, 10), (1, 6), (8, 5), (3, 4)]):
         row = next(r for r in improvements.IMPROVEMENTS if r['key'] == k)
         lua.execute('Found(0, %d, %d, "%s")' % (x, y, row['name_keys'][0]))
         assert imp(x, y) == ids[k], (k, imp(x, y))

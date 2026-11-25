@@ -185,3 +185,44 @@ def sample_quat_curve(value, t):
     q = [evaluate_stored([qq[c] for qq in quats], knots, t) for c in range(4)]
     n = math.sqrt(sum(x * x for x in q)) or 1.0
     return tuple(x / n for x in q)
+
+
+# --------------------------------------------------------------------------- any small rotation (Treebeard's lean)
+def euler_quat(pitch, roll, yaw=0.0):
+    """(x, y, z, w) of a rotation by pitch degrees about +X, then roll about +Y, then yaw about +Z (applied in that
+    order to a vector: q = qz * qy * qx)."""
+    def q_axis(axis, deg):
+        h = math.radians(deg) / 2
+        v = [0.0, 0.0, 0.0]
+        v[axis] = math.sin(h)
+        return (v[0], v[1], v[2], math.cos(h))
+
+    def mul(a, b):
+        ax, ay, az, aw = a
+        bx, by, bz, bw = b
+        return (aw * bx + ax * bw + ay * bz - az * by, aw * by - ax * bz + ay * bw + az * bx,
+                aw * bz + ax * by - ay * bx + az * bw, aw * bw - ax * bx - ay * by - az * bz)
+    return mul(q_axis(2, yaw), mul(q_axis(1, roll), q_axis(0, pitch)))
+
+
+def rot_curve_value(fn, T, m):
+    """D4nK16uC15u curve dict for a rotation given by fn(t) = (pitch, roll, yaw) degrees (each angle fitted as its
+    own clamped quadratic B-spline; the controls are the quaternions of the fitted angles. Granny blends the
+    controls component-wise and normalises: for the few degrees of a sway that is the fitted rotation)."""
+    ctrl = [fit(lambda t, i=i: fn(t)[i], T, m) for i in range(3)]
+    one_over = 65535.0 / T
+    h = T / m
+    knots = [0.0, 0.002] + [h * i for i in range(1, m)] + [T]
+    kq = [int(round(k * one_over)) for k in knots]
+    cq = []
+    for p, r, y in zip(*ctrl):
+        cq += list(quat_encode(euler_quat(p, r, y)))
+    return dict(knots=kq, controls=cq, one_over=one_over, entries=0x0000, angles=list(zip(*ctrl)))
+
+
+def quat_euler_small(q):
+    """(pitch, roll, yaw) degrees of a quaternion made by euler_quat (exact for one axis; close for small mixes)."""
+    x, y, z, w = q
+    if w < 0:
+        x, y, z, w = -x, -y, -z, -w
+    return (math.degrees(2 * math.atan2(x, w)), math.degrees(2 * math.atan2(y, w)), math.degrees(2 * math.atan2(z, w)))

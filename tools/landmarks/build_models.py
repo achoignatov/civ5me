@@ -116,11 +116,113 @@ def _bbox(verts):
     return [(round(min(p[i] for p in zs), 1), round(max(p[i] for p in zs), 1)) for i in range(3)]
 
 
+def _bake_part(fn, seed, px, ao_samples=48):
+    import bake
+    pipeline.reset()
+    blib.SEG[0] = blib.FILL[0] = 1.0
+    b = blib.Builder(seed=seed)
+    fn(b)
+    return bake.process(b, px=px, ao_samples=ao_samples)
+
+
+def build_skins(lm, mod, do_preview=True):
+    """A model with a static part and ONE skinned model made of several meshes with blended weights (module
+    SKIN_PARTS = [(suffix, build fn, texture px)], BONES = [(bone, parent, world position)], weights(res, suffix) ->
+    [[(bone, w)] per vertex], MOTIONS = {bone: fn(t) -> (pitch, roll, yaw) degrees}, LOOP seconds, SPANS).
+    Treebeard (2026-11-25): the whole Ent bends on a chain of bones from the ankles up, like a tree in the wind."""
+    import lmodel
+    t0 = time.time()
+    name = lm['model']
+    seed = zlib.crc32(name.encode()) & 0xffff
+    k = 1.0 / lm['scale']
+    env = envelope(lm)
+    px = getattr(mod, 'BAKE_PX', BAKED_DIFF)
+    static = _bake_part(lambda b: mod.build(b, eye=False), seed, px)
+    sdn, ssn = _textures(static, name, px, px // 2)
+    check_envelope(name + ' (static)', static.verts, static.tris, env)
+    parts, files, imgs = [], [name + '.gr2', sdn, ssn], [(static, sdn)]
+    tex = ['Generic_Grey_8.dds', sdn, ssn]
+    for i, (suffix, fn, ppx) in enumerate(mod.SKIN_PARTS):
+        res = _bake_part(fn, seed + 1 + i, ppx, getattr(mod, 'EYE_AO', 16))
+        tname = name + '_Eye' + ('' if i == 0 else str(i + 1))
+        dn, sn = _textures(res, tname, ppx, ppx // 2)
+        check_envelope('%s (skin %s)' % (name, suffix), res.verts, res.tris, env)
+        ws = mod.weights(res, suffix)
+        parts.append(dict(verts=_model_units(res.verts, k), tris=res.tris, diffuse=dn, sref=sn, weights=ws))
+        files += [dn, sn]
+        tex += [dn, sn]
+        imgs.append((res, dn))
+        print('%-20s skin %-8s %6d verts %6d tris  %dpx' % (name, suffix, len(res.verts), len(res.tris), ppx))
+    print('%-20s static %d verts; skins %s (limit %d each)' % (
+        name, len(static.verts), [len(p['verts']) for p in parts], env['max_verts']))
+    for r, _ in imgs:
+        assert len(r.verts) <= env['max_verts'] and len(r.tris) <= env['max_tris'], len(r.verts)
+    bones = [(bn, par, tuple(c * k for c in pos)) for bn, par, pos in mod.BONES]
+    size, bone_list = lmodel.write_building(
+        OUT, name, dict(verts=_model_units(static.verts, k), tris=static.tris, diffuse=sdn, sref=ssn),
+        skins=dict(bones=bones, parts=parts))
+    idle, cvals = lmodel.write_idle_tracks(OUT, name, bone_list, mod.MOTIONS, mod.LOOP, mod.SPANS)
+    verify_motions(os.path.join(OUT, idle), name, bone_list, mod.MOTIONS, mod.LOOP)
+    lmodel.write_fxsxml(os.path.join(OUT, name + '.fxsxml'), name + '.gr2', tex, animation=idle,
+                        decision_tree=lmodel.ANIMATED_DT)
+    files += [idle, name + '.fxsxml']
+    for f_ in files:
+        assert os.path.exists(os.path.join(OUT, f_)), f_
+    json.dump({'files': sorted(set(files))}, open(manifest_path(lm), 'w'), indent=1)
+    print('%-20s gr2 %d bytes, %d bones, loop %.1f s, bbox %s  (%.1fs)' % (
+        name, size, len(bone_list), mod.LOOP, _bbox(static.verts + [v for r, _ in imgs[1:] for v in r.verts]),
+        time.time() - t0))
+    if do_preview:
+        # every part together: their textures side by side (all the same size)
+        n = len(imgs)
+        pv, pt, pims = [], [], []
+        for j, (r, dn) in enumerate(imgs):
+            o = len(pv)
+            pv += [(v[0], v[1], v[2], v[3], ((j + v[4][0]) / n, v[4][1])) for v in r.verts]
+            pt += [(a + o, b + o, c + o) for a, b, c in r.tris]
+            pims.append(dds.decode_dxt3(os.path.join(OUT, dn)))
+        pimg = np.concatenate(pims, axis=1)
+        hin, hout = blib.HEX_IN, blib.HEX_OUT
+        pipeline.PREVIEW, pipeline.WORK = PREVIEW, WORK
+        blib.HEX_IN, blib.HEX_OUT = env['hex_in'], env['hex_out']
+        try:
+            pipeline.preview(name, pv, pt, pimg, extra=getattr(mod, 'PREVIEW', ()))
+            for j, (r, dn) in enumerate(imgs[1:]):
+                if getattr(mod, 'PREVIEW_EYE', None):
+                    pipeline.preview('%s_Eye%d' % (name, j + 1), r.verts, r.tris, pims[j + 1], extra=mod.PREVIEW_EYE)
+        finally:
+            blib.HEX_IN, blib.HEX_OUT = hin, hout
+
+
+def verify_motions(path, name, bones, motions, T):
+    """Read the written idle animation back: one track per bone (sorted), each moving bone's decoded rotation
+    follows its motion function within 0.25 degrees, the still ones are identity."""
+    import granim
+    r = gr2.read(path).root()
+    tgs = {tg['Name']: tg for tg in r['TrackGroups']}
+    assert set(tgs) == {'Tree cut', name, name + '_Eye'}, set(tgs)
+    tracks = {t['Name']: t for t in tgs[name + '_Eye']['TransformTracks']}
+    assert list(tracks) == sorted(b[0] for b in bones), list(tracks)
+    worst = 0.0
+    for bn, fn in motions.items():
+        v = tracks[bn]['OrientationCurve']['CurveData'].value
+        for i in range(241):
+            t = T * i / 240
+            got = granim.quat_euler_small(granim.sample_quat_curve(v, t))
+            want = fn(t)
+            worst = max(worst, max(abs(a - b_) for a, b_ in zip(got, want)))
+    assert worst < 0.25, 'motion curves off by %.2f degrees' % worst
+    print('  animation check: %d tracks, %d moving, worst error %.3f deg over the %.0f s loop' % (
+        len(tracks), len(motions), worst, T))
+
+
 def build_one(lm, do_preview=True):
     t0 = time.time()
     name = lm['model']
     mod = importlib.import_module(lm['module'])
     importlib.reload(mod)
+    if hasattr(mod, 'SKIN_PARTS'):
+        return build_skins(lm, mod, do_preview)
     seed = zlib.crc32(name.encode()) & 0xffff
     k = 1.0 / lm['scale']                       # world units -> model units at the WonderArtInfo fScale
     animated = lm.get('animated') and hasattr(mod, 'build_eye')
