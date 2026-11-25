@@ -140,6 +140,13 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=64.0, min_z=-3.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-25: Orthanc (models/orthanc.py), Isengard's capital: fits its own hex, in-game units written x4
+    # (scale 0.25); static part = the Ring, its gate and Orthanc, skinned part (all on the still bone) = Saruman on
+    # the summit, the industry, pillars, gates, banners; effects: the staff's white light (STAFF_GLOW), pit fires.
+    dict(key='ORTHANC', title='Orthanc', module='orthanc', model='MEC_LM_Orthanc', scale=0.25,
+         envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=70.0, min_z=-3.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
@@ -222,6 +229,9 @@ EFFECTS = {
     # Erebor: the warm gold light of the Front Gate and the gallery windows (glow.py), and its braziers
     'GATE_GLOW': dict(name='ART_DEF_VEFFECT_MEC_GATE_GLOW', model='ART_DEF_MEFFECT_MEC_GATE_GLOW',
                       file='MEC_EreborGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    # Orthanc: the white light in the claw of Saruman's staff (glow.py)
+    'STAFF_GLOW': dict(name='ART_DEF_VEFFECT_MEC_STAFF_GLOW', model='ART_DEF_MEFFECT_MEC_STAFF_GLOW',
+                       file='MEC_OrthancGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'BRAZIER': dict(name='ART_DEF_VEFFECT_MEC_BRAZIER', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
                     scale=0.35, rotation=(90.0, 0.0, 0.0)),
     'EYE_BEAM': dict(name='ART_DEF_VEFFECT_MEC_EYE_BEAM', model='ART_DEF_MEFFECT_MEC_EYE_BEAM',

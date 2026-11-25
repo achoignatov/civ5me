@@ -22,8 +22,9 @@ import lmodel
 
 def texture(path, lines, box, px=1024, color=(188, 226, 255), core=1.0, halo=0.32, sigma=(0.22, 0.9),
             alpha_keep=0.6):
-    """lines: [(x0, z0, x1, z1, width)] in in-game units on the wall; box = (X0, X1, Z0, Z1) the quad.
-    Alpha = crisp lines (core) + a narrow and a wide halo; row 0 = the top of the quad."""
+    """lines: [(x0, z0, x1, z1, width[, (r, g, b)])] in in-game units on the wall; box = (X0, X1, Z0, Z1) the quad.
+    A line's own colour (optional 6th item, Orthanc's orange palantir beside the white staff) overrides `color`
+    for the pixels nearest to it. Alpha = crisp lines (core) + a narrow and a wide halo; row 0 = the top."""
     X0, X1, Z0, Z1 = box
     W = px
     H = px
@@ -31,11 +32,16 @@ def texture(path, lines, box, px=1024, color=(188, 226, 255), core=1.0, halo=0.3
     zs = Z1 - (np.arange(H) + 0.5) / H * (Z1 - Z0)          # top row first
     X, Z = np.meshgrid(xs, zs)
     d = np.full(X.shape, 1e9)
-    for (x0, z0, x1, z1, w) in lines:
+    rgb = np.zeros(X.shape + (3,), np.float32)
+    rgb[...] = color
+    for ln in lines:
+        x0, z0, x1, z1, w = ln[:5]
         vx, vz = x1 - x0, z1 - z0
         L2 = vx * vx + vz * vz or 1e-9
         t = np.clip(((X - x0) * vx + (Z - z0) * vz) / L2, 0, 1)
-        d = np.minimum(d, np.hypot(X - (x0 + t * vx), Z - (z0 + t * vz)) - w / 2)
+        di = np.hypot(X - (x0 + t * vx), Z - (z0 + t * vz)) - w / 2
+        rgb[di < d] = ln[5] if len(ln) > 5 else color
+        d = np.minimum(d, di)
     pix = (X1 - X0) / W
     line = np.clip(0.5 - d / pix, 0, 1)                      # anti-aliased line coverage
     dd = np.maximum(d, 0)
@@ -44,7 +50,7 @@ def texture(path, lines, box, px=1024, color=(188, 226, 255), core=1.0, halo=0.3
     ex = np.minimum(np.minimum(X - X0, X1 - X), np.minimum(Z - Z0, Z1 - Z)) / (0.04 * (X1 - X0))
     a *= np.clip(ex, 0, 1)
     img = np.zeros((H, W, 4), np.float32)
-    img[..., 0], img[..., 1], img[..., 2] = color
+    img[..., :3] = rgb
     hot = np.clip(line, 0, 1)                                # line cores whiter
     for c in range(3):
         img[..., c] = img[..., c] + (255 - img[..., c]) * 0.6 * hot

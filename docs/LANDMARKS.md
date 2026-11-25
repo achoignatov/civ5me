@@ -13,9 +13,10 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | Minas Tirith (Gondor's capital) | The seven circles cut into Mount Mindolluin, the prow, ~350 houses, the Citadel with the Tower of Ecthelion, the Court of the Fountain with the White Tree in blossom, the King's banner swinging in the wind; fits its own hex | `vendor/landmarks/MinasTirith` (model `tools/landmarks/models/minas_tirith.py`) |
 | Edoras (Rohan's capital) | v2, after the film (`edoras.jpg`): a great crag with a jointed sheer face over dry tussock slopes, ~100 weathered longhouses under heavy thatch on its foot, the log wall with wall-walk, watchtowers and gatehouse, a stone stair up a spur to Meduseld's compound (antique-gold thatch, horse-head gables, lesser and spired halls), barrows with simbelmynë, the Snowbourn; the banner of the Mark swings. The plain is the game's own ground | `vendor/landmarks/Edoras` (model `tools/landmarks/models/edoras.py`) |
 | Erebor (the Dwarves' capital) | First draft, after the films' prologue: the Lonely Mountain (snow-capped summit, gullies, arms), the Front Gate cut in a dressed face at the head of its valley (stepped portal, gable head with the gilded crown and seven stars, pilasters, a gallery of lit windows, blue-and-gold banners), the doors ajar with a warm additive gold glow, two colossal dwarf warriors leaning on their axes, the River Running from culverts under the threshold, a dwarven bridge, Ravenhill's guard-post, five braziers; fits its own hex | `vendor/landmarks/Erebor` (model `tools/landmarks/models/erebor.py`) |
+| Isengard (Saruman's capital) | First draft: the Ring of Isengard cut by its gate (pylons, iron doors, banners of the White Hand), the plain torn into fiery pits with scaffolds, treadwheel cranes, chimneys, felled trees, the pillared road; Orthanc in black glossy stone (four faceted piers, knife-edged roots, fins, lancet windows, stair, door, balcony, four horns) and **Saruman on the summit** (7.8 high, above slimmer 7-unit horns: user's touch-up) with his staff (an additive white light) and the palantír glowing bright orange (after `screenshots/saruman.webp`); six pit fires; fits its own hex | `vendor/landmarks/Orthanc` (model `tools/landmarks/models/orthanc.py`) |
 | Every other city and city-state | Stock art | |
 
-**Next:** the user's in-game verdict on Erebor (glow, braziers' size), then the other 9 capitals one at a time (§7).
+**Next:** the user's in-game verdict on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires), then the other 8 capitals one at a time (§7).
 
 **Size rule (user, 2026-11-25):** a landmark fits its OWN hex and does not overlap the neighbouring tiles (Moria v4
 at ±54 looked overwhelming next to stock mountains; at `Scale` 0.134 it is "perfect"). New models are authored 1:1
@@ -133,6 +134,10 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   and its colour comes from `glow_effect()['tex_args']['color']` (Erebor: warm gold).
 - *A skinned part where nothing moves* (Erebor: `PIVOT_MATS = set()`, `GAZE` fn = 0): everything is on the still
   bone; the part is just a second 32k budget that carries the effect bones (`fxglow`, `fire0..4`).
+- *Orthanc:* a third glow key `STAFF_GLOW` (`MEC_OrthancGlow`: the staff's white light and the palantír's orange
+  fire on one quad; a glow line may carry its own colour as a 6th item, `glow.texture`); pit fires reuse
+  `TOWER_FIRE` (Barad-dûr's proven braziers); `loft_poly`/`wall_poly` in `orthanc.py` build hard-edged faceted solids
+  from horizontal sections (counter-clockwise from above) and panels on an octagon's faces.
 - *Braziers* (`BRAZIER`): the Great Lighthouse fire at VisEffect `Scale` 0.35 (a guess; untested).
 - *A skinned part with no effects* is fine: `rig()` may return `[]` (Minas Tirith: only its banner moves); the
   improvement row then has an animation but no `bones`/`trigger`, and its `FX_Triggers_*` file is not vendored.
@@ -189,7 +194,7 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 | Hobbits | The Shire (`MEC_THE_SHIRE`) | draft `hobbits.py` (Bag End) | To build |
 | High Elves | Rivendell (`MEC_RIVENDELL`) | draft `high_elves.py` | To build |
 | Wood Elves | Northern Mirkwood (`MEC_NORTHERN_MIRKWOOD`) | draft `wood_elves.py` | To build |
-| Isengard | Isengard (`MEC_ISENGARD`) | draft `isengard.py` | To build |
+| Isengard | Isengard (`MEC_ISENGARD`) | `orthanc.py`, `Scale` 0.25, fits its hex (ideas from the draft `isengard.py`); Saruman on the summit | **First draft installed** 2026-11-25, awaiting test |
 | Rohan | Edoras (`MEC_EDORAS`) | `edoras.py` v2, `Scale` 0.25, fits its hex (v1 from the draft `rohan.py` was "cartoonish": rebuilt after the film still `edoras.jpg`) | **Done** (user: "look incredible") |
 | Arnor | Annúminas (`MEC_ANNUMINAS`) | draft `arnor.py` | To build |
 | Angmar | Carn Dûm (`MEC_CARN_DUN`) | draft `angmar.py` | To build |

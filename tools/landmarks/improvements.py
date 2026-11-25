@@ -106,6 +106,25 @@ IMPROVEMENTS = [
          scale=0.25,
          name_keys=['TXT_KEY_CITY_NAME_MEC_EREBOR'],
          aliases=['Erebor', 'Lonely Mountain', 'The Lonely Mountain']),
+    # Orthanc (tools/landmarks/models/orthanc.py, 2026-11-25), Isengard's capital, fitting its own hex: the Ring of
+    # Isengard (rugged dark rock, higher in the north) cut by the gate (two pylons, an arch, iron doors, banners of the
+    # White Hand); within, the plain torn into fiery pits with timber scaffolds, treadwheel cranes, furnace chimneys,
+    # felled trees, a paved road with pillars and chains; Orthanc in black glossy stone (four faceted piers welded round
+    # an octagonal core, knife-edged roots, fins, lancet windows, the stair, the door, a balcony, the four horns and the
+    # blades between them) and Saruman the White on the summit with his staff and the palantir (user's reference
+    # screenshots/saruman.webp). The staff's white light is an additive model effect (MEC_OrthancGlow on bone fxglow);
+    # six pit fires (fire0..5, TOWER_FIRE). Nothing moves. Static part 26.8k vertices, skinned 15.8k; 2 x 2048 baked.
+    # About +-30.5 x (-32..+34), 64 high.
+    dict(key='ORTHANC', title='Orthanc', dir='Orthanc',
+         gr2='MEC_LM_Orthanc.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Orthanc_DIFF.dds', 'MEC_LM_Orthanc_SREF.dds',
+                   'MEC_LM_Orthanc_Eye_DIFF.dds', 'MEC_LM_Orthanc_Eye_SREF.dds'],
+         animation=('MEC_LM_Orthanc_Idle.gr2', 'Idle'),
+         bones=['fxglow'] + ['fire%d' % i for i in range(6)],
+         trigger=('FX_Triggers_MEC_LM_Orthanc.ftsxml', 'MEC_LM_Orthanc_Eye'),
+         scale=0.25,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_ISENGARD'],
+         aliases=['Isengard', 'Orthanc', 'Angrenost']),
     # Barad-dur v5, the film's tower (tools/landmarks/models/barad_dur_v5.py, 2026-11-24 night): crag + five-stage
     # spire with clinging turrets + the two-pronged crown, baked 2048, 30.5k vertices; a skinned Eye (6.3k vertices)
     # with the 6 s look-around loop, a ring of fire + a blaze round it, the searching beam, six braziers on the
@@ -137,10 +156,13 @@ VIS_EFFECTS = [
     # braziers of Barad-dur in file units; tune after the in-game test)
     ('ART_DEF_VEFFECT_MEC_GATE_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_GATE_GLOW'),
     ('ART_DEF_VEFFECT_MEC_BRAZIER', 90.0, 0.35, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
+    # Orthanc: the white light of Saruman's staff (file units, Scale 1.0)
+    ('ART_DEF_VEFFECT_MEC_STAFF_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_STAFF_GLOW'),
 ]
 VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
               ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml'),   # file in vendor/landmarks/Moria4
-              ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml')]  # file in vendor/landmarks/Erebor
+              ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml'),  # file in vendor/landmarks/Erebor
+              ('ART_DEF_MEFFECT_MEC_STAFF_GLOW', 'MEC_OrthancGlow.fxsxml')]  # file in vendor/landmarks/Orthanc
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).
