@@ -658,8 +658,62 @@ def head_point(th, x):
     return y, z, d, c, s_
 
 
+def head_surface(th, x):
+    """A point on the head's displaced surface (head space) and its outward direction."""
+    y, z, d, c, s_ = head_point(th, x)
+    nn = Vector((0.0, y, z))
+    nn = nn.normalized() if nn.length > 1e-6 else Vector((0, 0, 1))
+    return Vector((x, y, z)) + nn * d, nn
+
+
+EYE_X = (5.7, 10.0)                  # the eye's corners along the head (head space)
+
+
+def closed_eye(L, sgn):
+    """His eye, shut in sleep: an almond slit slanting up to the back, sealed by a heavy upper lid rolled over the
+    eyeball and a thinner lower lid; the dark seam where they meet; folds of hide over and under the socket."""
+    def ang(x, off=0.0):                                     # the slit: higher (nearer the brow) towards the back
+        a = 1.13 + 0.05 * (x - 7.85) / 2.15 + off
+        return a if sgn > 0 else 2 * math.pi - a
+    x0, x1 = EYE_X
+    N = 24
+    xs = [x0 + (x1 - x0) * i / N for i in range(N + 1)]
+    bulge = [math.sin(math.pi * i / N) for i in range(N + 1)]
+    # the eyeball under the lids: a low almond mound, mostly inside the head
+    c, nn = head_surface(ang(7.85), 7.85)
+    ax = (head_surface(ang(x1), x1)[0] - head_surface(ang(x0), x0)[0])          # along the slit
+    ax = (ax - nn * ax.dot(nn)).normalized()
+    R = Matrix((ax, nn.cross(ax), nn)).transposed().to_4x4()                   # x along the slit, z out of the head
+    ellipsoid(L, 'lid', tuple(c - nn * 0.62), (2.05, 0.95, 1.0), n=16, rings=8, R=R)
+    mound = [0.36 * bb ** 0.8 for bb in bulge]                # the lids' top over the head's surface
+    # the upper lid, heavy, rolled down over the eye; the lower lid, thinner, rising to meet it
+    for off, lift, r in ((-0.05, 1.0, 0.3), (0.05, 0.85, 0.2)):
+        Q = []
+        for x, bb, m in zip(xs, bulge, mound):
+            p, n_ = head_surface(ang(x, off * bb ** 0.5), x)
+            Q.append(tuple(p + n_ * (m * lift + 0.02)))
+        tube(L, 'lid', Q, [0.04 + r * bb ** 0.7 for bb in bulge], n=10, tip=True)
+    # the seam: the dark slit where they meet, in the groove between them
+    P = [head_surface(ang(x), x) for x in xs]
+    tube(L, 'nostril', [tuple(p + n_ * (m * 0.95 + 0.04)) for (p, n_), m in zip(P, mound)],
+         [0.03 + 0.06 * bb for bb in bulge], n=6, tip=True)
+    # a fold of hide arching over the socket under the brow, a softer one below the eye
+    for off, lift, r, span in ((-0.19, 0.2, 0.12, (6.0, 9.7)), (0.18, 0.12, 0.08, (6.4, 9.4))):
+        Q, rr = [], []
+        for i in range(17):
+            f = i / 16
+            x = span[0] + (span[1] - span[0]) * f
+            p, n_ = head_surface(ang(x, off), x)
+            Q.append(tuple(p + n_ * (lift * math.sin(math.pi * f) + 0.01)))
+            rr.append(0.02 + r * math.sin(math.pi * f) ** 0.8)
+        tube(L, 'lid', Q, rr, n=6, tip=True)
+
+
 def build_head(b):
     scale_palette()
+    material('lid', h('561a0e'), h('48150b'), spec=0.5, refl=60)        # the eyelids: finer, folded hide
+    blib.PALETTE['lid'].update(scale=8.0, vcracks=(6.0, 0.3), cavity=0.9,
+                               speckle=[(6.0, 0.2, h('6e2614')), (3.0, 0.15, h('2e0e08'))])
     b.tiny_px = 0
     b.ao_distance = 3.0
     b.emboss = dict(k=1.3)
@@ -680,6 +734,8 @@ def build_head(b):
         centres.append((x, 0.0, 0.0))
     # the param loft in head space, then placed by M
     loft_param(L, 'scales', rows, centres, nv_scales=NV)
+    for sgn in (1, -1):
+        closed_eye(L, sgn)
     tube(L, 'scales', [(HEAD_LEN - 0.2, 0.0, -0.1), (HEAD_LEN + 0.4, 0.0, -0.2)], [0.9, 0.2], n=12, tip=True)
     for sgn in (1, -1):                                       # the nostrils: dark slits in the nose's bulbs
         a = 0.45
@@ -1131,10 +1187,12 @@ DRAGON_PARTS = [                     # the dragon version's skinned meshes (kept
               ('head', build_head, 2048), ('limbs', build_limbs, 2048)]
 
 STATIC_PARTS = [('gold', build, 2048), ('body', build_body, 2048), ('head', build_head, 2048),
-                ('limbs', build_limbs, 2048), ('crust', build_crust, 1024), ('wing', build_wing, 2048)]
+                ('limbs', build_limbs, 2048), ('wing', build_wing, 2048)]
+# 2026-11-26: the belly crust (build_crust) is out: in game its gems and coin bits read as 'jelly beans' (the user).
 
 PREVIEW = [((-4, -58, 38), (-4, -18, 18), 44),            # the head on the gold
-           ((10, -60, 50), (2, 2, 22), 38),               # the belly turned to the camera, the crust
+           ((-14, -37, 15), (-9.4, -27.9, 7.2), 34),      # the closed eye, close
+           ((10, -60, 50), (2, 2, 22), 38),               # the belly turned to the camera
            ((70, -45, 50), (8, 0, 20), 36),               # the wing and the hind leg from the south-east
            ((-70, -40, 55), (-6, 0, 18), 36),             # from the south-west
            ((2, -62, 46), (2, -12, 10), 40)]              # the left wing spread on the gold

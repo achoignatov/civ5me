@@ -195,7 +195,7 @@ IMPROVEMENTS = [
     dict(key='SMAUG', minor='MINOR_CIV_MECS_SMAUGS_LAIR', title="Smaug's Lair", dir='Smaug',
          gr2='MEC_LM_Smaug.gr2',
          textures=['Generic_Grey_8.dds', 'MEC_LM_Smaug_DIFF.dds', 'MEC_LM_Smaug_SREF.dds'] +
-                  ['MEC_LM_Smaug_%d_%s.dds' % (k, t) for k in (2, 3, 4, 5, 6) for t in ('DIFF', 'SREF')],
+                  ['MEC_LM_Smaug_%d_%s.dds' % (k, t) for k in (2, 3, 4, 5) for t in ('DIFF', 'SREF')],
          scale=0.25,
          name_keys=['TXT_KEY_CITYSTATE_MECS_SMAUGS_LAIR'],
          aliases=["Smaug's Lair", 'Smaug']),
