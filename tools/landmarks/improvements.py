@@ -263,6 +263,12 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_BALROG_FORER', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_FORER'),
     # (v4: the stock lighthouse fires BALROG_BLAZE / FIRE / PIT were removed: they flickered wildly when zoomed in)
 ]
+# fScrollTime = a model effect's LOOP LENGTH: the game restarts the effect every fScrollTime seconds (the stock XCOM
+# trooper effects use their animations' lengths, 2.56-3.26 s). Ours were all 1.0 (copied from the beam), so the
+# Balrog's fire restarted every second: the scroll and its fade jumped back each second = the once-a-second surge in
+# the user's video (screenshots/flame2.mp4), and earlier the 6-12 s flame animations were cut off every second (the
+# "crazy" flicker). A row's optional 3rd item is the loop length; the fire gets a long one (it never visibly restarts).
+BALROG_FIRE_LOOP = 600.0
 VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
               ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml'),  # file in vendor/landmarks/Erebor
               ('ART_DEF_MEFFECT_MEC_STAFF_GLOW', 'MEC_OrthancGlow.fxsxml'),  # file in vendor/landmarks/Orthanc
@@ -270,14 +276,14 @@ VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # fil
               ('ART_DEF_MEFFECT_MEC_PIPE_PUFFS', 'MEC_BagEndPuffs.fxsxml'),  # file in vendor/landmarks/BagEnd
               ('ART_DEF_MEFFECT_MEC_WINDOW_FLICKER', 'MEC_BagEndFlicker.fxsxml'),  # file in vendor/landmarks/BagEnd
               ('ART_DEF_MEFFECT_MEC_BALROG_GLOW', 'MEC_BalrogGlow.fxsxml'),        # files in vendor/landmarks/Balrog
-              ('ART_DEF_MEFFECT_MEC_BALROG_CROWN', 'MEC_BalrogCrown.fxsxml'),
-              ('ART_DEF_MEFFECT_MEC_BALROG_MANE', 'MEC_BalrogMane.fxsxml'),
-              ('ART_DEF_MEFFECT_MEC_BALROG_ARML', 'MEC_BalrogArmL.fxsxml'),
-              ('ART_DEF_MEFFECT_MEC_BALROG_ARMR', 'MEC_BalrogArmR.fxsxml'),
-              ('ART_DEF_MEFFECT_MEC_BALROG_HEAD', 'MEC_BalrogHead.fxsxml'),
-              ('ART_DEF_MEFFECT_MEC_BALROG_BODY', 'MEC_BalrogBody.fxsxml'),
-              ('ART_DEF_MEFFECT_MEC_BALROG_FOREL', 'MEC_BalrogForeL.fxsxml'),
-              ('ART_DEF_MEFFECT_MEC_BALROG_FORER', 'MEC_BalrogForeR.fxsxml')]
+              ('ART_DEF_MEFFECT_MEC_BALROG_CROWN', 'MEC_BalrogCrown.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_BALROG_MANE', 'MEC_BalrogMane.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_BALROG_ARML', 'MEC_BalrogArmL.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_BALROG_ARMR', 'MEC_BalrogArmR.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_BALROG_HEAD', 'MEC_BalrogHead.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_BALROG_BODY', 'MEC_BalrogBody.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_BALROG_FOREL', 'MEC_BalrogForeL.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_BALROG_FORER', 'MEC_BalrogForeR.fxsxml', BALROG_FIRE_LOOP)]
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).
@@ -398,9 +404,11 @@ def vis_effect_models():
     L = ['<?xml version="1.0" encoding="utf-8"?>',
          '<VisEffectModelArtInfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
          'xmlns:xsd="http://www.w3.org/2001/XMLSchema">']
-    for name, fx in VIS_MODELS:
+    for row in VIS_MODELS:
+        name, fx = row[:2]
+        loop = row[2] if len(row) > 2 else 1.0
         L += ['\t<VisEffectModelArtInfo>', '\t\t<Name>%s</Name>' % name, '\t\t<File>%s</File>' % fx,
-              '\t\t<fScale>1.0</fScale>', '\t\t<fScrollTime>1.0</fScrollTime>', '\t</VisEffectModelArtInfo>']
+              '\t\t<fScale>1.0</fScale>', '\t\t<fScrollTime>%s</fScrollTime>' % loop, '\t</VisEffectModelArtInfo>']
     L.append('</VisEffectModelArtInfos>')
     return '\n'.join(L) + '\n'
 

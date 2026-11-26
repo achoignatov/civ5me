@@ -293,6 +293,14 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   material: four phase-shifted / mirrored copies of the fire photo and four silhouettes, the stock scrolling and ember
   textures by name. Moving fire with no bone animation for the engine to get wrong.
 
+- ***`fScrollTime` is a model effect's loop length*** (found 2026-11-26 from the user's video `screenshots/flame2.mp4`:
+  the Balrog's fire surged for 0.2 s exactly once a second, every set in sync). The game restarts a model effect every
+  `fScrollTime` seconds (`VisEffectModelArtInfo`; the stock XCOM trooper effects use their animations' lengths,
+  2.56-3.26 s). Ours were all 1.0, copied from the beam, so every model effect restarted each second: the shader fire's
+  scroll jumped back, and earlier the 6-12 s flame-card animations were cut off every second (the flicker of Balrog
+  v1-v4). `improvements.VIS_MODELS` rows now take an optional third item, the loop length (the Balrog's fire: 600 s).
+  Bag End's 24 s puffs and candle flicker probably need theirs set to 24 too.
+
 ## 5. Making a model
 
 **Authoring rules:** in-game units, Z up, origin at the hex centre, ground at z = 0, −Y = south = towards the

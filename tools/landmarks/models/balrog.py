@@ -911,7 +911,7 @@ def model_effects(out_dir, k):
     (flames.write_fire); our fire variants are shared by every set (MEC_Balrog_FireB0..3 / FireM0..3)."""
     import flames
     bases, masks = flames.fire_textures(out_dir, 'MEC_Balrog')
-    files = bases + masks
+    files = bases + masks + ['MEC_Balrog_FireUV.dds', 'MEC_Balrog_EmberUV.dds']
     for key, (name, bone, _, _, _, glow, _) in FLAME_SETS.items():
         tg = [t for t in flame_tongues(key, k) if not t.glow]      # (the crown's soft heat glow is not fire)
         files += flames.write_fire(out_dir, name, tg, bases, masks)

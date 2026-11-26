@@ -536,11 +536,39 @@ def _up(a, w, h):
     return np.asarray(Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).resize((w, h), Image.LANCZOS), np.float32)
 
 
+FIRE_SPEED = 184       # vertical scroll speed of the fire = the stock fire pit's (the user: "the animations are great";
+EMBER_SPEED = 189      # the surge they saw was the effect restarting every second: improvements.BALROG_FIRE_LOOP)
+
+
+def uv_map(path, r, g, b, a):
+    """A UV-scrolling map like the stock ones (4x4 A8R8G8B8 + mips, one colour). Decoded from the stock set
+    (fx_uv_lefttoright/righttoleft/bottomtotop/toptobottom/_slow/_slow02): R = horizontal direction (255 +, 0 -),
+    B = horizontal speed, G = vertical direction (255 up), A = vertical speed (255 fastest, 105 'slow', 58 'slow02')."""
+    d = bytearray(open(os.path.join(FIRE_STOCK, 'fx_fire_pit_fire_uv_01.dds'), 'rb').read())
+    for i in range(128, len(d), 4):
+        d[i:i + 4] = bytes((b, g, r, a))             # BGRA in memory
+    open(path, 'wb').write(bytes(d))
+
+
+def even_density(img, keep=0.3):
+    """Flatten the fire photo's density bands along the scroll: each row's mean alpha pulled towards the overall mean
+    (keep = how much of the variation stays), smoothed with wrap-round so the tile stays seamless."""
+    a = img[..., 3]
+    m = a.mean(1)
+    k = np.exp(-0.5 * (np.arange(-24, 25) / 8.0) ** 2)
+    k /= k.sum()
+    mm = np.convolve(np.r_[m[-24:], m, m[:24]], k, mode='same')[24:-24]
+    target = mm.mean() * (mm / mm.mean()) ** keep
+    out = img.copy()
+    out[..., 3] = np.clip(a * (target / np.maximum(mm, 1e-3))[:, None], 0, 255)
+    return out
+
+
 def fire_textures(out_dir, prefix):
     """Our variants of the stock fire: 4 copies of its scrolling fire photo (FX_Fire_Pit_Fire_base_01), shifted in
     phase along the scroll and mirrored, so neighbouring flames never show the same fire at the same moment; 4 flame
     silhouettes for the alpha lookup (the stock one, mirrored, and two tongues of our own). Returns (bases, masks)."""
-    base = _up(_stock_rgba('fx_fire_pit_fire_base_01.dds'), 128, 256)
+    base = even_density(_up(_stock_rgba('fx_fire_pit_fire_base_01.dds'), 128, 256))
     mask = _up(_stock_rgba('fx_fire_pit_fire_alpha_01.dds'), 128, 256)
     bases, masks = [], []
     for k, (roll, mirror) in enumerate(((0, False), (96, True), (160, False), (224, True))):
@@ -563,6 +591,8 @@ def fire_textures(out_dir, prefix):
         n = '%s_FireM%d.dds' % (prefix, k)
         dds.write_dxt3(os.path.join(out_dir, n), np.clip(m, 0, 255).astype(np.uint8))
         masks.append(n)
+    uv_map(os.path.join(out_dir, prefix + '_FireUV.dds'), 133, 255, 0, FIRE_SPEED)
+    uv_map(os.path.join(out_dir, prefix + '_EmberUV.dds'), 133, 255, 0, EMBER_SPEED)
     return bases, masks
 
 
@@ -599,7 +629,9 @@ def write_fire(out_dir, name, tongues, bases, masks):
         bones.append(lmodel.make_bone(bproto, bone, 0, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))
         mat = copy.deepcopy(proto_mat)
         mat['Name'] = '%s_%d' % (name, gi)
-        ren = {'FX_Fire_Pit_Fire_base_01.dds': bn, 'FX_Fire_Pit_Fire_alpha_01.dds': mn}
+        pre = bn.split('_FireB')[0]
+        ren = {'FX_Fire_Pit_Fire_base_01.dds': bn, 'FX_Fire_Pit_Fire_alpha_01.dds': mn,
+               'FX_Fire_Pit_Fire_UV_01.dds': pre + '_FireUV.dds', 'FX_Fire_Pit_Fire_UV_02.dds': pre + '_EmberUV.dds'}
 
         def fix(o):
             if isinstance(o, dict):
@@ -615,7 +647,7 @@ def write_fire(out_dir, name, tongues, bases, masks):
             elif isinstance(o, gr2.Variant):
                 fix(o.value)
         fix(mat)
-        for tx in ('FX_Fire_Pit_Fire_UV_01.dds', 'FX_Fire_Pit_Fire_base_02.dds', 'FX_Fire_Pit_Fire_UV_02.dds',
+        for tx in (pre + '_FireUV.dds', 'FX_Fire_Pit_Fire_base_02.dds', pre + '_EmberUV.dds',
                    'FX_Fire_Pit_Fire_alpha_02.dds', bn, mn):
             textures.add(tx)
         vb = bytearray()
