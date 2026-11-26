@@ -73,6 +73,53 @@ IMPROVEMENTS = [
          scale=0.125,     # v2 (user: 'around half the size')
          name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
          aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
+    # Carn Dum (tools/landmarks/models/carn_dum.py, 2026-11-26), the Witch-king's capital, ANGMAR's (original) capital
+    # whatever it is called, after the user's screenshots/carn-dum.webp, Tolkien (the capital "beneath the northernmost
+    # peak" of the Mountains of Angmar; Angmar 'Iron Home', Carn Dum 'Red Halls'), LOTRO (a fortified city climbing the
+    # slopes, iron gates, scaffolding and mining ledges, the castle's Watch over the city) and BFME II RotWK (the
+    # fortress "resembles a crown"): the northernmost peak split into two jagged spires (132 and 116 high) rising from the
+    # massif, the Red Halls cut in their faces (fire-lit windows, galleries, iron scaffolding); between them the keep
+    # (88) with its CROWN of iron tines (to 112) and the Watch; the city of red stone climbing four walled terraces by a
+    # grand stair through gatehouses; ~110 houses under snowy roofs; forge yards; arched causeways east and west; the
+    # outer gate of iron; the fell-water. Effects: red shader fire (forges, braziers, the crown, the Watch), cold clouds
+    # round the spires, a pale light between their tips, the gate's firelight. Nothing moves (the skinned part = stones
+    # carrying the bones, the Balrog's layout). Fits its own hex.
+    dict(key='CARN_DUM', civ='CIVILIZATION_MEC_ANGMAR', title='Carn Dum', dir='CarnDum',
+         gr2='MEC_LM_CarnDum.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_CarnDum_DIFF.dds', 'MEC_LM_CarnDum_SREF.dds'] +
+                  ['MEC_LM_CarnDum_%d_%s.dds' % (k, t) for k in (2, 3, 4, 5, 6) for t in ('DIFF', 'SREF')] +
+                  ['MEC_LM_CarnDum_Eye_DIFF.dds', 'MEC_LM_CarnDum_Eye_SREF.dds'],
+         animation=('MEC_LM_CarnDum_Idle.gr2', 'Idle'),
+         bones=['fxglow', 'fxfire', 'fxcrown', 'fxcloud', 'fxhalo'],
+         trigger=('FX_Triggers_MEC_LM_CarnDum.ftsxml', 'MEC_LM_CarnDum_Eye'),
+         scale=0.25,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_CARN_DUN'],
+         aliases=['Carn Dum', 'Carn Dûm', 'Carn-dum', 'Carn Dun']),
+    # Minas Morgul (tools/landmarks/models/minas_morgul.py, 2026-11-26), the Witch-king's city, a MORDOR city matched by
+    # its name (not the civ's capital: that is Barad-dur), fitting its own hex: after The Two Towers IV.8 and the film
+    # (screenshots/minas-morgul1.webp, minas-morgul2.webp). A shelf of rock on the knees of the mountains; three tiers
+    # of corpse-lit fluted walls with thorn crenellations, black curved blade-buttresses and spired towers; the gate
+    # "shaped like an open mouth with gleaming teeth" under the defaced Moon; the long white bridge over the Morgulduin
+    # lined with corrupt statues, pale flowers in the meads; ~110 dark houses with green-lit windows; the Tower of
+    # Sorcery (clawed roots, three stepped stages, five thorned galleries with pinnacles, lancets of corpse-light) and
+    # its REVOLVING top course, "a huge ghostly head leering into the night" (the skinned part, 24 s, +-38 degrees, the
+    # Eye's proven mechanism). Effects: green witch-fire (the Balrog's shader fire tinted) on the crown, in the Mouth
+    # and on the beacons; slow green vapour rising over the city and the stream; the glow of the Mouth and the Moon;
+    # the film's PILLAR of green light from the top. Static models: the rock (+ bridge, stream), walls, city, tower.
+    # About +-33 x (-36..+36), 140 high (the crown's spire).
+    # 2026-11-26 (user): kept for later use; it was briefly on Angmar's capital Carn Dum (which now has its own,
+    # CARN_DUM) and is back on cities named Minas Morgul only (a Mordor city).
+    dict(key='MINAS_MORGUL', title='Minas Morgul', dir='MinasMorgul',
+         gr2='MEC_LM_MinasMorgul.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_MinasMorgul_DIFF.dds', 'MEC_LM_MinasMorgul_SREF.dds'] +
+                  ['MEC_LM_MinasMorgul_%d_%s.dds' % (k, t) for k in (2, 3, 4) for t in ('DIFF', 'SREF')] +
+                  ['MEC_LM_MinasMorgul_Eye_DIFF.dds', 'MEC_LM_MinasMorgul_Eye_SREF.dds'],
+         animation=('MEC_LM_MinasMorgul_Idle.gr2', 'Idle'),
+         bones=['fxglow', 'fxbeam', 'fxcrown', 'fxgate', 'fxbeacon', 'fxmist'],
+         trigger=('FX_Triggers_MEC_LM_MinasMorgul.ftsxml', 'MEC_LM_MinasMorgul_Eye'),
+         scale=0.25,
+         name_keys=['TXT_KEY_CITY_NAME_MEC_MINAS_MORGUL'],
+         aliases=['Minas Morgul', 'MinasMorgul', 'Minas Ithil', 'Morgul']),
     # Minas Tirith (tools/landmarks/models/minas_tirith.py, 2026-11-25): Gondor's capital, fitting its own hex: the seven
     # walled circles cut into Mount Mindolluin, the prow, ~350 houses, bastions and staggered gates, the Citadel with
     # the Tower of Ecthelion and its silver spire, the Court of the Fountain with the White Tree in blossom, and the
@@ -262,6 +309,19 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_BALROG_FOREL', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_FOREL'),
     ('ART_DEF_VEFFECT_MEC_BALROG_FORER', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_FORER'),
     # (v4: the stock lighthouse fires BALROG_BLAZE / FIRE / PIT were removed: they flickered wildly when zoomed in)
+    # Carn Dum: model effects in file units (Scale 1.0)
+    ('ART_DEF_VEFFECT_MEC_CARN_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_GLOW'),
+    ('ART_DEF_VEFFECT_MEC_CARN_FIRE', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_FIRE'),
+    ('ART_DEF_VEFFECT_MEC_CARN_CROWN', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_CROWN'),
+    ('ART_DEF_VEFFECT_MEC_CARN_CLOUD', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_CLOUD'),
+    ('ART_DEF_VEFFECT_MEC_CARN_HALO', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_HALO'),
+    # Minas Morgul: all model effects in file units (Scale 1.0)
+    ('ART_DEF_VEFFECT_MEC_MORGUL_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_GLOW'),
+    ('ART_DEF_VEFFECT_MEC_MORGUL_BEAM', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_BEAM'),
+    ('ART_DEF_VEFFECT_MEC_MORGUL_CROWN', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_CROWN'),
+    ('ART_DEF_VEFFECT_MEC_MORGUL_GATE', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_GATE'),
+    ('ART_DEF_VEFFECT_MEC_MORGUL_BEACONS', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_BEACONS'),
+    ('ART_DEF_VEFFECT_MEC_MORGUL_MIST', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_MIST'),
 ]
 # fScrollTime = a model effect's LOOP LENGTH: the game restarts the effect every fScrollTime seconds (the stock XCOM
 # trooper effects use their animations' lengths, 2.56-3.26 s). Ours were all 1.0 (copied from the beam), so the
@@ -283,7 +343,21 @@ VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # fil
               ('ART_DEF_MEFFECT_MEC_BALROG_HEAD', 'MEC_BalrogHead.fxsxml', BALROG_FIRE_LOOP),
               ('ART_DEF_MEFFECT_MEC_BALROG_BODY', 'MEC_BalrogBody.fxsxml', BALROG_FIRE_LOOP),
               ('ART_DEF_MEFFECT_MEC_BALROG_FOREL', 'MEC_BalrogForeL.fxsxml', BALROG_FIRE_LOOP),
-              ('ART_DEF_MEFFECT_MEC_BALROG_FORER', 'MEC_BalrogForeR.fxsxml', BALROG_FIRE_LOOP)]
+              ('ART_DEF_MEFFECT_MEC_BALROG_FORER', 'MEC_BalrogForeR.fxsxml', BALROG_FIRE_LOOP),
+              # Minas Morgul (files in vendor/landmarks/MinasMorgul): the glow and the pillar are still; the fires and
+              # the vapour scroll in the shader and get the long loop (never a visible restart)
+              ('ART_DEF_MEFFECT_MEC_MORGUL_GLOW', 'MEC_MorgulGlow.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_MORGUL_BEAM', 'MEC_MorgulBeam.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_MORGUL_CROWN', 'MEC_MorgulCrown.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_MORGUL_GATE', 'MEC_MorgulGate.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_MORGUL_BEACONS', 'MEC_MorgulBeacons.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_MORGUL_MIST', 'MEC_MorgulMist.fxsxml', BALROG_FIRE_LOOP),
+              # Carn Dum (files in vendor/landmarks/CarnDum)
+              ('ART_DEF_MEFFECT_MEC_CARN_GLOW', 'MEC_CarnDumGlow.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_CARN_HALO', 'MEC_CarnDumHalo.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_CARN_FIRE', 'MEC_CarnDumFire.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_CARN_CROWN', 'MEC_CarnDumCrown.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_CARN_CLOUD', 'MEC_CarnDumCloud.fxsxml', BALROG_FIRE_LOOP)]
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).

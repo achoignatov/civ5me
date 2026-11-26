@@ -564,11 +564,61 @@ def even_density(img, keep=0.3):
     return out
 
 
-def fire_textures(out_dir, prefix):
+def tint_fire(img, stops):
+    """Recolour a fire photo by its brightness (Minas Morgul's corpse-light: the same moving fire, in ghostly green).
+    stops = [(brightness 0..1, (r, g, b))]; alpha unchanged."""
+    L = (0.3 * img[..., 0] + 0.55 * img[..., 1] + 0.15 * img[..., 2]) / 255.0
+    L = L / max(1e-3, float(np.percentile(L[img[..., 3] > 8], 99))) if (img[..., 3] > 8).any() else L
+    out = img.copy()
+    out[..., :3] = _ramp_stops(np.clip(L, 0, 1), stops)
+    return out
+
+
+def _ramp_stops(T, stops):
+    out = np.zeros(T.shape + (3,), np.float32)
+    for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
+        m = (T >= t0) & (T <= t1)
+        u = ((T - t0) / max(1e-6, t1 - t0))[m][:, None]
+        out[m] = np.array(c0, np.float32) * (1 - u) + np.array(c1, np.float32) * u
+    return out
+
+
+def soft_masks(seeds=(5, 6, 7, 8)):
+    """Silhouettes for rising VAPOUR (Minas Morgul's green mist): broad soft columns with ragged, wispy edges that
+    thin away upwards, instead of flame tongues (white, the shape in alpha; top row first)."""
+    out = []
+    for s in seeds:
+        rng = np.random.default_rng(s)
+        h, w = 256, 128
+        v = 1.0 - (np.arange(h) + 0.5) / h
+        x = (np.arange(w) + 0.5) / w * 2 - 1
+        X, V = np.meshgrid(x, v)
+        n = _noise2(w, h, (4, 7), rng) * 0.6 + _noise2(w, h, (9, 16), rng) * 0.4
+        c = 0.18 * np.sin(6.283 * (0.7 * V + rng.random()))
+        width = 0.55 + 0.35 * V
+        r = np.abs(X - c) / width
+        a = np.clip(1.0 - r ** 1.6 + 0.6 * (n - 0.5), 0, 1) * np.clip(V / 0.12, 0, 1) ** 0.8 * (1 - V) ** 1.3
+        a *= np.clip((1 - np.abs(X)) / 0.15, 0, 1)
+        m = np.zeros((h, w, 4), np.float32)
+        m[..., :3] = 255
+        m[..., 3] = np.clip(a * 1.25, 0, 1) * 255
+        out.append(m)
+    return out
+
+
+def fire_textures(out_dir, prefix, tint=None, speed=None, ember_speed=None, soft=False, ember_tint=None):
     """Our variants of the stock fire: 4 copies of its scrolling fire photo (FX_Fire_Pit_Fire_base_01), shifted in
     phase along the scroll and mirrored, so neighbouring flames never show the same fire at the same moment; 4 flame
-    silhouettes for the alpha lookup (the stock one, mirrored, and two tongues of our own). Returns (bases, masks)."""
+    silhouettes for the alpha lookup (the stock one, mirrored, and two tongues of our own). Returns (bases, masks).
+    Minas Morgul (2026-11-26): tint = colour stops (tint_fire) for a green witch-fire, its embers recoloured too
+    (<prefix>_Ember.dds, used by write_fire instead of the stock embers); speed = the scroll speed (UV map alpha,
+    255 fastest, 105 'slow'); soft = vapour silhouettes (soft_masks) instead of flame tongues."""
     base = even_density(_up(_stock_rgba('fx_fire_pit_fire_base_01.dds'), 128, 256))
+    if tint:
+        base = tint_fire(base, tint)
+        emb = _stock_rgba('fx_fire_pit_fire_base_02.dds')
+        emb = tint_fire(emb, ember_tint or tint)
+        dds.write_dxt3(os.path.join(out_dir, prefix + '_Ember.dds'), np.clip(emb, 0, 255).astype(np.uint8))
     mask = _up(_stock_rgba('fx_fire_pit_fire_alpha_01.dds'), 128, 256)
     bases, masks = [], []
     for k, (roll, mirror) in enumerate(((0, False), (96, True), (160, False), (224, True))):
@@ -587,12 +637,12 @@ def fire_textures(out_dir, prefix):
         m[..., :3] = 255
         m[..., 3] = a * 255
         ours.append(m)
-    for k, m in enumerate((mask, mask[:, ::-1], ours[0], ours[1])):
+    for k, m in enumerate(soft_masks() if soft else (mask, mask[:, ::-1], ours[0], ours[1])):
         n = '%s_FireM%d.dds' % (prefix, k)
         dds.write_dxt3(os.path.join(out_dir, n), np.clip(m, 0, 255).astype(np.uint8))
         masks.append(n)
-    uv_map(os.path.join(out_dir, prefix + '_FireUV.dds'), 133, 255, 0, FIRE_SPEED)
-    uv_map(os.path.join(out_dir, prefix + '_EmberUV.dds'), 133, 255, 0, EMBER_SPEED)
+    uv_map(os.path.join(out_dir, prefix + '_FireUV.dds'), 133, 255, 0, speed or FIRE_SPEED)
+    uv_map(os.path.join(out_dir, prefix + '_EmberUV.dds'), 133, 255, 0, ember_speed or EMBER_SPEED)
     return bases, masks
 
 
@@ -632,6 +682,9 @@ def write_fire(out_dir, name, tongues, bases, masks):
         pre = bn.split('_FireB')[0]
         ren = {'FX_Fire_Pit_Fire_base_01.dds': bn, 'FX_Fire_Pit_Fire_alpha_01.dds': mn,
                'FX_Fire_Pit_Fire_UV_01.dds': pre + '_FireUV.dds', 'FX_Fire_Pit_Fire_UV_02.dds': pre + '_EmberUV.dds'}
+        ember = pre + '_Ember.dds' if os.path.exists(os.path.join(out_dir, pre + '_Ember.dds')) else None
+        if ember:                                    # a tinted fire (Minas Morgul): its own embers too
+            ren['FX_Fire_Pit_Fire_base_02.dds'] = ember
 
         def fix(o):
             if isinstance(o, dict):
@@ -647,7 +700,7 @@ def write_fire(out_dir, name, tongues, bases, masks):
             elif isinstance(o, gr2.Variant):
                 fix(o.value)
         fix(mat)
-        for tx in (pre + '_FireUV.dds', 'FX_Fire_Pit_Fire_base_02.dds', pre + '_EmberUV.dds',
+        for tx in (pre + '_FireUV.dds', ember or 'FX_Fire_Pit_Fire_base_02.dds', pre + '_EmberUV.dds',
                    'FX_Fire_Pit_Fire_alpha_02.dds', bn, mn):
             textures.add(tx)
         vb = bytearray()

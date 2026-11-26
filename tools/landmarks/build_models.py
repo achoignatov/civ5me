@@ -44,7 +44,7 @@ GAME_SREF = 256
 BAKED_DIFF = 1024        # baked models (module BAKE = True): 1024 DIFF / 512 SREF, like the larger stock wonders
 BAKED_SREF = 512
 WORK = os.path.join(os.path.dirname(PREVIEW), 'work')
-GLOW_KEYS = ('DOOR_GLOW', 'GATE_GLOW', 'STAFF_GLOW', 'WINDOW_GLOW', 'BALROG_GLOW')   # rig effect keys drawn as a still additive picture (glow.py, glow_effect())
+GLOW_KEYS = ('DOOR_GLOW', 'GATE_GLOW', 'STAFF_GLOW', 'WINDOW_GLOW', 'BALROG_GLOW', 'MORGUL_GLOW', 'CARN_GLOW')   # rig effect keys drawn as a still additive picture (glow.py, glow_effect())
 
 
 def in_hex(x, y, slack=0.05, env=ENVELOPE):

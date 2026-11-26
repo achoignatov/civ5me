@@ -179,6 +179,19 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=100.0, hex_out=100.0 / 0.8660254, max_height=112.0, min_z=-1.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-26: Minas Morgul (models/minas_morgul.py), the Witch-king's city (a Mordor city, matched by name): the
+    # shelf of rock, three tiers of corpse-lit walls with black blade-buttresses, the Mouth gate, the white bridge, the
+    # Tower of Sorcery (128) and its REVOLVING crown (the skinned part, to 140); green witch-fire, vapour, the pillar.
+    dict(key='MINAS_MORGUL', title='Minas Morgul', module='minas_morgul', model='MEC_LM_MinasMorgul', scale=0.25,
+         envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=142.0, min_z=-5.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
+    # 2026-11-26: Carn Dum (models/carn_dum.py), the Witch-king's capital of Angmar: twin spires of the northernmost
+    # peak (132/116), the Red Halls cut in them, the crowned keep between, the terraced red city, causeways; red fire.
+    dict(key='CARN_DUM', title='Carn Dum', module='carn_dum', model='MEC_LM_CarnDum', scale=0.25,
+         envelope=dict(hex_in=33.6, hex_out=33.6 / 0.8660254, max_height=142.0, min_z=-5.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
@@ -294,6 +307,31 @@ EFFECTS = {
                          file='MEC_BalrogForeL.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'BALROG_FORER': dict(name='ART_DEF_VEFFECT_MEC_BALROG_FORER', model='ART_DEF_MEFFECT_MEC_BALROG_FORER',
                          file='MEC_BalrogForeR.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    # Minas Morgul: the glow of the Mouth and the defaced Moon (glow.py), the pillar of light (a still additive quad),
+    # green witch-fire on the crown, in the Mouth and on the beacons, the rising vapour (flames.write_fire, tinted)
+    'MORGUL_GLOW': dict(name='ART_DEF_VEFFECT_MEC_MORGUL_GLOW', model='ART_DEF_MEFFECT_MEC_MORGUL_GLOW',
+                       file='MEC_MorgulGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'MORGUL_BEAM': dict(name='ART_DEF_VEFFECT_MEC_MORGUL_BEAM', model='ART_DEF_MEFFECT_MEC_MORGUL_BEAM',
+                       file='MEC_MorgulBeam.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'MORGUL_CROWN': dict(name='ART_DEF_VEFFECT_MEC_MORGUL_CROWN', model='ART_DEF_MEFFECT_MEC_MORGUL_CROWN',
+                        file='MEC_MorgulCrown.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'MORGUL_GATE': dict(name='ART_DEF_VEFFECT_MEC_MORGUL_GATE', model='ART_DEF_MEFFECT_MEC_MORGUL_GATE',
+                       file='MEC_MorgulGate.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'MORGUL_BEACONS': dict(name='ART_DEF_VEFFECT_MEC_MORGUL_BEACONS', model='ART_DEF_MEFFECT_MEC_MORGUL_BEACONS',
+                          file='MEC_MorgulBeacons.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'MORGUL_MIST': dict(name='ART_DEF_VEFFECT_MEC_MORGUL_MIST', model='ART_DEF_MEFFECT_MEC_MORGUL_MIST',
+                       file='MEC_MorgulMist.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    # Carn Dum: the gate's firelight (glow.py), red shader fire (forges, braziers, the crown), cold clouds, the halo
+    'CARN_GLOW': dict(name='ART_DEF_VEFFECT_MEC_CARN_GLOW', model='ART_DEF_MEFFECT_MEC_CARN_GLOW',
+                     file='MEC_CarnDumGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'CARN_FIRE': dict(name='ART_DEF_VEFFECT_MEC_CARN_FIRE', model='ART_DEF_MEFFECT_MEC_CARN_FIRE',
+                     file='MEC_CarnDumFire.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'CARN_CROWN': dict(name='ART_DEF_VEFFECT_MEC_CARN_CROWN', model='ART_DEF_MEFFECT_MEC_CARN_CROWN',
+                      file='MEC_CarnDumCrown.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'CARN_CLOUD': dict(name='ART_DEF_VEFFECT_MEC_CARN_CLOUD', model='ART_DEF_MEFFECT_MEC_CARN_CLOUD',
+                      file='MEC_CarnDumCloud.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'CARN_HALO': dict(name='ART_DEF_VEFFECT_MEC_CARN_HALO', model='ART_DEF_MEFFECT_MEC_CARN_HALO',
+                     file='MEC_CarnDumHalo.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'BRAZIER': dict(name='ART_DEF_VEFFECT_MEC_BRAZIER', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
                     scale=0.35, rotation=(90.0, 0.0, 0.0)),
     'EYE_BEAM': dict(name='ART_DEF_VEFFECT_MEC_EYE_BEAM', model='ART_DEF_MEFFECT_MEC_EYE_BEAM',

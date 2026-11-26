@@ -1,0 +1,17 @@
+<trigger_system type="FGrannyTimedTriggerSystem">
+  <event_tracks>
+    <event_track ec="1000">
+      <track id="1" name="Sound" />
+      <track id="2" name="Effect" />
+      <track id="3" name="Transfer" />
+    </event_track>
+  </event_tracks>
+  <triggers>
+    <trigger type="FTimedTriggerEffect" id="1" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_MORGUL_GLOW" bone="fxglow" />
+    <trigger type="FTimedTriggerEffect" id="2" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_MORGUL_BEAM" bone="fxbeam" />
+    <trigger type="FTimedTriggerEffect" id="3" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_MORGUL_CROWN" bone="fxcrown" />
+    <trigger type="FTimedTriggerEffect" id="4" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_MORGUL_GATE" bone="fxgate" />
+    <trigger type="FTimedTriggerEffect" id="5" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_MORGUL_BEACONS" bone="fxbeacon" />
+    <trigger type="FTimedTriggerEffect" id="6" time="0" duration="24" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_MORGUL_MIST" bone="fxmist" />
+  </triggers>
+</trigger_system>
