@@ -279,6 +279,20 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
   so it was removed. For fire, use rest-pose flame cards (`flames.write`), not big stock particles. v4 also raises a
   crater mound of broken rock (6.5 high in game) over the tile's middle, hiding the stock houses.
 
+- *Balrog test 4 (the user's video `screenshots/flame-flicker.mp4`):* a map of per-pixel change between frames showed
+  the flame sets the engine animated (crown, head sides, left arm) jumping between poses every frame, while the sets it
+  drew in their rest pose (shoulders, torso, right arm, the eye glow) were steady and did not move. Our per-card
+  rotation curves on model effects are not reliable in game. v5: **all flame sets still**, in the proven glow layout
+  (`flames.write_still`: every card baked in place on one bone, identity tracks). Animating flames safely is open.
+
+- *Real fire, the game's own way (Balrog v6):* the stock fire pit (`fxm_fire_pit_01`, vendored in `vendor/civ5/`) is a
+  STATIC mesh with no animation; its material (`FXShader`, a FireGrafix material, additive) has up to five layers of
+  `BaseTextureMap` / `UVScrollingMap` / `AlphaLookupMap`, and the SHADER scrolls a photographic fire texture through a
+  fixed flame-silhouette mask over elapsed time (layer 0) with rising embers (layer 1). The scrolling maps are tiny
+  constant-colour textures (fire `133,255,0,184`). `flames.write_fire` draws our steady flame cards with clones of that
+  material: four phase-shifted / mirrored copies of the fire photo and four silhouettes, the stock scrolling and ember
+  textures by name. Moving fire with no bone animation for the engine to get wrong.
+
 ## 5. Making a model
 
 **Authoring rules:** in-game units, Z up, origin at the hex centre, ground at z = 0, −Y = south = towards the

@@ -1,8 +1,15 @@
 <Asset>
-	<Mesh file="MEC_BalrogArmL.gr2"/>
-	<Animation file="MEC_BalrogArmL_IdleA.gr2" name="IdleA" ec="1000" source="Max"/>
-	<Texture file="FX_Blk_Blk4x4.dds"/>
-	<Texture file="FX_Wht_Wht4x4.dds"/>
-	<Texture file="MEC_BalrogArmL_DIFF.dds"/>
-	<DecisionTree file="AnimatedModelEffect_DecisionTree.ddtxml" source="Tool"/>
+  <Mesh file="MEC_BalrogArmL.gr2" source="Max" />
+  <Texture file="FX_Fire_Pit_Fire_UV_01.dds" source="Max" />
+  <Texture file="FX_Fire_Pit_Fire_UV_02.dds" source="Max" />
+  <Texture file="FX_Fire_Pit_Fire_alpha_02.dds" source="Max" />
+  <Texture file="FX_Fire_Pit_Fire_base_02.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireB0.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireB1.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireB2.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireB3.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireM0.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireM1.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireM2.dds" source="Max" />
+  <Texture file="MEC_Balrog_FireM3.dds" source="Max" />
 </Asset>

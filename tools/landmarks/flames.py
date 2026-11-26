@@ -399,6 +399,85 @@ def write(out_dir, name, tongues, T, spans=600):
     return [name + '.gr2', name + '_IdleA.gr2', name + '.fxsxml', tex]
 
 
+def write_still(out_dir, name, tongues):
+    """v4 (2026-11-26, the user's in-game video screenshots/flame-flicker.mp4): sets whose cards the engine animated
+    jumped between poses from frame to frame (smeared streaks), while the sets it drew in their rest pose were steady.
+    So the flames are now STILL, built exactly like the proven glows (glow.py: the Eye's eyes, Erebor's gate, the
+    Balrog's eyes): every card baked in place (foot, lean, mean width) on ONE bone at the origin, every animation
+    track identity. Same cards, same amount and placement as before."""
+    f = gr2.read(lmodel.FX_TEMPLATE)
+    root = f.root()
+    mesh = root['Meshes'][0]
+    vd = mesh['PrimaryVertexData']
+    members = vd['Vertices'].members
+    vb = bytearray()
+    tris = []
+    pts = []
+    for i, tg in enumerate(tongues):
+        q0 = rest_quat(tg)
+        ft = tg.base
+        u0, v0, u1, v1 = cell_uv(tg.cell)
+        hw = tg.w / 2
+        z0, z1 = (-tg.h / 2, tg.h / 2) if tg.glow else (-0.06 * tg.h, 0.94 * tg.h)
+        nx, ny, nz = qrotate(q0, (0.0, -1.0, 0.0))
+        tx, ty, tz = qrotate(q0, (1.0, 0.0, 0.0))
+        bx, by, bz = qrotate(q0, (0.0, 0.0, -1.0))
+        for (x, z, u, v) in ((-hw, z0, u0, v1), (hw, z0, u1, v1), (hw, z1, u1, v0), (-hw, z1, u0, v0)):
+            px, py, pz = qrotate(q0, (x, -0.01 * i, z))
+            p = (ft[0] + px, ft[1] + py, ft[2] + pz)
+            pts.append(p)
+            vb += struct.pack('<3f4B4B12f', *p, 255, 0, 0, 0, 0, 0, 0, 0, nx, ny, nz, tx, ty, tz, bx, by, bz, u, v, 0.0)
+        b = 4 * i
+        tris += [(b, b + 1, b + 2), (b, b + 2, b + 3)]
+    vd['Vertices'] = gr2.Variant(members, bytes(vb))
+    mesh['PrimaryTopology'].update(lmodel.topology(tris))
+    lo, hi = lmodel.obb(pts)
+    for bb in mesh['BoneBindings']:
+        bb['OBBMin'], bb['OBBMax'] = ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+    mesh['BoneBindings'][0]['OBBMin'], mesh['BoneBindings'][0]['OBBMax'] = lo, hi
+    tex = name + '_DIFF.dds'
+
+    def swap(o):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if isinstance(v, str) and 'FX_Ind_Lighthouse_base_01' in v:
+                    o[k] = tex
+                else:
+                    swap(v)
+        elif isinstance(o, list):
+            for x in o:
+                swap(x)
+        elif isinstance(o, gr2.Variant):
+            swap(o.value)
+    swap(root['Materials'])
+    root['FromFileName'] = name + '.blend'
+    os.makedirs(out_dir, exist_ok=True)
+    gr2.write(os.path.join(out_dir, name + '.gr2'), f.root_type, root, f.tag)
+    atlas(os.path.join(out_dir, tex))
+    # the animation: the stock IdleA with every track still (as glow.write)
+    a = gr2.read(lmodel.ANIM_TEMPLATE)
+    ar = a.root()
+    curves = lmodel.Curves(ar)
+    local = {b['Name']: b['Transform']['Position'] for b in root['Skeletons'][0]['Bones']}
+    for t in ar['TrackGroups'][0]['TransformTracks']:
+        p = local[t['Name']]
+        t['PositionCurve'] = curves.const3(p) if any(abs(x) > 1e-9 for x in p) else curves.identity(3)
+        t['OrientationCurve'] = curves.identity(4)
+    ar['Animations'][0]['Name'] = name + '_IdleA'
+    ar['FromFileName'] = name + '.blend'
+    gr2.write(os.path.join(out_dir, name + '_IdleA.gr2'), a.root_type, ar, a.tag)
+    binds = [bb['BoneName'] for bb in mesh['BoneBindings']]
+    print('  flames %s: %d still cards on bone %s (glow layout), every track identity' % (name, len(tongues), binds[0]))
+    L = ['<Asset>', '\t<Mesh file="%s.gr2"/>' % name,
+         '\t<Animation file="%s_IdleA.gr2" name="IdleA" ec="1000" source="Max"/>' % name,
+         '\t<Texture file="FX_Blk_Blk4x4.dds"/>', '\t<Texture file="FX_Wht_Wht4x4.dds"/>',
+         '\t<Texture file="%s"/>' % tex,
+         '\t<DecisionTree file="AnimatedModelEffect_DecisionTree.ddtxml" source="Tool"/>', '</Asset>']
+    with open(os.path.join(out_dir, name + '.fxsxml'), 'w', newline='\r\n') as fh:
+        fh.write('\n'.join(L) + '\n')
+    return [name + '.gr2', name + '_IdleA.gr2', name + '.fxsxml', tex]
+
+
 def verify(path, names, tongues, T, rests, feet):
     """Read the written curves back: positions constant at the feet, each decoded rotation = the wanted turn about the
     foot; also the largest turn (how far a tongue's tip can swing, in degrees)."""
@@ -427,7 +506,7 @@ def overlays(path_dds, tongues, bone_world, k, t):
     for tg in tongues:
         if not tg.glow and tg.yaw(t) >= 89.5:
             continue
-        q = tg.quat(t)
+        q = rest_quat(tg)                   # v4: the flames are still
         px, py, pz = tg.pos(t)
         hw = tg.w / 2
         z0, z1 = (-tg.h / 2, tg.h / 2) if tg.glow else (-0.06 * tg.h, 0.94 * tg.h)
@@ -438,3 +517,165 @@ def overlays(path_dds, tongues, bone_world, k, t):
             P.append((bone_world[0] + (px + rx) / k, bone_world[1] + (py + ry) / k, bone_world[2] + (pz + rz) / k))
         out.append((P, [(0, 1, 2, 3)], [(u0, v1), (u1, v1), (u1, v0), (u0, v0)], img))
     return out
+
+
+# --------------------------------------------------------------------------- v5: real fire (the stock fire pit's way)
+FIRE_TEMPLATE = os.path.join(lmodel.VENDOR, 'fxm_fire_pit_01.gr2')        # stock (EffectData.fpk): the tipi fire pit
+FIRE_STOCK = os.path.join(lmodel.VENDOR, 'fx_fire_pit')                   # its textures (EffectTextures.fpk), for us
+
+
+def _stock_rgba(name):
+    from PIL import Image
+    im = Image.open(os.path.join(FIRE_STOCK, name.lower()))
+    im.load()
+    return np.asarray(im.convert('RGBA'), np.float32)
+
+
+def _up(a, w, h):
+    from PIL import Image
+    return np.asarray(Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).resize((w, h), Image.LANCZOS), np.float32)
+
+
+def fire_textures(out_dir, prefix):
+    """Our variants of the stock fire: 4 copies of its scrolling fire photo (FX_Fire_Pit_Fire_base_01), shifted in
+    phase along the scroll and mirrored, so neighbouring flames never show the same fire at the same moment; 4 flame
+    silhouettes for the alpha lookup (the stock one, mirrored, and two tongues of our own). Returns (bases, masks)."""
+    base = _up(_stock_rgba('fx_fire_pit_fire_base_01.dds'), 128, 256)
+    mask = _up(_stock_rgba('fx_fire_pit_fire_alpha_01.dds'), 128, 256)
+    bases, masks = [], []
+    for k, (roll, mirror) in enumerate(((0, False), (96, True), (160, False), (224, True))):
+        b = np.roll(base, roll, axis=0)
+        if mirror:
+            b = b[:, ::-1]
+        n = '%s_FireB%d.dds' % (prefix, k)
+        dds.write_dxt3(os.path.join(out_dir, n), b.astype(np.uint8))
+        bases.append(n)
+    ours = []
+    for seed, dbl in ((211, False), (223, True)):            # tongues of our own, as silhouettes (white, alpha)
+        t = tongue(seed, 128, 256, double=dbl)
+        a = np.clip(t[..., 3] / ALPHA / 255.0, 0, 1)
+        a = np.clip(a * 1.6, 0, 1) ** 0.8
+        m = np.zeros((256, 128, 4), np.float32)
+        m[..., :3] = 255
+        m[..., 3] = a * 255
+        ours.append(m)
+    for k, m in enumerate((mask, mask[:, ::-1], ours[0], ours[1])):
+        n = '%s_FireM%d.dds' % (prefix, k)
+        dds.write_dxt3(os.path.join(out_dir, n), np.clip(m, 0, 255).astype(np.uint8))
+        masks.append(n)
+    return bases, masks
+
+
+def write_fire(out_dir, name, tongues, bases, masks):
+    """v5 (2026-11-26, the user: "animated, but without the flicker; it must look like real fire"): the flame cards of
+    write_still (in place, the steady layout) drawn the way the game draws its own fires: the stock fire pit's
+    FireGrafix material (FXShader, additive), whose SHADER animates the texture over elapsed time: a photographic fire
+    scrolling up through a flame-silhouette mask (layer 0) and rising embers (layer 1, stock). A static mesh with no
+    skeleton animation at all (the stock fxm_fire_pit_01 has none), so nothing the engine can mis-animate. One mesh per
+    (fire phase, silhouette) material; cards spread over them so neighbours differ."""
+    f = gr2.read(FIRE_TEMPLATE)
+    root = f.root()
+    proto_mat = [m for m in root['Materials'] if m['Name'] == '03 - Default'][0]      # fire + embers
+    proto_mesh = [m for m in root['Meshes'] if m['Name'] == 'Plane02'][0]
+    proto_vd = proto_mesh['PrimaryVertexData']
+    members = proto_vd['Vertices'].members
+    assert [m.name for m in members] == ['Position', 'Normal', 'Tangent', 'Binormal', 'TextureCoordinates0'], \
+        [m.name for m in members]
+    skel = root['Skeletons'][0]
+    bproto = skel['Bones'][0]
+    combos = [(bases[i % len(bases)], masks[(i * 3 + 1) % len(masks)]) for i in range(4)]
+    groups = {i: [] for i in range(len(combos))}
+    rng = random.Random(zlib_crc(name))
+    for tg in tongues:
+        groups[rng.randrange(len(combos))].append(tg)
+    bones = [lmodel.make_bone(bproto, 'Dummy01', -1, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))]
+    mats, vds, topos, meshes = [], [], [], []
+    textures = set()
+    for gi, (bn, mn) in enumerate(combos):
+        cards = groups[gi]
+        if not cards:
+            continue
+        bone = 'Fire%02d' % gi
+        bones.append(lmodel.make_bone(bproto, bone, 0, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))
+        mat = copy.deepcopy(proto_mat)
+        mat['Name'] = '%s_%d' % (name, gi)
+        ren = {'FX_Fire_Pit_Fire_base_01.dds': bn, 'FX_Fire_Pit_Fire_alpha_01.dds': mn}
+
+        def fix(o):
+            if isinstance(o, dict):
+                for k, v in o.items():
+                    if isinstance(v, str) and v.lower().endswith('.dds'):
+                        base_n = v.replace('\\', '/').split('/')[-1]
+                        o[k] = ren.get(base_n, base_n)
+                    else:
+                        fix(v)
+            elif isinstance(o, list):
+                for x in o:
+                    fix(x)
+            elif isinstance(o, gr2.Variant):
+                fix(o.value)
+        fix(mat)
+        for tx in ('FX_Fire_Pit_Fire_UV_01.dds', 'FX_Fire_Pit_Fire_base_02.dds', 'FX_Fire_Pit_Fire_UV_02.dds',
+                   'FX_Fire_Pit_Fire_alpha_02.dds', bn, mn):
+            textures.add(tx)
+        vb = bytearray()
+        tris = []
+        pts = []
+        for i, tg in enumerate(cards):
+            q0 = rest_quat(tg)
+            ft = tg.base
+            hw = tg.w / 2
+            z0, z1 = (-tg.h / 2, tg.h / 2) if tg.glow else (-0.06 * tg.h, 0.94 * tg.h)
+            flip = rng.random() < 0.5                    # mirror half of the cards (more variety)
+            nrm = qrotate(q0, (0.0, -1.0, 0.0))
+            tan = qrotate(q0, (1.0, 0.0, 0.0))
+            bin_ = qrotate(q0, (0.0, 0.0, -1.0))
+            for (x, z, u, v) in ((-hw, z0, 0.0, 1.0), (hw, z0, 1.0, 1.0), (hw, z1, 1.0, 0.0), (-hw, z1, 0.0, 0.0)):
+                px, py, pz = qrotate(q0, (x, -0.01 * i, z))
+                p = (ft[0] + px, ft[1] + py, ft[2] + pz)
+                pts.append(p)
+                vb += struct.pack('<15f', *p, *nrm, *tan, *bin_, (1.0 - u) if flip else u, v, 0.0)
+            b = 4 * i
+            tris += [(b, b + 1, b + 2), (b, b + 2, b + 3)]
+        vd = {'Vertices': gr2.Variant(members, bytes(vb)),
+              'VertexComponentNames': copy.deepcopy(proto_vd['VertexComponentNames']),
+              'VertexAnnotationSets': []}
+        topo = lmodel.topology(tris)
+        mesh = {'Name': bone, 'PrimaryVertexData': vd, 'MorphTargets': [], 'PrimaryTopology': topo,
+                'MaterialBindings': [{'Material': mat}],
+                'BoneBindings': [{'BoneName': bone, 'OBBMin': [0.0, 0.0, 0.0], 'OBBMax': [0.0, 0.0, 0.0],
+                                  'TriangleIndices': []}],
+                'ExtendedData': None}
+        mats.append(mat); vds.append(vd); topos.append(topo); meshes.append(mesh)
+    skel['Bones'] = bones
+    skel['Name'] = 'Dummy01'
+    model = root['Models'][0]
+    model['Skeleton'] = skel
+    model['MeshBindings'] = [{'Mesh': m} for m in meshes]
+    root.update({'Materials': mats, 'Skeletons': [skel], 'VertexDatas': vds, 'TriTopologies': topos,
+                 'Meshes': meshes, 'Models': [model], 'TrackGroups': [], 'Animations': []})
+    root['FromFileName'] = name + '.blend'
+    os.makedirs(out_dir, exist_ok=True)
+    gr2.write(os.path.join(out_dir, name + '.gr2'), f.root_type, root, f.tag)
+    # read back: every card on a static mesh with the fire material, the textures as intended
+    r = gr2.read(os.path.join(out_dir, name + '.gr2')).root()
+    ncards = sum(len(m['PrimaryVertexData']['Vertices'].value) // 60
+                 if isinstance(m['PrimaryVertexData']['Vertices'].value, (bytes, bytearray))
+                 else len(m['PrimaryVertexData']['Vertices'].value) // 4 for m in r['Meshes']) // \
+        (1 if isinstance(r['Meshes'][0]['PrimaryVertexData']['Vertices'].value, (bytes, bytearray)) else 1)
+    used = sorted({(x['String'] or '') for m in r['Materials']
+                   for x in m['ExtendedData'].value['ParameterSet1']['ParamDataT'] if x['String']})
+    assert not r['Animations'] and all(m['ExtendedData'].value['ShaderSet'] == 'FXShader' for m in r['Materials'])
+    print('  fire %s: %d cards on %d static meshes (FXShader, no animation), textures %s' % (
+        name, len(tongues), len(r['Meshes']), used))
+    L = ['<Asset>', '  <Mesh file="%s.gr2" source="Max" />' % name]
+    L += ['  <Texture file="%s" source="Max" />' % t for t in sorted(textures)]
+    L.append('</Asset>')
+    with open(os.path.join(out_dir, name + '.fxsxml'), 'w', newline='\r\n') as fh:
+        fh.write('\n'.join(L) + '\n')
+    return [name + '.gr2', name + '.fxsxml']
+
+
+def zlib_crc(s):
+    import zlib
+    return zlib.crc32(s.encode()) & 0xffff

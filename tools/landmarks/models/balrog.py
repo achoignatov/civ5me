@@ -907,20 +907,40 @@ def flame_tongues(key, k):
 
 
 def model_effects(out_dir, k):
+    """v5: real fire: the flame cards in their steady places, drawn with the stock fire pit's shader-animated fire
+    (flames.write_fire); our fire variants are shared by every set (MEC_Balrog_FireB0..3 / FireM0..3)."""
     import flames
-    files = []
-    for key, (name, bone, _, _, _, _, _) in FLAME_SETS.items():
-        files += flames.write(out_dir, name, flame_tongues(key, k), T_FLAME)
+    bases, masks = flames.fire_textures(out_dir, 'MEC_Balrog')
+    files = bases + masks
+    for key, (name, bone, _, _, _, glow, _) in FLAME_SETS.items():
+        tg = [t for t in flame_tongues(key, k) if not t.glow]      # (the crown's soft heat glow is not fire)
+        files += flames.write_fire(out_dir, name, tg, bases, masks)
     return files
 
 
 def preview_overlays(out_dir):
+    """The fire for the preview: every card with one frame of the stock fire (fire photo x silhouette), additive."""
     import os
+    import dds
     import flames
+    b = dds.decode_dxt3(os.path.join(out_dir, 'MEC_Balrog_FireB0.dds')).astype(np.float32)
+    m = dds.decode_dxt3(os.path.join(out_dir, 'MEC_Balrog_FireM0.dds')).astype(np.float32)
+    img = b.copy()
+    img[..., 3] = b[..., 3] * m[..., 3] / 255.0
+    img = np.clip(img, 0, 255).astype(np.uint8)
     out = []
     for key, (name, bone, _, _, _, _, _) in FLAME_SETS.items():
         bw = next(r[2] for r in rig() if r[0] == bone)
-        out += flames.overlays(os.path.join(out_dir, name + '_DIFF.dds'), flame_tongues(key, 4.0), bw, 4.0, 1.37)
+        for tg in flame_tongues(key, 4.0):
+            if tg.glow:
+                continue
+            q = flames.rest_quat(tg)
+            hw = tg.w / 2
+            P = []
+            for (x, z) in ((-hw, -0.06 * tg.h), (hw, -0.06 * tg.h), (hw, 0.94 * tg.h), (-hw, 0.94 * tg.h)):
+                rx, ry, rz = flames.qrotate(q, (x, 0.0, z))
+                P.append((bw[0] + (tg.base[0] + rx) / 4.0, bw[1] + (tg.base[1] + ry) / 4.0, bw[2] + (tg.base[2] + rz) / 4.0))
+            out.append((P, [(0, 1, 2, 3)], [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)], img))
     return out
 
 
