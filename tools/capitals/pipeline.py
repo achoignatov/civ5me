@@ -279,6 +279,7 @@ def preview(name, verts, tris, img_top_first, size=(900, 640), extra=(), fx=(), 
     sc.render.engine = 'CYCLES'
     sc.cycles.samples = 32
     sc.cycles.use_denoising = False
+    sc.cycles.transparent_max_bounces = 128   # many overlapping additive cards (Carn Dum fog): the default 8 ends rays in black
     sc.render.resolution_x, sc.render.resolution_y = size
     sc.view_settings.view_transform = 'Standard'
     zmax = max(v[0][2] for v in verts)

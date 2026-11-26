@@ -673,9 +673,12 @@ def bank_masks(seeds=(31, 32, 33, 34)):
         x = (np.arange(w) + 0.5) / w * 2 - 1
         X, V = np.meshgrid(x, v)
         n = _noise2(w, h, (3, 5), rng) * 0.6 + _noise2(w, h, (7, 12), rng) * 0.4
-        prof = np.exp(-((V - 0.42) / 0.3) ** 2)
-        side = np.clip((1 - np.abs(X)) / 0.35, 0, 1) ** 1.2
-        a = np.clip(prof * side * (0.8 + 0.7 * (n - 0.5)), 0, 1)
+        # v4: a soft ragged OVAL fading to nothing at every edge (v3's banks kept density at their top and bottom
+        # edges: in a field of hundreds the cards' rectangles showed as a patchwork)
+        r = np.hypot(X / 0.95, (V - 0.47) / 0.47)
+        core = np.clip(1.0 - r ** 1.7 + 0.45 * (n - 0.5), 0, 1)
+        edge = np.clip((1 - np.abs(X)) / 0.12, 0, 1) * np.clip(V / 0.1, 0, 1) * np.clip((1 - V) / 0.1, 0, 1)
+        a = np.clip(core * edge * 1.1, 0, 1)
         m = np.zeros((h, w, 4), np.float32)
         m[..., :3] = 255
         m[..., 3] = np.clip(a * 1.15, 0, 1) * 255

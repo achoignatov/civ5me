@@ -780,7 +780,7 @@ def glow_effect(k):
 
 
 T_FLAME = 12.0
-FOG_STOPS = [(0.0, (8, 9, 12)), (0.5, (44, 49, 62)), (0.85, (86, 93, 110)), (1.0, (120, 128, 146))]   # dim: layers add up
+FOG_STOPS = [(0.0, (4, 5, 7)), (0.5, (30, 33, 42)), (0.85, (62, 67, 80)), (1.0, (88, 94, 108))]   # v5: darker gloom
 FOG_DRIFT = 10           # sideways scroll speed (the fire's upward scroll is 184): barely moving, never rising   # dim: a veil
 
 
@@ -831,6 +831,27 @@ def _cloud_em():
                            rng.uniform(0.75, 1.15) * (0.8 if z > 95 else 1.0)))
     for (x, y, z0, z1, r) in NEEDLES:
         em.append((Vector((x, y - r - 2.0, (z0 + z1) / 2 - 6.0)), rng.uniform(0.6, 0.8)))
+    for row, (y, z, sc) in enumerate(((-31.0, 0.3, 1.0), (-44.0, 0.3, 1.15), (-58.0, 0.3, 1.25))):
+        for j in range(12 + 2 * row):          # v4: standing curtains between the camera and the city (look through)
+            x = -44.0 - 8 * row + (88.0 + 16 * row) * (j + rng.uniform(-0.3, 0.3)) / (11 + 2 * row)
+            em.append((Vector((x, y + rng.uniform(-3.0, 3.0), z)), sc * rng.uniform(0.8, 1.05)))
+    # v5 (the user: "the whole of the model engulfed"): standing banks through the WHOLE HEIGHT, on rings that narrow
+    # with the model (wide round the city, tight round the peaks), the front and the flanks (the back never shows), and
+    # threaded between the keep and the spires; a few aloft over the neighbouring tiles
+    for z, R, n in ((10.0, 33.0, 14), (20.0, 31.0, 14), (32.0, 27.0, 13), (45.0, 23.0, 12), (60.0, 20.0, 11),
+                    (76.0, 17.0, 10), (93.0, 14.0, 8), (110.0, 11.0, 6)):
+        for j in range(n):
+            a = -math.pi - 0.35 + (math.pi + 0.7) * (j + rng.uniform(-0.3, 0.3)) / (n - 1)
+            rr = R * rng.uniform(0.85, 1.1)
+            em.append((Vector((rr * math.cos(a), CC[1] - 6.0 + rr * 0.95 * math.sin(a), z + rng.uniform(-3.0, 3.0))),
+                       rng.uniform(0.85, 1.15) * (1.0 if z < 70 else 0.8)))
+    for j in range(14):                      # threaded through the city, between the keep and the spires
+        x, y = rng.uniform(-14.0, 14.0), rng.uniform(4.0, 18.0)
+        em.append((Vector((x, y, rng.uniform(36.0, 80.0))), rng.uniform(0.7, 0.95)))
+    for j in range(16):                      # aloft over the neighbouring tiles
+        a = 2 * math.pi * (j + rng.uniform(-0.3, 0.3)) / 16
+        rr = rng.uniform(42.0, 60.0)
+        em.append((Vector((rr * math.cos(a), rr * math.sin(a), rng.uniform(10.0, 28.0))), rng.uniform(1.1, 1.4)))
     for j in range(9):                       # v3: a belt of fog across the upper city, veiling the keep's foot
         x = -16.0 + 32.0 * j / 8 + rng.uniform(-1.0, 1.0)
         em.append((Vector((x, 2.0 + rng.uniform(-1.5, 1.5), TERR[2][1] + rng.uniform(2.0, 6.0))),
@@ -851,21 +872,30 @@ def _fog_em():
     rng = random.Random(13)
     em = []
     step = 7.0
-    for layer, (dz, off, keep_p) in enumerate(((0.9, 0.0, 1.0), (4.2, 0.5, 0.75))):
+    for layer, (dz, off, keep_p) in enumerate(((0.9, 0.0, 0.8), (5.0, 0.5, 0.45))):      # v5: thinner (looked like snow)
         for gy in np.arange(-36.0, 36.0, step):
             for gx in np.arange(-31.0, 31.5, step):
-                x = gx + off * step + rng.uniform(-1.5, 1.5)
-                y = gy + off * step + rng.uniform(-1.5, 1.5)
+                x = gx + off * step + rng.uniform(-3.0, 3.0)
+                y = gy + off * step + rng.uniform(-3.0, 3.0)
                 if hex_d(x, y) > HEX - 1.5 or rng.random() > keep_p:
                     continue
                 z = surface_z(x, y)
                 if z > 30.0:                         # (the cloud banks cover the heights)
                     continue
                 em.append((Vector((x, y, z + dz)), rng.uniform(0.85, 1.15)))
-    for k in range(16):                              # round the city, spilling past the tile's edge
-        a = 2 * math.pi * (k + rng.uniform(-0.2, 0.2)) / 16
-        r = rng.uniform(34.0, 38.0)
-        em.append((Vector((r * math.cos(a), r * math.sin(a), 0.8)), rng.uniform(0.9, 1.2)))
+    # v4 (the user: "spread further away ... above the neighbouring tiles, much more dense"): the blanket goes on
+    # over the six neighbouring hexes to their far edges (hex measure ~95), two layers of larger banks
+    step2 = 10.0
+    for dz, off, keep_p in ((1.5, 0.0, 0.62),):
+        for gy in np.arange(-100.0, 100.0, step2):
+            for gx in np.arange(-100.0, 100.0, step2):
+                x = gx + off * step2 + rng.uniform(-4.5, 4.5)
+                y = gy + off * step2 + rng.uniform(-4.5, 4.5)
+                d = hex_d(x, y)
+                if d < HEX - 1.5 or d > 95.0 or rng.random() > keep_p:
+                    continue
+                em.append((Vector((x, y, dz + rng.uniform(-0.4, 0.8))),
+                           rng.uniform(1.15, 1.8) * (1.0 - 0.25 * max(0.0, (d - 70.0) / 25.0))))
     return em
 
 
