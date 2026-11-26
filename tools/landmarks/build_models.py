@@ -218,11 +218,62 @@ def verify_motions(path, name, bones, motions, T):
         len(tracks), len(motions), worst, T))
 
 
+def build_statics(lm, mod, do_preview=True):
+    """A landmark of several STATIC models (module STATIC_PARTS = [(suffix, build fn, texture px)]; the first part
+    is the module's build()): one model and texture per part, no animation (lmodel.write_static_models).
+    Smaug's Lair (2026-11-26): the skinned model never drew there, the static one always did."""
+    import lmodel
+    t0 = time.time()
+    name = lm['model']
+    seed = zlib.crc32(name.encode()) & 0xffff
+    k = 1.0 / lm['scale']
+    env = envelope(lm)
+    parts, files, imgs, tex = [], [name + '.gr2'], [], ['Generic_Grey_8.dds']
+    for i, (suffix, fn, ppx) in enumerate(mod.STATIC_PARTS):
+        res = _bake_part(fn, seed + i, ppx, getattr(mod, 'PART_AO', 32))
+        tname = name if i == 0 else '%s_%d' % (name, i + 1)
+        dn, sn = _textures(res, tname, ppx, ppx // 2)
+        check_envelope('%s (%s)' % (name, suffix), res.verts, res.tris, env)
+        parts.append(dict(verts=_model_units(res.verts, k), tris=res.tris, diffuse=dn, sref=sn))
+        files += [dn, sn]
+        tex += [dn, sn]
+        imgs.append((res, dn))
+        print('%-20s static part %-8s %6d verts %6d tris  %dpx' % (name, suffix, len(res.verts), len(res.tris), ppx))
+    size = lmodel.write_static_models(OUT, name, parts)
+    lmodel.write_fxsxml(os.path.join(OUT, name + '.fxsxml'), name + '.gr2', tex)
+    files.append(name + '.fxsxml')
+    for f_ in files:
+        assert os.path.exists(os.path.join(OUT, f_)), f_
+    json.dump({'files': sorted(set(files))}, open(manifest_path(lm), 'w'), indent=1)
+    print('%-20s %d static models, gr2 %d bytes, bbox %s  (%.1fs)' % (
+        name, len(parts), size, _bbox([v for r, _ in imgs for v in r.verts]), time.time() - t0))
+    if do_preview:
+        pv, pt, pims = [], [], []
+        n = len(imgs)
+        for j, (r, dn) in enumerate(imgs):
+            o = len(pv)
+            pv += [(v[0], v[1], v[2], v[3], ((j + v[4][0]) / n, v[4][1])) for v in r.verts]
+            pt += [(a + o, b + o, c + o) for a, b, c in r.tris]
+            pims.append(dds.decode_dxt3(os.path.join(OUT, dn)))
+        H = max(im.shape[0] for im in pims)
+        pimg = np.concatenate([np.repeat(np.repeat(im, H // im.shape[0], 0), H // im.shape[0], 1) for im in pims],
+                              axis=1)
+        hin, hout = blib.HEX_IN, blib.HEX_OUT
+        pipeline.PREVIEW, pipeline.WORK = PREVIEW, WORK
+        blib.HEX_IN, blib.HEX_OUT = env['hex_in'], env['hex_out']
+        try:
+            pipeline.preview(name, pv, pt, pimg, extra=getattr(mod, 'PREVIEW', ()))
+        finally:
+            blib.HEX_IN, blib.HEX_OUT = hin, hout
+
+
 def build_one(lm, do_preview=True):
     t0 = time.time()
     name = lm['model']
     mod = importlib.import_module(lm['module'])
     importlib.reload(mod)
+    if hasattr(mod, 'STATIC_PARTS'):
+        return build_statics(lm, mod, do_preview)
     if hasattr(mod, 'SKIN_PARTS'):
         return build_skins(lm, mod, do_preview)
     seed = zlib.crc32(name.encode()) & 0xffff

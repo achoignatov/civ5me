@@ -102,7 +102,7 @@ def dragon_scales(seed, rows=8, nv=32, cell=64):
     alb[:] = (0.08, 0.03, 0.02)
     back = np.array((0.21, 0.08, 0.05), np.float32)       # dark umber-red on the spine (the film's Smaug)
     flank = np.array((0.36, 0.13, 0.07), np.float32)
-    belly = np.array((0.6, 0.38, 0.17), np.float32)       # dull gold underneath
+    belly = np.array((0.78, 0.62, 0.4), np.float32)       # 'his long pale belly': pale gold underneath
     ember = np.array((0.95, 0.55, 0.16), np.float32)      # flecks of ember-orange and gold in the scales
     yy, xx = np.mgrid[0:H, 0:WE].astype(np.float32)
     v = yy / H                                            # 0 = spine, 0.5 = belly

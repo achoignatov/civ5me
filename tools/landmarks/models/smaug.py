@@ -45,8 +45,8 @@ LIMB_V = (0.04, 0.36)                # limbs use the spine-to-flank part of the 
 
 # --------------------------------------------------------------------------- the hoard
 # piles: (x, y, rx, ry, height); the first is the main heap on the city's own hex, the rest spill into the neighbours
-PILES = [(0.0, 3.0, 40.0, 35.0, 24.0), (-11.0, 9.0, 17.0, 14.0, 9.0), (13.0, 11.0, 16.0, 14.0, 8.0),
-         (2.0, -13.0, 16.0, 11.0, 6.0), (-4.0, 18.0, 15.0, 12.0, 7.0), (0.0, 6.0, 66.0, 62.0, 3.2),     # the heap; a low floor of gold under all (-15.0, 15.0, 14.0, 12.0, 7.0), (17.0, 17.0, 13.0, 12.0, 6.0),
+PILES = [(0.0, 9.0, 40.0, 37.0, 22.0), (-11.0, 11.0, 17.0, 14.0, 7.0), (13.0, 11.0, 16.0, 14.0, 6.0),
+         (2.0, -16.0, 20.0, 13.0, 5.5), (-4.0, 20.0, 15.0, 12.0, 6.0), (0.0, 6.0, 66.0, 62.0, 3.2),     # the heap; a low floor of gold under all (-15.0, 15.0, 14.0, 12.0, 7.0), (17.0, 17.0, 13.0, 12.0, 6.0),
          # flows of gold out of the heap into the neighbouring hexes: chains of overlapping lobes, lower outwards
          (-30.0, 6.0, 20.0, 17.0, 9.0), (-48.0, 2.0, 18.0, 15.0, 6.5), (-62.0, 9.0, 12.0, 10.0, 3.5),
          (-20.0, 32.0, 17.0, 14.0, 8.0), (-33.0, 48.0, 15.0, 13.0, 5.5),
@@ -82,16 +82,29 @@ def in_own_hex(x, y):
 
 
 # --------------------------------------------------------------------------- Smaug's spine (from the head to the tail)
-SPINE_XY = [(-8.0, -17.0), (-17.0, -12.0), (-22.0, -2.0), (-19.0, 9.0), (-9.0, 14.0), (3.0, 15.0), (14.0, 12.0),
-            (24.0, 18.0), (34.0, 20.0), (43.0, 11.0), (45.0, -1.0), (40.0, -11.0), (32.0, -15.0), (27.0, -11.0)]
-SECT = [(0.0, 4.0, 4.1), (18.0, 5.7, 5.6), (40.0, 8.6, 7.9), (58.0, 11.4, 9.8), (78.0, 12.2, 10.2), (96.0, 10.4, 9.0),
-        (112.0, 8.0, 7.0), (140.0, 5.2, 4.6), (175.0, 3.0, 2.8), (205.0, 1.5, 1.4), (222.0, 0.4, 0.4)]
+# v4 (2026-11-26): on the city's own tile. The Hobbit, ch. 12: "a vast red-golden dragon, fast asleep ... under all
+# his limbs and his huge coiled tail ... Smaug lay, with wings folded like an immeasurable bat, turned partly on one
+# side, so that the hobbit could see his underparts and his long pale belly crusted with gems and fragments of gold".
+# The neck curls down the front-left of the heap to the head resting on the gold; the body lies over the summit,
+# ROLLED towards the camera so the belly shows; the tail coils round the east side and the front, its tip by his snout.
+SPINE_XY = [(-12.0, -21.0), (-20.0, -16.0), (-24.0, -7.0), (-20.0, 1.0), (-12.0, 4.0), (-1.0, 5.0), (10.0, 4.0),
+            (18.0, 0.0), (24.0, -7.0), (25.0, -17.0), (19.0, -25.0), (11.0, -29.0), (5.0, -31.0)]
+# (fraction of the length from the head, half-width, half-height)
+SECT = [(0.0, 3.4, 3.5), (15.0, 4.2, 4.3), (30.0, 6.2, 5.8), (38.0, 8.4, 7.4), (50.0, 9.0, 7.8), (62.0, 7.6, 6.8),
+        (70.0, 5.6, 5.0), (84.0, 3.2, 3.0), (94.0, 1.7, 1.6), (100.0, 0.4, 0.4)]
+ROLL = 75.0                          # degrees the trunk is turned on its side (the belly towards the camera)
 SINK = 0.5                           # how deep he lies in the coins (fraction of his height below the spine)
 _SPINE = {}
 
 
+def roll_at(sn):
+    return math.radians(ROLL) * smooth((sn - 24.0) / 12.0) * smooth((76.0 - sn) / 12.0)
+
+
 def spine():
-    """[(point, tangent, side, up, s)] along the spine every ~0.6 units; the head end first."""
+    """[(point, tangent, side, up, s)] along the spine every ~0.42 units, the head end first; s in percent of the
+    length. side/up are ROLLED about the tangent (roll_at): the belly (-up) turns towards side, i.e. towards the
+    camera where he lies over the summit."""
     if _SPINE:
         return _SPINE['pts']
     P = [Vector((x, y, 0.0)) for x, y in SPINE_XY]
@@ -120,8 +133,11 @@ def spine():
         t = (c - a).normalized()
         side = t.cross(Vector((0.0, 0.0, 1.0))).normalized()
         up = side.cross(t).normalized()
+        f = roll_at(sn)
+        side, up = side * math.cos(f) + up * math.sin(f), up * math.cos(f) - side * math.sin(f)
         pts.append((p, t, side, up, sn))
     _SPINE['pts'] = pts
+    _SPINE['length'] = total
     return pts
 
 
@@ -313,12 +329,13 @@ def scatter_coins(b, rng, n, region):
         R = nrm.to_track_quat('Z', 'X').to_matrix().to_4x4() @ Matrix.Rotation(rng.uniform(0, 6.3), 4, 'Z')
         M = Matrix.Translation((x, y, zz - 0.06)) @ R
         m = 'coinS' if rng.random() < 0.06 else rng.choice(('coin1', 'coin2', 'coin3'))
-        lathe(b, m, [(0.0, 0.0), (r, 0.0), (r, 0.1), (r * 0.82, 0.13), (0.0, 0.13)], 7, M=M, smooth=True)
+        if not (DRAGON and under_left_wing(x, y, 0.9)):      # (after every draw: the others stay where they were)
+            lathe(b, m, [(0.0, 0.0), (r, 0.0), (r, 0.1), (r * 0.82, 0.13), (0.0, 0.13)], 7, M=M, smooth=True)
         placed += 1
 
 
 STATIC_PX = 2048
-DRAGON = False                       # v3 (2026-11-26): the gold alone, as ONE static mesh (the dragon comes later)
+DRAGON = True                        # v4: Smaug on the heap (his own static models: STATIC_PARTS)
 
 
 def build(b, eye=False):
@@ -486,11 +503,24 @@ def necklace(b, rng, x0, y0, n=14):
 
 
 def clear_of_dragon(x, y, margin=1.5):
+    M = head_frame()
+    for xh in range(-4, 24, 2):
+        c = M @ Vector((xh, 0.0, 0.0))
+        if math.hypot(x - c.x, y - c.y) < 6.5 + margin:
+            return False
     for p, t, side, up, sn in spine()[::3]:
         rw, rh = keyed(SECT, sn)
         if math.hypot(x - p.x, y - p.y) < rw + margin:
             return False
     return True
+
+
+class _Null:
+    def add(self, *a, **k):
+        pass
+
+
+_NULL = _Null()
 
 
 def build_treasure(b, n=95):
@@ -513,7 +543,10 @@ def build_treasure(b, n=95):
     kinds = ['goblet'] * 16 + ['sword'] * 10 + ['shield'] * 10 + ['crown'] * 7 + ['helm'] * 7 + ['chest'] * 6 + \
         ['gems'] * 14 + ['plate'] * 8 + ['candle'] * 5 + ['necklace'] * 9 + ['goblet2'] * 3
     rng.shuffle(kinds)
+    real = b
     for (x, y, _), kind in zip(spots, kinds):
+        # under the left wing: built into nothing (the same random draws, so the other pieces stay where they were)
+        b = _NULL if DRAGON and under_left_wing(x, y, 2.5) else real
         s = rng.uniform(0.9, 1.25)
         if kind == 'goblet':
             goblet(b, rng.choice(('goldp', 'goldp', 'silver')), place(x, y, 0.5, 0.45, rng), s)
@@ -541,6 +574,7 @@ def build_treasure(b, n=95):
             candlestick(b, place(x, y, 0.3, 0.6, rng), s)
         elif kind == 'necklace':
             necklace(b, rng, x, y)
+    b = real
     # the Arkenstone, the Heart of the Mountain, half buried below the dragon's head
     x, y = 4.0, -27.0
     M = place(x, y, 0.2, 0.1, rng)
@@ -565,14 +599,19 @@ def build_body(b):
         rows.append(row)
         centres.append(tuple(p))
     loft_param(b, 'scales', rows, centres)
-    # close the tail tip
+    # the tail's tip: closed, with a fan of three blades (the film's)
     p, t, side, up, sn = pts[-1]
-    tube(b, 'scales', [tuple(p), tuple(p + t * 1.2)], [0.35, 0.05], n=8, tip=True)
+    tube(b, 'scalecap', [tuple(p), tuple(p + t * 1.2)], [0.4, 0.05], n=8, tip=True)
+    for k, (a, ln) in enumerate(((0.0, 3.2), (0.7, 2.4), (-0.7, 2.4))):
+        d = (t + up * 0.35 + side * a).normalized()
+        base = p - t * 1.5 * k
+        tube(b, 'horn', [tuple(base), tuple(base + d * ln * 0.5 + up * 0.2), tuple(base + d * ln)],
+             [0.45, 0.25, 0.02], n=7, tip=True)
 
 
 # --------------------------------------------------------------------------- Smaug: the head (mesh 5)
 HEAD = [(-1.5, 3.9, 4.1, -3.9), (1.2, 5.3, 4.9, -4.5), (4.6, 6.0, 5.4, -4.4), (8.0, 5.3, 4.8, -3.7),
-        (11.5, 4.2, 3.6, -3.1), (16.0, 3.5, 2.9, -2.6), (20.6, 3.0, 2.3, -2.3), (23.2, 2.5, 1.7, -1.8),
+        (11.5, 4.1, 3.5, -3.1), (16.0, 3.2, 2.7, -2.5), (20.6, 2.5, 2.0, -2.0), (23.2, 2.0, 1.5, -1.6),
         (24.4, 1.1, 0.7, -1.0)]
 HEAD_LEN = 24.4
 
@@ -581,7 +620,7 @@ def head_frame():
     """The head's matrix: origin at the back of the skull (the neck's end), X along the snout, Z up: resting on the
     gold, chin down, turned towards the camera."""
     p, t, side, up, sn = spine()[0]
-    fwd = Vector((0.62, -0.78, 0.0)).normalized()          # the snout: towards the camera and a little east
+    fwd = Vector((-t.x, -t.y - 0.35, 0.0)).normalized()     # the neck's continuation, turned a little to the camera
     base = p - (-t) * 0.0
     z = max(height(base.x + fwd.x * 10, base.y + fwd.y * 10), 0.0)
     pitch = math.atan2((z + 2.4) - base.z, 10.0) * 0.6
@@ -589,7 +628,10 @@ def head_frame():
     Y = Vector((0, 0, 1)).cross(X).normalized()
     Z = X.cross(Y).normalized()
     R = Matrix((X, Y, Z)).transposed().to_4x4()
-    return Matrix.Translation(base) @ R
+    return Matrix.Translation(base) @ R @ Matrix.Rotation(math.radians(-14.0), 4, 'X') @ Matrix.Scale(HEAD_S, 4)
+
+
+HEAD_S = 0.82                        # the head's scale (the profile below is authored for a bigger dragon)
 
 
 def head_point(th, x):
@@ -699,78 +741,88 @@ def claw(b, base, direction, length, r):
     tube(b, 'claw', [tuple(p) for p in pts], [r, r * 0.6, 0.02], n=7, tip=True)
 
 
-def wing(b, rng, sgn):
-    """A folded wing (the forelimb): the shoulder high on the flank, the elbow raised above the back, the forearm down
-    to the wrist planted on the gold beside the chest with the thumb's hooked claw; four long fingers sweep back along
-    the flank and the membrane between them falls in a fan over his side."""
-    p, t, side, up, sn = at_s(58.0)
+def wing(b, rng):
+    """The folded wing on his upper side ('wings folded like an immeasurable bat'): the shoulder high on the turned-up
+    flank, the elbow raised with its spur, the forearm down to the wrist planted on the gold before his chest, its
+    thumb's claw hooked into the coins; four long knuckled fingers sweep back over the flank towards the hips and the
+    membrane between them lies over his side in creased folds."""
+    p, t, side, up, sn = at_s(37.0)
     rw, rh = keyed(SECT, sn)
-    S = side * sgn
-    shoulder = p + S * rw * 0.85 + up * rh * 0.35 - t * 2.0
-    elbow = shoulder + up * 6.0 + t * 8.0 + S * 2.8
-    wrist = p - t * 8.0 + S * (rw + 4.0)
-    wrist.z = max(height(wrist.x, wrist.y), 0.0) + 1.0
-    arm = resample([tuple(shoulder), tuple((shoulder + elbow) / 2 + S * 1.0), tuple(elbow)], 0.5)
-    ptube(b, 'scales', [tuple(q) for q in arm], [1.9 - 0.7 * i / (len(arm) - 1) for i in range(len(arm))], n=14)
-    fore = resample([tuple(elbow), tuple((elbow + wrist) / 2 + S * 1.5 - t * 1.0), tuple(wrist)], 0.5)
-    ptube(b, 'scales', [tuple(q) for q in fore], [1.25 - 0.4 * i / (len(fore) - 1) for i in range(len(fore))], n=12)
-    psphere(b, 'scales', tuple(elbow), (1.5, 1.5, 1.5))
-    claw(b, elbow, up + t * 0.6, 3.5, 0.6)                 # the spur on the elbow
-    psphere(b, 'scales', tuple(wrist), (1.5, 1.5, 1.2))
-    claw(b, wrist + S * 0.5, -t + S * 0.3, 3.2, 0.55)        # the thumb, hooked into the coins
-    # fingers: from the wrist back along the flank, stacked from the gold up to near the spine
+    Z = Vector((0.0, 0.0, 1.0))
+    shoulder = p + up * rh * 0.75 + side * rw * 0.25
+    elbow = shoulder + Z * 10.0 + t * 6.5 - side * 1.0
+    wrist = p - t * 8.0 + up * (rh + 1.5) + Z * 2.0
+    hz = max(height(wrist.x, wrist.y), 0.0) + 1.2
+    wrist.z = max(wrist.z, hz)
+    arm = resample([tuple(shoulder), tuple((shoulder + elbow) / 2 + side * 1.0), tuple(elbow)], 0.5)
+    ptube(b, 'scales', [tuple(q) for q in arm], [2.1 - 0.8 * i / (len(arm) - 1) for i in range(len(arm))], n=14)
+    fore = resample([tuple(elbow), tuple((elbow + wrist) / 2 + side * 1.6 - t * 0.5), tuple(wrist)], 0.5)
+    ptube(b, 'scales', [tuple(q) for q in fore], [1.35 - 0.45 * i / (len(fore) - 1) for i in range(len(fore))], n=12)
+    psphere(b, 'scales', tuple(elbow), (1.6, 1.6, 1.6))
+    claw(b, elbow + Z * 0.8, Z + t * 0.7, 3.6, 0.65)       # the spur on the elbow
+    psphere(b, 'scales', tuple(wrist), (1.6, 1.6, 1.3))
+    claw(b, wrist - t * 0.6, -t + Vector((0.0, 0.0, -0.6)), 3.4, 0.6)   # the thumb's hooked claw
     fingers = []
     for k in range(4):
-        q = at_s(78.0 + 16.0 * k)
-        pp, tt, ss, uu, sk = q
+        pp, tt, ss, uu, sk = at_s(46.0 + 7.5 * k)
         rwk, rhk = keyed(SECT, sk)
-        end = pp + ss * sgn * (rwk * 0.98 + 0.9) + uu * (rhk * (-0.25 + 0.28 * k))
-        mid = wrist.lerp(end, 0.45) + ss * sgn * 1.6 + uu * (1.5 + 1.6 * k)
-        P = resample([tuple(wrist), tuple(mid), tuple(end)], 0.6)
+        end = pp + uu * (rhk * 1.0 + 0.8) + ss * (rwk * (0.45 - 0.3 * k))
+        mid = wrist.lerp(end, 0.42) + uu * 2.4 + Z * (4.5 - 0.6 * k)
+        P = resample([tuple(wrist), tuple(mid), tuple(end)], 0.55)
         fingers.append(P)
-        ptube(b, 'scales', [tuple(x) for x in P], [0.75 - 0.6 * i / (len(P) - 1) for i in range(len(P))], n=8)
-    # the membranes: between the forearm/elbow line and finger 4, and between neighbouring fingers
-    edges = [fore[::-1]] + fingers[::-1]
-    for A, B in zip(edges, edges[1:]):
-        m = 14
+        n = len(P)
+        rr = [0.8 - 0.62 * i / (n - 1) + 0.18 * (g(i / (n - 1) - 0.33, 0.04) + g(i / (n - 1) - 0.66, 0.04))
+              for i in range(n)]                             # knuckles
+        ptube(b, 'scales', [tuple(x) for x in P], rr, n=9)
+        claw(b, Vector(P[-1]), (Vector(P[-1]) - Vector(P[-2])), 1.0, 0.18)
+    # membranes between the forearm and the fingers, creased along their length, sagging between the bones
+    edges = [fore[::-1]] + fingers
+    for e, (A, B) in enumerate(zip(edges, edges[1:])):
+        m = 16
         rowsA = [A[int(i * (len(A) - 1) / m)] for i in range(m + 1)]
         rowsB = [B[int(i * (len(B) - 1) / m)] for i in range(m + 1)]
         grid = []
         for i in range(m + 1):
             row = []
-            for j in range(8):
-                f = j / 7
+            for j in range(9):
+                f = j / 8
                 q = rowsA[i].lerp(rowsB[i], f)
-                sag = math.sin(math.pi * f) * (0.6 + 0.5 * math.sin(math.pi * i / m))
-                q = q + S * sag * 0.5 - Vector((0, 0, sag * 0.3))
+                sag = math.sin(math.pi * f) * (0.55 + 0.45 * math.sin(math.pi * i / m))
+                crease = 0.18 * math.sin(f * math.pi * 3 + e) * math.sin(math.pi * i / m)
+                q = q - Z * (sag * 0.6) + up * (sag * 0.3 + crease)
                 row.append(tuple(q))
             grid.append(row)
         thick_sheet(b, 'membrane', grid, 0.12)
 
 
-def leg(b, sgn):
-    """A hind leg tucked under him: the thigh bulging on the flank, the foot on the gold with four clawed toes."""
-    p, t, side, up, sn = at_s(108.0)
+def leg(b):
+    """His upper hind leg: the thigh on the turned-up flank, the shin, the foot resting on the gold below his belly,
+    four clawed toes spread over the coins."""
+    p, t, side, up, sn = at_s(63.0)
     rw, rh = keyed(SECT, sn)
-    S = side * sgn
-    hip = p + S * rw * 0.62 - up * rh * 0.35
-    knee = hip + S * 3.5 - t * 5.0 - up * 1.0
-    foot = hip + S * 4.5 + t * 2.0
-    foot.z = max(height(foot.x, foot.y), 0.0) + 0.8
-    thigh = resample([tuple(hip - t * 4.0 - S * 1.0 + up * 1.5), tuple(hip + S * 1.5 + up * 0.5),
-                      tuple(knee + up * 0.5)], 0.6)
+    Z = Vector((0.0, 0.0, 1.0))
+    hip = p + side * rw * 0.5 + up * rh * 0.15
+    knee = hip - t * 6.0 + side * 3.0 + Z * 1.0
+    foot = p - t * 2.0 + side * (rw + 4.5)
+    foot.z = max(height(foot.x, foot.y), 0.0) + 0.9
+    thigh = resample([tuple(hip + t * 3.0), tuple(hip + side * 1.0), tuple(knee)], 0.6)
     ptube(b, 'scales', [tuple(q) for q in thigh],
-          [2.6 + 0.9 * math.sin(math.pi * i / (len(thigh) - 1)) for i in range(len(thigh))], n=16)
-    P = resample([tuple(hip), tuple(knee), tuple(foot)], 0.5)
-    ptube(b, 'scales', [tuple(q) for q in P], [3.6 - 2.2 * i / (len(P) - 1) for i in range(len(P))], n=14)
-    psphere(b, 'scales', tuple(foot), (1.8, 1.4, 1.0))
+          [2.8 + 1.2 * math.sin(math.pi * i / (len(thigh) - 1)) for i in range(len(thigh))], n=16)
+    P = resample([tuple(knee), tuple((knee + foot) / 2 + side * 0.5), tuple(foot)], 0.5)
+    ptube(b, 'scales', [tuple(q) for q in P], [2.4 - 1.2 * i / (len(P) - 1) for i in range(len(P))], n=14)
+    psphere(b, 'scales', tuple(foot), (1.9, 1.5, 1.0))
+    fwd = (side + (-t) * 0.3).normalized()
     for k in range(4):
-        a = -0.6 + 0.4 * k
-        d = (-t * math.cos(a) + S * math.sin(a) * 1.2).normalized()
-        base = foot + d * 1.2
-        toe = resample([tuple(base), tuple(base + d * 1.6 + Vector((0, 0, 0.2)))], 0.4)
-        ptube(b, 'scales', [tuple(q) for q in toe], [0.55] * (len(toe) - 1) + [0.42], n=8)
-        claw(b, Vector(toe[-1]), d, 1.6, 0.4)
+        a = -0.75 + 0.5 * k
+        d = (fwd * math.cos(a) + t.cross(Z).normalized() * math.sin(a)).normalized()
+        d.z = 0.0
+        d.normalize()
+        base = foot + d * 1.3
+        tip = base + d * 1.8
+        tip.z = max(height(tip.x, tip.y), 0.0) + 0.5
+        toe = resample([tuple(base), tuple(tip)], 0.4)
+        ptube(b, 'scales', [tuple(q) for q in toe], [0.6] * (len(toe) - 1) + [0.45], n=8)
+        claw(b, Vector(toe[-1]), d, 1.7, 0.42)
 
 
 def dorsal_spikes(b):
@@ -794,10 +846,252 @@ def build_limbs(b):
     b.ao_distance = 4.0
     b.emboss = dict(k=1.3)
     rng = random.Random(2013)
-    for sgn in (1, -1):
-        wing(b, rng, sgn)
-        leg(b, sgn)
+    wing(b, rng)
+    leg(b)
     dorsal_spikes(b)
+
+
+# --------------------------------------------------------------------------- Smaug: the left wing (mesh 7)
+# The user (2026-11-26): "the left wing ... resting on top of the central tile pile of gold ... looking somewhat like a
+# bat wing ... as if the dragon is just taking a nap in his bed ... in a natural sleeping, comfortable position".
+# He lies rolled with the belly to the camera, the folded wing on the side turned to the sky. The other wing comes out from under his chest and lies spread, relaxed, over the gold inside his
+# coil like a blanket: the arm runs down the heap beside his neck to the wrist near his jaw (the thumb's claw hooked
+# into the coins), four fingers fan back towards his tail, the membrane between them drapes over the coins in loose
+# folds, its trailing edge scalloped between the finger tips, the last panel hanging from his flank.
+LW_ELBOW = (-11.0, -9.5)
+LW_WRIST = (-4.0, -18.0)
+LW_TIPS = [(3.0, -24.5), (15.0, -23.0), (17.5, -12.0), (10.0, -9.5)]   # fingers II..V (the third the longest)
+LW_FLANK = (36.5, 57.0)              # the membrane's attachment along his flank (percent of the length)
+LW_CLEAR = 0.32                      # the membrane's height over the coins
+_LW = {}
+
+
+def gz(x, y):
+    return max(height(x, y), 0.0)
+
+
+def flank_point(sn):
+    """The lowest point of his belly-front still clear of the coins at sn (where the membrane joins the body)."""
+    p, t, side, up, s2 = at_s(sn)
+    best = None
+    for k in range(40):
+        th = math.pi - 0.2 + 1.7 * k / 39
+        y, z = section(th, s2)
+        q = p + side * y + up * z
+        if q.z >= gz(q.x, q.y) + 0.6 and (best is None or q.z < best.z):
+            best = q
+    nrm = (-up + (-side) * 0.4).normalized()
+    return best + nrm * 0.35
+
+
+def _arclen(P):
+    L = [0.0]
+    for a, c in zip(P, P[1:]):
+        L.append(L[-1] + (c - a).length)
+    return L
+
+
+def _at(P, L, s):
+    """The point at fraction s (0..1) of the length along the polyline P (cumulative lengths L)."""
+    d = max(0.0, min(1.0, s)) * L[-1]
+    i = 0
+    while i < len(L) - 2 and L[i + 1] < d:
+        i += 1
+    return P[i].lerp(P[i + 1], (d - L[i]) / max(1e-6, L[i + 1] - L[i]))
+
+
+def drape(P, r, sink=0.75):
+    """Lay a path on the coins: z = the heap plus part of the bone's radius."""
+    out = []
+    for i, q in enumerate(P):
+        rr = r[i] if isinstance(r, list) else r
+        out.append(Vector((q.x, q.y, gz(q.x, q.y) + rr * sink)))
+    return out
+
+
+def lw_skeleton():
+    """The bones of the left wing as paths: humerus+forearm (from the shoulder under his chest), fingers II..V, and
+    the attachment line along his flank."""
+    if _LW:
+        return _LW
+    flank = [flank_point(sn) for sn in [LW_FLANK[0] + (LW_FLANK[1] - LW_FLANK[0]) * k / 24 for k in range(25)]]
+    S = flank[0]
+    E = Vector((LW_ELBOW[0], LW_ELBOW[1], 0.0))
+    W = Vector((LW_WRIST[0], LW_WRIST[1], 0.0))
+    E.z = gz(E.x, E.y) + 1.5
+    W.z = gz(W.x, W.y) + 1.1
+    hum = resample([tuple(S), tuple(S.lerp(E, 0.5) + Vector((-1.0, 0.5, 0.0))), tuple(E)], 0.35)
+    for i, q in enumerate(hum):                      # down from the chest onto the coins
+        f = i / (len(hum) - 1)
+        q.z = max(q.z, gz(q.x, q.y) + 1.5)
+    fore = resample([tuple(E), tuple(E.lerp(W, 0.5) + Vector((-0.9, -0.6, 0.0))), tuple(W)], 0.35)
+    fore = drape(fore, [1.35 - 0.3 * i / (len(fore) - 1) for i in range(len(fore))], 0.8)
+    fingers = []
+    for k, (tx, ty) in enumerate(LW_TIPS):
+        T = Vector((tx, ty, 0.0))
+        d = T - W
+        n_ = Vector((-d.y, d.x, 0.0)).normalized()
+        bow = (0.9, 1.3, 1.1, -0.8)[k]               # the fingers bowed a little, relaxed
+        P = resample([tuple(W), tuple(W.lerp(T, 0.36) + n_ * bow * 0.6), tuple(W.lerp(T, 0.7) + n_ * bow),
+                      tuple(T)], 0.3)
+        n = len(P)
+        rr = [0.85 - 0.62 * i / (n - 1) + 0.2 * (g(i / (n - 1) - 0.36, 0.035) + g(i / (n - 1) - 0.7, 0.03))
+              for i in range(n)]                     # knuckles
+        P = drape(P, rr, 0.7)
+        for i in range(min(6, n)):                   # rising into the wrist
+            P[i].z = max(P[i].z, W.z * (1 - i / 6) + P[i].z * i / 6)
+        fingers.append((P, rr))
+    _LW.update(flank=flank, S=S, E=E, W=W, hum=hum, fore=fore, fingers=fingers)
+    return _LW
+
+
+def _panel(b, A, B, m, nc, scallop, seed, veins=2, ends=(0.0, 1.0)):
+    """A membrane panel between two edge paths A and B that start together (at the wrist, or at the shoulder for
+    the last one): a grid lerped between them, the trailing edge between their ends scalloped towards the start,
+    sagging off the bones onto the coins, lying in loose folds (always above the coins), with raised veins."""
+    rng = random.Random(seed)
+    LA, LB = _arclen(A), _arclen(B)
+    ph = [rng.uniform(0, 6.3) for _ in range(4)]
+
+    def point(r, f):
+        re = r * (1.0 - scallop * max(0.0, math.sin(math.pi * f)) ** 1.3)
+        a, c = _at(A, LA, ends[0] + (ends[1] - ends[0]) * re), _at(B, LB, re)
+        q = a.lerp(c, f)
+        span = (a - c).length
+        floor_ = gz(q.x, q.y) + LW_CLEAR
+        z = q.z - span * 0.35 * math.sin(math.pi * f)               # slack: it sags off the bones
+        z = max(z, floor_)
+        w = max(0.0, math.sin(math.pi * f)) ** 0.6 * smooth(re / 0.25)
+        k = min(1.0, span / 8.0)                                     # wider panels lie in deeper slack folds
+        fold = (0.75 * k + 0.2) * (0.5 + 0.5 * math.sin(2 * math.pi * ((1.6 + 1.6 * k) * f + 0.5 * re) + ph[0])) ** 2 + \
+            0.22 * (0.5 + 0.5 * math.sin(2 * math.pi * ((4.5 + 3 * k) * f - 1.3 * re) + ph[1])) + \
+            0.1 * (0.5 + 0.5 * math.sin(2 * math.pi * (11 * f + 2.5 * re) + ph[2]))
+        curl = 0.45 * smooth((re - 0.8) / 0.2) * math.sin(math.pi * f)       # the free edge lifts a little
+        return Vector((q.x, q.y, z + w * fold + curl * (0.5 + 0.5 * math.sin(9 * f + ph[2]))))
+    grid = [[tuple(point(i / m, j / nc)) for j in range(nc + 1)] for i in range(m + 1)]
+    # the outer face up (thick_sheet offsets the inner face against du x dv)
+    i0, j0 = m // 2, nc // 2
+    du = Vector(grid[i0][j0 + 1]) - Vector(grid[i0][j0 - 1])
+    dv = Vector(grid[i0 + 1][j0]) - Vector(grid[i0 - 1][j0])
+    if du.cross(dv).z < 0:
+        grid = [row[::-1] for row in grid]
+    thick_sheet(b, 'membrane', grid, 0.1)
+    for v in range(veins):                                         # veins, with a branch or two
+        f0 = (v + 0.5 + rng.uniform(-0.15, 0.15)) / veins
+        P = [point(0.06 + 0.86 * k / 30, f0 + 0.05 * math.sin(k * 0.5 + ph[3] + v)) + Vector((0, 0, 0.06))
+             for k in range(31)]
+        tube(b, 'vein', [tuple(q) for q in P], [0.17 - 0.1 * k / 30 for k in range(31)], n=6, tip=True)
+        for _ in range(3):
+            k0 = rng.randint(6, 20)
+            df = rng.choice((-1, 1)) * rng.uniform(0.08, 0.16)
+            Q = [point(0.06 + 0.86 * (k0 + k) / 30, f0 + df * k / 8) + Vector((0, 0, 0.06)) for k in range(9)]
+            tube(b, 'vein', [tuple(q) for q in Q], [0.1 - 0.06 * k / 8 for k in range(9)], n=4, tip=True)
+
+
+def left_wing(b):
+    sk = lw_skeleton()
+    S, E, W, hum, fore, fingers, flank = sk['S'], sk['E'], sk['W'], sk['hum'], sk['fore'], sk['fingers'], sk['flank']
+    Z = Vector((0.0, 0.0, 1.0))
+    # bones: the humerus, the forearm, the wrist, the thumb and its claw, the elbow's spur
+    ptube(b, 'scales', [tuple(q) for q in hum], [2.0 - 0.6 * i / (len(hum) - 1) for i in range(len(hum))], n=14)
+    ptube(b, 'scales', [tuple(q) for q in fore], [1.35 - 0.3 * i / (len(fore) - 1) for i in range(len(fore))], n=12)
+    psphere(b, 'scales', tuple(E), (1.7, 1.7, 1.4))
+    d = (E - S).normalized()
+    claw(b, E + Z * 0.6 - d * 0.3, (d + Z * 0.4), 2.6, 0.55)              # the spur at the elbow
+    psphere(b, 'scales', tuple(W), (1.5, 1.5, 1.15))
+    fd = (W - E).normalized()
+    fwd = Vector((fd.y, -fd.x, 0.0))                                     # the leading side (towards his head)
+    th0 = W + fwd * 0.8 + fd * 0.5
+    th1 = th0 + (fwd * 0.6 + fd * 0.8).normalized() * 2.2
+    th1.z = gz(th1.x, th1.y) + 0.7
+    thumb = resample([tuple(th0), tuple(th0.lerp(th1, 0.5) + Z * 0.4), tuple(th1)], 0.3)
+    ptube(b, 'scales', [tuple(q) for q in thumb], [0.62 - 0.15 * i / (len(thumb) - 1) for i in range(len(thumb))],
+          n=9)
+    claw(b, th1, (th1 - th0) + Vector((0, 0, -0.2)), 2.0, 0.42)          # hooked into the coins
+    for P, rr in fingers:
+        ptube(b, 'scales', [tuple(q) for q in P], rr, n=10)
+        claw(b, P[-1], P[-1] - P[-3], 0.9, 0.16)
+    # the membranes: in front of the arm (shoulder to wrist), between the fingers, and from finger V to his flank
+    arm = hum + fore[1:]
+    LA = _arclen(arm)
+    front = []
+    for i in range(len(arm)):
+        s = LA[i] / LA[-1]
+        dd = (arm[min(i + 1, len(arm) - 1)] - arm[max(i - 1, 0)])
+        dd.z = 0.0
+        dd.normalize()
+        off = Vector((dd.y, -dd.x, 0.0)) * (2.2 * math.sin(math.pi * s) ** 0.8)
+        q = arm[i] + off
+        front.append(Vector((q.x, q.y, max(gz(q.x, q.y) + LW_CLEAR, arm[i].z - 0.4))))
+    _panel(b, arm, front, 40, 5, 0.0, 71, veins=1)
+    for k in range(3):
+        _panel(b, fingers[k][0], fingers[k + 1][0], 40, 20, 0.22, 80 + k, veins=2)
+    _panel(b, flank, arm + fingers[3][0][1:], 50, 28, 0.16, 90, veins=5)
+
+
+def under_left_wing(x, y, margin=1.0):
+    """Is (x, y) under the left wing (its outline: shoulder, elbow, wrist, the finger tips, back along the flank)?"""
+    sk = lw_skeleton()
+    if 'outline' not in sk:
+        o = [sk['S'], sk['E'], sk['W'] + Vector((-1.5, -1.5, 0))] + [Vector((tx, ty, 0)) for tx, ty in LW_TIPS] + \
+            sk['flank'][::-1]
+        sk['outline'] = [(q.x, q.y) for q in o]
+    poly = sk['outline']
+    inside = False
+    for (x1, y1), (x2, y2) in zip(poly, poly[1:] + poly[:1]):
+        if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
+            inside = not inside
+        vx, vy = x2 - x1, y2 - y1
+        tt = max(0.0, min(1.0, ((x - x1) * vx + (y - y1) * vy) / max(1e-9, vx * vx + vy * vy)))
+        if math.hypot(x - x1 - tt * vx, y - y1 - tt * vy) < margin:
+            return True
+    return inside
+
+
+def build_wing(b):
+    scale_palette()
+    material('vein', h('5a1c10'), h('4a160c'), spec=0.4, refl=40)
+    blib.PALETTE['vein'].update(scale=3.0, cavity=0.5)
+    b.tiny_px = 0
+    b.ao_distance = 4.0
+    b.emboss = dict(k=1.3)
+    left_wing(b)
+
+
+def build_crust(b):
+    """His long pale belly 'crusted with gems and fragments of gold from his long lying on his costly bed' (the
+    'waistcoat of fine diamonds'), but for the bare patch in the hollow of his left breast."""
+    treasure_palette()
+    coin_palette()
+    b.tiny_px = 0
+    b.ao_distance = 1.5
+    rng = random.Random(1941)
+    cam = Vector((0.0, -0.62, 0.78))
+    patch = None
+    for (p, t, side, up, sn) in spine():
+        if not 22.0 <= sn <= 72.0 or rng.random() < 0.25:
+            continue
+        for _ in range(5):
+            th = math.pi + rng.uniform(-1.15, 1.15)
+            y, z = section(th, sn)
+            q = p + side * y + up * z
+            nrm = (side * math.sin(th) * 0.8 + up * math.cos(th)).normalized()
+            if nrm.dot(cam) < 0.05 or q.z < height(q.x, q.y) + 0.3:
+                continue
+            if patch is None and 33.0 < sn < 35.0:
+                y2, z2 = section(math.pi - 0.5, sn)          # the hollow of his LEFT breast (left = +side here)
+                patch = p + side * y2 + up * z2
+            if patch is not None and (q - patch).length < 2.2:
+                continue
+            R = nrm.to_track_quat('Z', 'X').to_matrix().to_4x4() @ Matrix.Rotation(rng.uniform(0, 6.3), 4, 'Z')
+            if rng.random() < 0.62:
+                r = rng.uniform(0.22, 0.5)
+                ellipsoid(b, rng.choice(('gemR', 'gemR', 'gemG', 'gemB', 'gemP', 'arken')), tuple(q + nrm * r * 0.1),
+                          (r, r * 0.8, r * 0.38), n=6, rings=3, R=R)
+            else:
+                r = rng.uniform(0.35, 0.6)
+                lathe(b, rng.choice(('coin1', 'coin2', 'coin3')), [(0.0, 0.0), (r, 0.0), (r, 0.1), (0.0, 0.1)], 7,
+                      M=Matrix.Translation(q - nrm * 0.02) @ R, smooth=True)
 
 
 # --------------------------------------------------------------------------- the rig (still for now)
@@ -816,8 +1110,12 @@ DRAGON_PARTS = [                     # the dragon version's skinned meshes (kept
     ('pile', build_pile, 2048), ('treasure', build_treasure, 2048), ('body', build_body, 2048),
               ('head', build_head, 2048), ('limbs', build_limbs, 2048)]
 
-PREVIEW = [((-2, -62, 42), (-2, -18, 16), 42),            # the head on the gold
-           ((60, -30, 40), (14, 2, 18), 40),              # the flank: wing, hind leg
-           ((95, -95, 75), (0, 0, 12), 38),               # the hoard from the south-east
-           ((18, -45, 20), (14, -28, 6), 45)]             # treasure close up
+STATIC_PARTS = [('gold', build, 2048), ('body', build_body, 2048), ('head', build_head, 2048),
+                ('limbs', build_limbs, 2048), ('crust', build_crust, 1024), ('wing', build_wing, 2048)]
+
+PREVIEW = [((-4, -58, 38), (-4, -18, 18), 44),            # the head on the gold
+           ((10, -60, 50), (2, 2, 22), 38),               # the belly turned to the camera, the crust
+           ((70, -45, 50), (8, 0, 20), 36),               # the wing and the hind leg from the south-east
+           ((-70, -40, 55), (-6, 0, 18), 36),             # from the south-west
+           ((2, -62, 46), (2, -12, 10), 40)]              # the left wing spread on the gold
 PREVIEW_EYE = [((0, -220, 190), (0, 0, 10), 38)]

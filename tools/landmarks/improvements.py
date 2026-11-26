@@ -186,10 +186,16 @@ IMPROVEMENTS = [
     # v3 (2026-11-26, after the v2 test drew the spills again but still not the skinned model): THE GOLD ALONE, AS ONE
     # STATIC MESH like every proven static landmark: the central heap (24 high, lumpy) and the spills are one height
     # field and one coin texture (2048), 120 loose coins, 26 treasures; 29.5k vertices. The dragon comes later.
-    # About +-73 x (-83..+77), 28 high.
+    # v4 (2026-11-26, the user: "the gold piles are PERFECT"): Smaug asleep on the heap, as FOUR MORE STATIC MODELS in
+    # the same file (gold, body, head, limbs, belly crust; one texture each; the stock improvements are built this way):
+    # The Hobbit ch. 12, "turned partly on one side ... his long pale belly crusted with gems and fragments of gold",
+    # the bare patch in the hollow of his left breast, "wings folded like an immeasurable bat", the huge coiled tail with
+    # its tip by his snout; the film's wyvern anatomy and umber-red hide with ember flecks (screenshots/smaug-awake.png).
+    # About +-73 x (-83..+77), 42 high.
     dict(key='SMAUG', minor='MINOR_CIV_MECS_SMAUGS_LAIR', title="Smaug's Lair", dir='Smaug',
          gr2='MEC_LM_Smaug.gr2',
-         textures=['Generic_Grey_8.dds', 'MEC_LM_Smaug_DIFF.dds', 'MEC_LM_Smaug_SREF.dds'],
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Smaug_DIFF.dds', 'MEC_LM_Smaug_SREF.dds'] +
+                  ['MEC_LM_Smaug_%d_%s.dds' % (k, t) for k in (2, 3, 4, 5, 6) for t in ('DIFF', 'SREF')],
          scale=0.25,
          name_keys=['TXT_KEY_CITYSTATE_MECS_SMAUGS_LAIR'],
          aliases=["Smaug's Lair", 'Smaug']),

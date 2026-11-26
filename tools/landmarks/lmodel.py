@@ -270,6 +270,59 @@ def write_idle_tracks(out_dir, name, bones, motions, T, spans):
     return fn, cvals
 
 
+def write_static_models(out_dir, name, parts):
+    """A landmark of SEVERAL STATIC MODELS (Smaug's Lair, 2026-11-26; the stock improvements are built this way, e.g.
+    anc_academy: the stencil and a dozen static models, one mesh each): the stock 'Tree cut' stencil, then one model
+    per part, each with its own mesh and material (its own texture), built exactly like write_building's proven
+    static model. parts = [dict(verts, tris, diffuse, sref)] in MODEL units; the first model is called `name`, the
+    others `name`_2, _3... Returns the .gr2 size."""
+    f = gr2.read(BUILDING_TEMPLATE)
+    root = f.root()
+    tc_mat, b_tmpl = root['Materials'][0], root['Materials'][1]
+    tc_skel, tc_vd, tc_topo, tc_mesh, tc_model = (root['Skeletons'][0], root['VertexDatas'][0],
+                                                  root['TriTopologies'][0], root['Meshes'][0], root['Models'][0])
+    for m in tc_mat['Maps']:
+        m['Map']['Texture']['FromFileName'] = 'Generic_Grey_8.dds'
+        m['Map']['ExtendedData'].value['File Name'] = 'Generic_Grey_8.dds'
+    for i in (0, 4, 8):
+        tc_mat['ExtendedData'].value['ParameterSet0']['ParamDataT'][i]['String'] = 'Generic_Grey_8.dds'
+    tc_vd['VertexComponentNames'][4]['String'] = 'TextureCoordinates0'
+    bone_proto = tc_skel['Bones'][0]
+    vmembers = tc_vd['Vertices'].members
+    mats, skels, vds, topos, meshes, models = [tc_mat], [tc_skel], [tc_vd], [tc_topo], [tc_mesh], [tc_model]
+    for k, part in enumerate(parts):
+        mname = name if k == 0 else '%s_%d' % (name, k + 1)
+        sv, st = part['verts'], part['tris']
+        assert len(sv) < MAX_PART_VERTS, (mname, len(sv))
+        vb = bytearray()
+        for p, n, t, b, uv in sv:
+            vb += struct.pack('<15f', *p, *n, *t, *b, uv[0], uv[1], 0.0)
+        s_mat = building_material(b_tmpl, mname, part['diffuse'], part['sref'])
+        s_vd = {'Vertices': gr2.Variant(vmembers, bytes(vb)),
+                'VertexComponentNames': [{'String': s} for s in ('Position', 'Normal', 'Tangent', 'Binormal',
+                                                                  'TextureCoordinates0')],
+                'VertexAnnotationSets': []}
+        s_topo = topology(st)
+        lo, hi = obb([v[0] for v in sv])
+        s_bone = make_bone(bone_proto, mname, -1, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+        s_skel = {'Name': mname, 'Bones': [s_bone], 'LODType': 0, 'ExtendedData': None}
+        s_mesh = {'Name': mname, 'PrimaryVertexData': s_vd, 'MorphTargets': [], 'PrimaryTopology': s_topo,
+                  'MaterialBindings': [{'Material': s_mat}],
+                  'BoneBindings': [{'BoneName': mname, 'OBBMin': lo, 'OBBMax': hi, 'TriangleIndices': []}],
+                  'ExtendedData': None}
+        s_model = dict(tc_model)
+        s_model.update({'Name': mname, 'Skeleton': s_skel, 'MeshBindings': [{'Mesh': s_mesh}]})
+        mats.append(s_mat); skels.append(s_skel); vds.append(s_vd); topos.append(s_topo)
+        meshes.append(s_mesh); models.append(s_model)
+    root['ArtToolInfo']['FromArtToolName'] = 'Blender'
+    root['ExporterInfo']['ExporterName'] = 'civ5me tools/landmarks'
+    root['FromFileName'] = name + '.blend'
+    root.update({'Materials': mats, 'Skeletons': skels, 'VertexDatas': vds, 'TriTopologies': topos,
+                 'Meshes': meshes, 'Models': models})
+    os.makedirs(out_dir, exist_ok=True)
+    return gr2.write(os.path.join(out_dir, name + '.gr2'), f.root_type, root, f.tag)
+
+
 # --------------------------------------------------------------------------- idle animation .gr2
 class Curves:
     """Curve variants built from the member definitions of the stock template animation."""
