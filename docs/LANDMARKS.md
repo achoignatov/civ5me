@@ -9,7 +9,7 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | City | Landmark | Art |
 |---|---|---|
 | Barad-dûr (Mordor's capital) | The Dark Tower as in the films, with the living Eye of Sauron: 242 units high, about two hexes wide | `vendor/landmarks/BaradDur5` (model `tools/landmarks/models/barad_dur_v5.py`) |
-| Moria (the Goblins' capital) | v4 (first draft, awaiting the in-game test): the Walls of Moria under Caradhras, Celebdil and Fanuidhol; the Doors of Durin with a real additive ithildin glow; holly trees, the lake, the Watcher's swaying tentacles | `vendor/landmarks/Moria4` (model `tools/landmarks/models/moria_v4.py`) |
+| Moria (the Goblins' capital) | **The Balrog** (2026-11-26, first draft, awaiting the in-game test; replaces v4, the West-gate): the upper half of the Balrog clawing his way out of a molten rift, after `screenshots/balrog1.webp` / `balrog2.webp`: a hide of charred plates with fire in the seams, ram horns, a gaunt skull with burning eyes and a roaring maw full of fangs, talon hands with hooked claws dug into the ground of the neighbouring hexes, wings half-spread; **animated flames** on the head, the shoulders and both arms, stock fires on the head, arms and in the rift; the head turns slowly | `vendor/landmarks/Balrog` (model `tools/landmarks/models/balrog.py`) |
 | Minas Tirith (Gondor's capital) | The seven circles cut into Mount Mindolluin, the prow, ~350 houses, the Citadel with the Tower of Ecthelion, the Court of the Fountain with the White Tree in blossom, the King's banner swinging in the wind; fits its own hex | `vendor/landmarks/MinasTirith` (model `tools/landmarks/models/minas_tirith.py`) |
 | Edoras (Rohan's capital) | v2, after the film (`edoras.jpg`): a great crag with a jointed sheer face over dry tussock slopes, ~100 weathered longhouses under heavy thatch on its foot, the log wall with wall-walk, watchtowers and gatehouse, a stone stair up a spur to Meduseld's compound (antique-gold thatch, horse-head gables, lesser and spired halls), barrows with simbelmynë, the Snowbourn; the banner of the Mark swings. The plain is the game's own ground | `vendor/landmarks/Edoras` (model `tools/landmarks/models/edoras.py`) |
 | Erebor (the Dwarves' capital) | First draft, after the films' prologue: the Lonely Mountain (snow-capped summit, gullies, arms), the Front Gate cut in a dressed face at the head of its valley (stepped portal, gable head with the gilded crown and seven stars, pilasters, a gallery of lit windows, blue-and-gold banners), the doors ajar with a warm additive gold glow, two colossal dwarf warriors leaning on their axes, the River Running from culverts under the threshold, a dwarven bridge, Ravenhill's guard-post, five braziers; fits its own hex | `vendor/landmarks/Erebor` (model `tools/landmarks/models/erebor.py`) |
@@ -19,7 +19,7 @@ wonders) is never touched. This works reliably on every city and city-state, at 
 | Smaug's Lair (city-state) | v5 (2026-11-26; gold v3 and dragon v4 approved in game): **the hoard of Erebor spilling into all six neighbouring hexes** with treasures and the Arkenstone; **Smaug asleep on it** after *The Hobbit* ch. 12 and the film: coiled over the heap, rolled to show the long pale belly (the gem crust was removed 2026-11-26: in game it read as 'jelly beans'), painted scales, horns, fangs, dorsal spikes; the right wing folded over his back, **the left wing spread and draped over the gold inside his coil like a bat's** (humerus from under the chest, forearm, thumb claw hooked in the coins, four bowed knuckled fingers, membranes in slack folds with branching veins, scalloped trailing edge, the last panel hanging from his flank). Five static models in one gr2 (no skinned part). Still for now | `vendor/landmarks/Smaug` (model `tools/landmarks/models/smaug.py`) |
 | Every other city and city-state | Stock art | |
 
-**Next:** the user's in-game verdict on Treebeard (does the blended multi-mesh skin draw and sway?), on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires) and Bag End (chimney smoke size, window glow), then the other 7 capitals one at a time (§7).
+**Next:** the user's in-game verdict on the Balrog (does the skinned head draw beside four extra static models? do the animated flame tongues show and move? the stock fires' sizes), then on Treebeard (does the blended multi-mesh skin draw and sway?), on Erebor (glow, braziers' size) and Orthanc (Saruman's readability, the staff's light, pit fires) and Bag End (chimney smoke size, window glow), then the other 7 capitals one at a time (§7).
 
 **Size rule (user, 2026-11-25):** a landmark fits its OWN hex and does not overlap the neighbouring tiles (Moria v4
 at ±54 looked overwhelming next to stock mountains; at `Scale` 0.134 it is "perfect"). New models are authored 1:1
@@ -234,6 +234,51 @@ are `TimedTrigger` files on bones listed in `BoneUsage` (as the stock gold mine 
 - *A skinned part with no effects* is fine: `rig()` may return `[]` (Minas Tirith: only its banner moves); the
   improvement row then has an animation but no `bones`/`trigger`, and its `FX_Triggers_*` file is not vendored.
 
+- *The Balrog (2026-11-26), new techniques, untested in game until the user's test:*
+  - **SDF sculpting** (`tools/landmarks/sdf.py`): signed distance fields on a numpy grid (ellipsoids, tapered capsules,
+    rounded boxes; smooth-min blending, smooth-max carving, noise displacement), meshed by vectorised marching
+    tetrahedra, Laplacian-smoothed, decimated in Blender to the budget (`sdf.add_to_builder`). The full-resolution
+    sculpt is kept on the builder (`b.hires`) and is the source of the AO bake and of a **relief bake** (its normals
+    against the game mesh's, lit from the game's sun side): every muscle and wrinkle the decimation removed comes back
+    as shading. Explicit meshes (horns, teeth, claws, membranes) are added to `b.hires` too (`balrog.explicit`), or
+    the selected-to-active bake finds nothing for them.
+  - **Lava crust** (`bake.py` palette `lava=dict(...)`): Voronoi seams in object space with a white-yellow core, an
+    orange rim and a red halo, a noise mask making some seams cold; a second fine scale; the plates raised by a bump
+    (embossed like painted relief). The glowing part is exempt from AO and relief shading (emission blue = 1 - glow).
+  - **Animated flame tongues** (`tools/landmarks/flames.py`): puffs.py's proven card machinery with an atlas of 7
+    painted tongues + a soft glow, cards anchored at their foot, the full rotation `tilt * roll * yaw` (tilted back
+    52 degrees to face the game camera; yaw = width, edge-on = hidden; roll = sway), a life cycle per tongue (born
+    narrow, opens, rises and sways, thins away, drops back while edge-on), 6 s loop, 255 position ticks, 900 rotation
+    spans; `flames.verify` reads the written curves back. Four effects of 30 cards (`BALROG_CROWN` on a bone under
+    `eyepivot` so it turns with the head, `BALROG_MANE`, `BALROG_ARML`, `BALROG_ARMR`).
+  - **Extra static models beside the skinned part** (`EXTRA_STATICS` in a module using `build_eye`/`rig`;
+    `lmodel.write_building(extra_statics=)`): models `<name>_2.._5` between the main static model and `<name>_Eye`,
+    each with a still track group in the idle animation. Combines Smaug's proven multi-static layout with the Eye's
+    proven skinned part + effect bones (the combination itself is new).
+  - `tools/landmarks/preview_flames.py` animates the WRITTEN files (models posed by the idle, flame cards from their
+    decoded curves on their bones) into frames, a contact sheet and a GIF; `tools/landmarks/clay_preview.py` renders a
+    module's geometry in clay in a minute (shape iteration before the slow bake).
+
+- *Balrog test 1 (2026-11-26):* the skinned head did NOT draw (its effects did): the second skinned-part failure after
+  Smaug. That file had 156k vertices in 7 models (the most ever), the skinned one last. **Put everything visible in
+  static models** (Smaug: 5 static models drew); a skinned part only carries effect bones (Balrog v2: three stones).
+  Keep a landmark's total near the proven ones (Smaug 112k, Treebeard 136k). Flames that open and close (edge-on
+  cycling, ~1 s lives) looked like "random flashes" and went "crazy" when zoomed in (the perspective shows cards
+  turning): v2 uses `flames.Steady`, persistent tongues that never turn edge-on (slow sway, breathing width, bob;
+  12 s loop), leaning back towards the camera only on the head and shoulders and nearly upright on sloping limbs (else
+  the card lies along the limb and is buried in it).
+
+- *Balrog test 2:* size perfect at `Scale` 0.125. The persistent flames went "crazy" zoomed in exactly like v1's
+  (perfect zoomed out), so the cause is in the engine and depends on zoom (suspected: the animation's level of detail,
+  the rest pose far away and the full curves near). v3 `flames.write`: **the rest pose is the finished fire** (each
+  card written in place on its own bone at its foot), the animation only turns the bones a little on the proven
+  rotation curves, positions constant (no `D3K8uC8u` curves). Untested in game until the user's test.
+
+- *Balrog test 3:* the rest-pose flame tongues rendered right at every zoom ("exactly as I want"); the stock Great
+  Lighthouse fire at large VisEffect scales (2-5 at improvement `Scale` 0.125) was what flickered wildly zoomed in,
+  so it was removed. For fire, use rest-pose flame cards (`flames.write`), not big stock particles. v4 also raises a
+  crater mound of broken rock (6.5 high in game) over the tile's middle, hiding the stock houses.
+
 ## 5. Making a model
 
 **Authoring rules:** in-game units, Z up, origin at the hex centre, ground at z = 0, −Y = south = towards the
@@ -280,7 +325,7 @@ for the houses round the tile centre, or let the landmark rise from a crag or wa
 | Civ | Capital (name key) | Model | Status |
 |---|---|---|---|
 | Mordor | Barad-dûr (`MEC_BARAD_DUR`) | `barad_dur_v5.py`, `Scale` 0.5 | **Done** |
-| Goblins | Moria (`MEC_MORIA`) | `moria_v4.py`, `Scale` 0.134 = fits its own hex (v3 `moria.py` kept in `vendor/landmarks/Moria`) | **v4 approved**, size final (2026-11-25); doors redesigned for legibility, awaiting test |
+| Goblins | Moria (`MEC_MORIA`) | `balrog.py` (the Balrog), `Scale` 0.25, hands and wings over the neighbouring hexes (v4 `moria_v4.py` kept in `vendor/landmarks/Moria4`, no longer packed) | **The Balrog: first draft installed** 2026-11-26, awaiting test |
 | Gondor | Minas Tirith (`MEC_MINAS_TIRITH`) | `minas_tirith.py`, `Scale` 0.25, fits its hex (started from the draft `tools/capitals/models/gondor.py`) | **Done** (user: "amazing") |
 | Dwarves | Erebor (`MEC_EREBOR`) | `erebor.py`, `Scale` 0.25, fits its hex (ideas from the draft `dwarves.py`) | **First draft installed** 2026-11-25, awaiting test |
 | Hobbits | The Shire (`MEC_THE_SHIRE`) | `bag_end.py` v4, `Scale` 0.25, fills its hex at ground level | **v4 installed** 2026-11-25, awaiting test |

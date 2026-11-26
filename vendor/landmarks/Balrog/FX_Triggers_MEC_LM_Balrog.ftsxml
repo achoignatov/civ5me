@@ -1,0 +1,20 @@
+<trigger_system type="FGrannyTimedTriggerSystem">
+  <event_tracks>
+    <event_track ec="1000">
+      <track id="1" name="Sound" />
+      <track id="2" name="Effect" />
+      <track id="3" name="Transfer" />
+    </event_track>
+  </event_tracks>
+  <triggers>
+    <trigger type="FTimedTriggerEffect" id="1" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_GLOW" bone="fxglow" />
+    <trigger type="FTimedTriggerEffect" id="2" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_CROWN" bone="fxcrown" />
+    <trigger type="FTimedTriggerEffect" id="3" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_HEAD" bone="fxheadf" />
+    <trigger type="FTimedTriggerEffect" id="4" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_MANE" bone="fxmane" />
+    <trigger type="FTimedTriggerEffect" id="5" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_BODY" bone="fxbody" />
+    <trigger type="FTimedTriggerEffect" id="6" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_ARML" bone="fxarml" />
+    <trigger type="FTimedTriggerEffect" id="7" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_FOREL" bone="fxforel" />
+    <trigger type="FTimedTriggerEffect" id="8" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_ARMR" bone="fxarmr" />
+    <trigger type="FTimedTriggerEffect" id="9" time="0" duration="12" repeat="0" ec="1000" track="2" tier="0" event="ART_DEF_VEFFECT_MEC_BALROG_FORER" bone="fxforer" />
+  </triggers>
+</trigger_system>

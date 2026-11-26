@@ -171,6 +171,14 @@ ALL_LANDMARKS = [
          envelope=dict(hex_in=77.3, hex_out=77.3 / 0.8660254, max_height=70.0, min_z=-3.0, max_verts=31900,
                        max_tris=48000),
          name_keys=[], aliases=[], animated=False, enabled=False),     # v3: one static mesh (no skinned part)
+    # 2026-11-26: the Balrog (models/balrog.py), the new landmark of Moria (replaces the West-gate): the upper half of
+    # the Balrog clawing his way out of a molten rift; hands in the neighbouring hexes, wings half-spread behind; in-game
+    # units written x4 (scale 0.25). Static part = the rift; extra statics = torso, arms, wings; skinned part = the
+    # head (turns slowly) with the effect bones: animated flame tongues (flames.py), stock fires, the glow of eyes/maw.
+    dict(key='BALROG', title='The Balrog', module='balrog', model='MEC_LM_Balrog', scale=0.25,
+         envelope=dict(hex_in=100.0, hex_out=100.0 / 0.8660254, max_height=112.0, min_z=-1.0, max_verts=31900,
+                       max_tris=48000),
+         name_keys=[], aliases=[], animated=True, enabled=False),
     # 2026-11-24 ~21:30 ROOT-CAUSE PROBE "invisible outriggers" (docs/CITY_MODELS.md §18). Prebuilt files in
     # build/landmarks/out (no Blender): Tall + Wide from step 7, Outrig from tools/landmarks/outrig_probe.py.
     # Order = TEST_HASH group 0/1/2. Remove these rows (or size_test) after the test.
@@ -266,6 +274,26 @@ EFFECTS = {
                            file='MEC_BagEndFlicker.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),   # Bag End's candles
     'PIPE_PUFFS': dict(name='ART_DEF_VEFFECT_MEC_PIPE_PUFFS', model='ART_DEF_MEFFECT_MEC_PIPE_PUFFS',
                        file='MEC_BagEndPuffs.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    # the Balrog: the glow of his eyes and maw (glow.py), our animated flame tongues (flames.py) on the head, the
+    # shoulders and each arm, and the stock Great Lighthouse fire on the head, arms and in the rift
+    'BALROG_GLOW': dict(name='ART_DEF_VEFFECT_MEC_BALROG_GLOW', model='ART_DEF_MEFFECT_MEC_BALROG_GLOW',
+                        file='MEC_BalrogGlow.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_CROWN': dict(name='ART_DEF_VEFFECT_MEC_BALROG_CROWN', model='ART_DEF_MEFFECT_MEC_BALROG_CROWN',
+                         file='MEC_BalrogCrown.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_MANE': dict(name='ART_DEF_VEFFECT_MEC_BALROG_MANE', model='ART_DEF_MEFFECT_MEC_BALROG_MANE',
+                        file='MEC_BalrogMane.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_ARML': dict(name='ART_DEF_VEFFECT_MEC_BALROG_ARML', model='ART_DEF_MEFFECT_MEC_BALROG_ARML',
+                        file='MEC_BalrogArmL.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_ARMR': dict(name='ART_DEF_VEFFECT_MEC_BALROG_ARMR', model='ART_DEF_MEFFECT_MEC_BALROG_ARMR',
+                        file='MEC_BalrogArmR.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_HEAD': dict(name='ART_DEF_VEFFECT_MEC_BALROG_HEAD', model='ART_DEF_MEFFECT_MEC_BALROG_HEAD',
+                        file='MEC_BalrogHead.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_BODY': dict(name='ART_DEF_VEFFECT_MEC_BALROG_BODY', model='ART_DEF_MEFFECT_MEC_BALROG_BODY',
+                        file='MEC_BalrogBody.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_FOREL': dict(name='ART_DEF_VEFFECT_MEC_BALROG_FOREL', model='ART_DEF_MEFFECT_MEC_BALROG_FOREL',
+                         file='MEC_BalrogForeL.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'BALROG_FORER': dict(name='ART_DEF_VEFFECT_MEC_BALROG_FORER', model='ART_DEF_MEFFECT_MEC_BALROG_FORER',
+                         file='MEC_BalrogForeR.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'BRAZIER': dict(name='ART_DEF_VEFFECT_MEC_BRAZIER', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',
                     scale=0.35, rotation=(90.0, 0.0, 0.0)),
     'EYE_BEAM': dict(name='ART_DEF_VEFFECT_MEC_EYE_BEAM', model='ART_DEF_MEFFECT_MEC_EYE_BEAM',

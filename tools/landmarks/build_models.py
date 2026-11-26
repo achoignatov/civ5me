@@ -44,7 +44,7 @@ GAME_SREF = 256
 BAKED_DIFF = 1024        # baked models (module BAKE = True): 1024 DIFF / 512 SREF, like the larger stock wonders
 BAKED_SREF = 512
 WORK = os.path.join(os.path.dirname(PREVIEW), 'work')
-GLOW_KEYS = ('DOOR_GLOW', 'GATE_GLOW', 'STAFF_GLOW', 'WINDOW_GLOW')   # rig effect keys drawn as a still additive picture (glow.py, glow_effect())
+GLOW_KEYS = ('DOOR_GLOW', 'GATE_GLOW', 'STAFF_GLOW', 'WINDOW_GLOW', 'BALROG_GLOW')   # rig effect keys drawn as a still additive picture (glow.py, glow_effect())
 
 
 def in_hex(x, y, slack=0.05, env=ENVELOPE):
@@ -308,6 +308,7 @@ def build_one(lm, do_preview=True):
         import beam
         import lmodel
         # the tower without the Eye, and the Eye alone (its own small texture); baked models bake both
+        extras = []
         if baked:
             import bake
             pipeline.reset()
@@ -325,6 +326,12 @@ def build_one(lm, do_preview=True):
             edn, esn = _textures(eye, name + '_Eye', epx, epx // 2)
             if hasattr(mod, 'PIVOT_MATS'):          # only these materials move with eyepivot; the rest stays still
                 eye.still = [m_ not in mod.PIVOT_MATS for m_ in eye.vmat]
+            for i_, (xsuf, xfn, xpx) in enumerate(getattr(mod, 'EXTRA_STATICS', ())):   # the Balrog: more static
+                xr = _bake_part(xfn, seed + 11 + i_, xpx, getattr(mod, 'PART_AO', 32))      # models (own textures)
+                xdn, xsn = _textures(xr, '%s_%d' % (name, i_ + 2), xpx, xpx // 2)
+                check_envelope('%s (%s)' % (name, xsuf), xr.verts, xr.tris, env)
+                print('%-20s extra static %-8s %6d verts %6d tris  %dpx' % (name, xsuf, len(xr.verts), len(xr.tris), xpx))
+                extras.append((xr, xdn, xsn))
         else:
             tower = _make(lambda b: mod.build(b, eye=False), seed)
             tdn, tsn = _textures(tower, name)
@@ -350,9 +357,12 @@ def build_one(lm, do_preview=True):
             OUT, name, dict(verts=_model_units(tower.verts, k), tris=tower.tris, diffuse=tdn, sref=tsn),
             eye=dict(verts=_model_units(eye.verts, k), tris=eye.tris, diffuse=edn, sref=esn,
                      still=getattr(eye, 'still', None)),
-            rig=dict(pivot=pivot, bones=bones))
-        idle, curve = lmodel.write_idle(OUT, name, bone_list, mod.GAZE)
-        verify_animation(os.path.join(OUT, idle), name, bone_list, mod.GAZE)
+            rig=dict(pivot=pivot, bones=bones),
+            extra_statics=[dict(verts=_model_units(xr.verts, k), tris=xr.tris, diffuse=xdn, sref=xsn)
+                           for xr, xdn, xsn in extras])
+        xnames = ['%s_%d' % (name, i_ + 2) for i_ in range(len(extras))]
+        idle, curve = lmodel.write_idle(OUT, name, bone_list, mod.GAZE, extra_models=xnames)
+        verify_animation(os.path.join(OUT, idle), name, bone_list, mod.GAZE, extra_models=xnames)
         # effects
         from landmarks import EFFECTS, BEAM_TILT
         fire = []
@@ -378,7 +388,7 @@ def build_one(lm, do_preview=True):
         if hasattr(mod, 'model_effects'):    # further animated model effects of the module (Bag End: the pipe puffs)
             files += mod.model_effects(OUT, k)
         ename = name + '_Eye'
-        tex = ['Generic_Grey_8.dds', tdn, tsn, edn, esn]
+        tex = ['Generic_Grey_8.dds', tdn, tsn] + [t_ for _, xdn, xsn in extras for t_ in (xdn, xsn)] + [edn, esn]
         fx_bones = [b_[0] for b_ in rig if b_[3]]
         fire_bones = [b_[0] for b_ in rig if b_[3] and b_[3] != 'EYE_BEAM']
         assert len(bone_list) <= 32, 'skinned part: at most 32 bones (SkinBoneCount)'
@@ -391,6 +401,7 @@ def build_one(lm, do_preview=True):
           decision_tree=lmodel.ANIMATED_DT)                                                             # + animation
         W(os.path.join(OUT, name + '_T3.fxsxml'), name + '.gr2', tex, animation=idle, triggers_file=trig_fire,
           trigger_model=ename, bones=fire_bones, decision_tree=lmodel.ANIMATED_DT)                     # + fire
+        files += [t_ for _, xdn, xsn in extras for t_ in (xdn, xsn)]
         files += [name + '.gr2', idle, tdn, tsn, edn, esn, trig_full, trig_fire,
                   name + '.fxsxml', name + '_T2.fxsxml', name + '_T3.fxsxml'] + (
                      [name + '_T1.fxsxml'] if res is not None else [])
@@ -416,7 +427,20 @@ def build_one(lm, do_preview=True):
             if animated and hasattr(mod, 'preview_overlays'):   # e.g. Bag End's puffs, frozen mid-puff
                 overlays += mod.preview_overlays(OUT)
             pv, pt, pimg = preview_res.verts, preview_res.tris, dds.decode_dxt3(os.path.join(OUT, preview_dn))
-            if animated and baked and hasattr(mod, 'PIVOT_MATS'):
+            if animated and baked and extras:
+                # every part side by side: the static part, the extra statics, the skinned part
+                parts_ = [(tower, tdn)] + [(xr, xdn) for xr, xdn, _ in extras] + [(eye, edn)]
+                n_ = len(parts_)
+                pv, pt, pims = [], [], []
+                for j_, (r_, dn_) in enumerate(parts_):
+                    o_ = len(pv)
+                    pv += [(v[0], v[1], v[2], v[3], ((j_ + v[4][0]) / n_, v[4][1])) for v in r_.verts]
+                    pt += [(a + o_, b_ + o_, c + o_) for a, b_, c in r_.tris]
+                    pims.append(dds.decode_dxt3(os.path.join(OUT, dn_)))
+                H_ = max(im.shape[0] for im in pims)
+                pimg = np.concatenate([np.repeat(np.repeat(im, H_ // im.shape[0], 0), H_ // im.shape[0], 1)
+                                       for im in pims], axis=1)
+            elif animated and baked and hasattr(mod, 'PIVOT_MATS'):
                 # the skinned part holds half the landmark: show both parts together (textures side by side)
                 eimg = dds.decode_dxt3(os.path.join(OUT, edn))
                 if eimg.shape == pimg.shape:
@@ -433,13 +457,13 @@ def build_one(lm, do_preview=True):
             blib.HEX_IN, blib.HEX_OUT = hin, hout
 
 
-def verify_animation(path, name, bones, gaze):
+def verify_animation(path, name, bones, gaze, extra_models=()):
     """Read the written idle animation back: track groups = models, tracks = bones (sorted), and the
     decoded gaze curve follows gaze['fn'] (within 3 degrees; the curve is a smoothed fit)."""
     import granim
     r = gr2.read(path).root()
     tgs = {tg['Name']: tg for tg in r['TrackGroups']}
-    assert set(tgs) == {'Tree cut', name, name + '_Eye'}, set(tgs)
+    assert set(tgs) == {'Tree cut', name, name + '_Eye'} | set(extra_models), set(tgs)
     tracks = [t['Name'] for t in tgs[name + '_Eye']['TransformTracks']]
     assert tracks == sorted(b[0] for b in bones), tracks
     t = [t for t in tgs[name + '_Eye']['TransformTracks'] if t['Name'] == 'eyepivot'][0]

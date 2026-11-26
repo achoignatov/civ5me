@@ -44,24 +44,33 @@ BARAD_V5 = dict(dir='BaradDur5', gr2='MEC_LM_BaradDur5.gr2',
                 trigger=('FX_Triggers_MEC_LM_BaradDur5.ftsxml', 'MEC_LM_BaradDur5_Eye'))
 
 IMPROVEMENTS = [
-    # Moria v4, the West-gate (tools/landmarks/models/moria_v4.py, 2026-11-25): the Walls of Moria round a bay under
-    # the three Mountains of Moria (Caradhras, Celebdil, Fanuidhol), ridged relief at stock-mountain density, snow;
-    # the Doors of Durin in ithildin with a real additive glow (model effect MEC_DurinGlow on bone fxglow), holly
-    # trees, the lake and the Watcher's tentacles (skinned, a slow 6 s sway). Static part 29.3k vertices (the massif),
-    # skinned part 22.9k (doors, trees, lake, rocks on the still bone eyeroot; tentacles on eyepivot); 2 x 2048 baked.
-    # Authored in in-game units, written x4: Scale 0.25 = 1:1, about +-54 x (-35..+56), 76 high.
-    # 2026-11-25 (user, after the first test: "overwhelming next to the stock mountains"): fit its own tile, no
-    # overlap with the neighbours. Everything above ground reaches 61.3 in the hex's own measure (centre -> flat side
-    # = 34), so x0.536: Scale 0.134 -> about +-29 x (-19..+30), 41 high; the glow and the tentacles scale with it.
-    # (v3, test 2 of 2026-11-24, is kept in vendor/landmarks/Moria but no longer packed.)
-    dict(key='MORIA', civ='CIVILIZATION_MEC_GOBLINS', title='Moria', dir='Moria4',
-         gr2='MEC_LM_Moria4.gr2',
-         textures=['Generic_Grey_8.dds', 'MEC_LM_Moria4_DIFF.dds', 'MEC_LM_Moria4_SREF.dds',
-                   'MEC_LM_Moria4_Eye_DIFF.dds', 'MEC_LM_Moria4_Eye_SREF.dds'],
-         animation=('MEC_LM_Moria4_Idle.gr2', 'Idle'),
-         bones=['fxglow'],
-         trigger=('FX_Triggers_MEC_LM_Moria4.ftsxml', 'MEC_LM_Moria4_Eye'),
-         scale=0.134,
+    # The Balrog of Moria (tools/landmarks/models/balrog.py, 2026-11-26; replaces Moria v4, the West-gate, kept in
+    # vendor/landmarks/Moria4 but no longer packed): the upper half of the Balrog clawing his way out of a molten rift,
+    # after the user's screenshots/balrog1.webp and balrog2.webp. Sculpted in signed distance fields (sdf.py), the
+    # full sculpt baked into the textures; a hide of charred plates with fire in the seams. The rift (static), the
+    # torso, both arms (the hands claw the ground in the neighbouring hexes) and the wings (half-spread) are static
+    # models; the neck, head, ram horns and fangs are the skinned part (the head turns slowly, 12 s) carrying the
+    # effects: animated flame tongues (flames.py: the crown of the head, the shoulders' mane, each arm; 4 x 30 cards),
+    # the stock Great Lighthouse fire on the head (4), arms (6) and the rift (4), and the glow of the eyes and maw
+    # (glow.py). Authored 1:1 in in-game units (Scale 0.25): about +-90 x (-62..+50), 100 high (the wings).
+    # v2 (2026-11-26, after the first test: "too big; no face or horns; flames too quick, random flashes, crazy when
+    # zoomed in"): Scale 0.125 (half: about +-45 x (-31..+25), 49 high); the head and horns a STATIC model (the skinned
+    # head never drew, only the effects on its bones; the skinned part is now three stones carrying the bones);
+    # ~115k vertices in all (v1 156k; Smaug's 112k draws); flames PERSISTENT (flames.Steady: always open, slow sway,
+    # breathing width and bob on a 12 s loop, nothing turns edge-on) + a torso set (BALROG_BODY): 8 x 30 cards.
+    # v3: the film's head (balrog1.webp); the flames' REST POSE is the finished fire (flames.write v3). v4 (user:
+    # "one layer renders exactly as I want, another flickers massively when zoomed in: drop it; hide the stock
+    # buildings"): the stock particle fires removed (only our flame tongues remain); he rises from a rocky mound 6.5
+    # high in game (the stock houses, drawn at ground level, are under it), the magma pool on its top.
+    dict(key='MORIA', civ='CIVILIZATION_MEC_GOBLINS', title='Moria', dir='Balrog',
+         gr2='MEC_LM_Balrog.gr2',
+         textures=['Generic_Grey_8.dds', 'MEC_LM_Balrog_DIFF.dds', 'MEC_LM_Balrog_SREF.dds'] +
+                  ['MEC_LM_Balrog_%d_%s.dds' % (k, t) for k in (2, 3, 4, 5, 6) for t in ('DIFF', 'SREF')] +
+                  ['MEC_LM_Balrog_Eye_DIFF.dds', 'MEC_LM_Balrog_Eye_SREF.dds'],
+         animation=('MEC_LM_Balrog_Idle.gr2', 'Idle'),
+         bones=['fxglow', 'fxcrown', 'fxheadf', 'fxmane', 'fxbody', 'fxarml', 'fxforel', 'fxarmr', 'fxforer'],
+         trigger=('FX_Triggers_MEC_LM_Balrog.ftsxml', 'MEC_LM_Balrog_Eye'),
+         scale=0.125,     # v2 (user: 'around half the size')
          name_keys=['TXT_KEY_CITY_NAME_MEC_MORIA'],
          aliases=['Moria', 'Khazad-dum', 'Khazad-dûm', 'Khazad Dum', 'Khazad Dûm']),
     # Minas Tirith (tools/landmarks/models/minas_tirith.py, 2026-11-25): Gondor's capital, fitting its own hex: the seven
@@ -224,8 +233,7 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_EYE_BLAZE', 90.0, 2.5, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
     ('ART_DEF_VEFFECT_MEC_TOWER_FIRE', 90.0, 0.6, 'ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE', None),
     ('ART_DEF_VEFFECT_MEC_EYE_BEAM', 0.0, 29.0, None, 'ART_DEF_MEFFECT_MEC_EYE_BEAM'),
-    # Moria v4: the ithildin glow; its quads are written in the model's file units, so Scale 1.0
-    ('ART_DEF_VEFFECT_MEC_DOOR_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_DOOR_GLOW'),
+    # (Moria v4's ithildin glow ART_DEF_VEFFECT_MEC_DOOR_GLOW left with Moria v4: the Balrog replaced it 2026-11-26)
     # Erebor: the Front Gate's gold light (file units, Scale 1.0) and its braziers (a guess, about half the tower's
     # braziers of Barad-dur in file units; tune after the in-game test)
     ('ART_DEF_VEFFECT_MEC_GATE_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_GATE_GLOW'),
@@ -241,14 +249,35 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_PIPE_PUFFS', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_PIPE_PUFFS'),
     # Bag End: candlelight flickering in its windows (puffs.py cards: width = light), file units
     ('ART_DEF_VEFFECT_MEC_WINDOW_FLICKER', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_WINDOW_FLICKER'),
+    # the Balrog: the glow of the eyes and maw and the animated flame tongues are model effects in file units (Scale
+    # 1.0); the stock Great Lighthouse fire on the head (blaze), arms and the rift, sized after the Eye's (blaze 2.5
+    # at improvement Scale 0.5 round a ~21-unit Eye; the Balrog's head is ~30 units, at Scale 0.25). Tune in game.
+    ('ART_DEF_VEFFECT_MEC_BALROG_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_GLOW'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_CROWN', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_CROWN'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_MANE', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_MANE'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_ARML', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_ARML'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_ARMR', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_ARMR'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_HEAD', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_HEAD'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_BODY', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_BODY'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_FOREL', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_FOREL'),
+    ('ART_DEF_VEFFECT_MEC_BALROG_FORER', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_BALROG_FORER'),
+    # (v4: the stock lighthouse fires BALROG_BLAZE / FIRE / PIT were removed: they flickered wildly when zoomed in)
 ]
 VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # file in vendor/landmarks/BaradDur5
-              ('ART_DEF_MEFFECT_MEC_DOOR_GLOW', 'MEC_DurinGlow.fxsxml'),   # file in vendor/landmarks/Moria4
               ('ART_DEF_MEFFECT_MEC_GATE_GLOW', 'MEC_EreborGlow.fxsxml'),  # file in vendor/landmarks/Erebor
               ('ART_DEF_MEFFECT_MEC_STAFF_GLOW', 'MEC_OrthancGlow.fxsxml'),  # file in vendor/landmarks/Orthanc
               ('ART_DEF_MEFFECT_MEC_WINDOW_GLOW', 'MEC_BagEndGlow.fxsxml'),  # file in vendor/landmarks/BagEnd
               ('ART_DEF_MEFFECT_MEC_PIPE_PUFFS', 'MEC_BagEndPuffs.fxsxml'),  # file in vendor/landmarks/BagEnd
-              ('ART_DEF_MEFFECT_MEC_WINDOW_FLICKER', 'MEC_BagEndFlicker.fxsxml')]  # file in vendor/landmarks/BagEnd
+              ('ART_DEF_MEFFECT_MEC_WINDOW_FLICKER', 'MEC_BagEndFlicker.fxsxml'),  # file in vendor/landmarks/BagEnd
+              ('ART_DEF_MEFFECT_MEC_BALROG_GLOW', 'MEC_BalrogGlow.fxsxml'),        # files in vendor/landmarks/Balrog
+              ('ART_DEF_MEFFECT_MEC_BALROG_CROWN', 'MEC_BalrogCrown.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_BALROG_MANE', 'MEC_BalrogMane.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_BALROG_ARML', 'MEC_BalrogArmL.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_BALROG_ARMR', 'MEC_BalrogArmR.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_BALROG_HEAD', 'MEC_BalrogHead.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_BALROG_BODY', 'MEC_BalrogBody.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_BALROG_FOREL', 'MEC_BalrogForeL.fxsxml'),
+              ('ART_DEF_MEFFECT_MEC_BALROG_FORER', 'MEC_BalrogForeR.fxsxml')]
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).

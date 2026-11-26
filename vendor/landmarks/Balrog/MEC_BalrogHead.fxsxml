@@ -1,0 +1,8 @@
+<Asset>
+	<Mesh file="MEC_BalrogHead.gr2"/>
+	<Animation file="MEC_BalrogHead_IdleA.gr2" name="IdleA" ec="1000" source="Max"/>
+	<Texture file="FX_Blk_Blk4x4.dds"/>
+	<Texture file="FX_Wht_Wht4x4.dds"/>
+	<Texture file="MEC_BalrogHead_DIFF.dds"/>
+	<DecisionTree file="AnimatedModelEffect_DecisionTree.ddtxml" source="Tool"/>
+</Asset>

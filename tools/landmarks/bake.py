@@ -240,6 +240,85 @@ def _material(name, glow=None):
         mm6 = N.new('ShaderNodeMath'); mm6.operation = 'MULTIPLY'
         Lk.new(edge, mm6.inputs[0]); Lk.new(steep6, mm6.inputs[1])
         col = mix(col, tuple(x * (1.0 - vdark) for x in (0.32, 0.3, 0.28)) + (1.0,), mm6.outputs[0], 'MULTIPLY')
+    lava_glow = None
+    if p.get('lava'):
+        # MOLTEN CRACKS (the Balrog, 2026-11-26): a crust of charred plates (Voronoi cells in object space, warped so
+        # the seams wander like real fractures) with fire showing in the seams: a white-yellow core, an orange rim and
+        # a red halo bleeding onto the plates. A noise mask makes some seams cold (dark) and others hot; two scales
+        # (big plates + fine crazing). The plates are raised by a bump (baked as relief), and the glowing part is
+        # exempt from AO and relief shading (the emission bake's AO weight is 1 - glow).
+        lv = p['lava']
+        glows = []
+
+        def seams(scale, width, warp_amt, seed_off):
+            vor = N.new('ShaderNodeTexVoronoi')
+            vor.feature = 'DISTANCE_TO_EDGE'
+            vor.inputs['Scale'].default_value = scale
+            warp = N.new('ShaderNodeTexNoise')
+            warp.inputs['Scale'].default_value = scale * 1.3
+            warp.inputs['Detail'].default_value = 3.0
+            warp.noise_dimensions = '4D'
+            warp.inputs['W'].default_value = seed_off
+            Lk.new(tc.outputs['Object'], warp.inputs['Vector'])
+            wv = N.new('ShaderNodeMix')
+            wv.data_type = 'VECTOR'
+            wv.inputs[0].default_value = warp_amt
+            Lk.new(tc.outputs['Object'], wv.inputs[4])
+            Lk.new(warp.outputs['Color'], wv.inputs[5])
+            Lk.new(wv.outputs[1], vor.inputs['Vector'])
+            return vor.outputs['Distance']
+        w = lv.get('width', 0.05)
+        d1 = seams(lv.get('scale', 0.3), w, lv.get('warp', 0.3), 1.7)
+        mnz = N.new('ShaderNodeTexNoise')
+        mnz.inputs['Scale'].default_value = lv.get('mask_scale', 0.05)
+        mnz.inputs['Detail'].default_value = 3.0
+        Lk.new(tc.outputs['Object'], mnz.inputs['Vector'])
+        thr = lv.get('hot', 0.45)                    # lower = more of the seams hot
+        mask = maprange(mnz.outputs['Fac'], thr - 0.08, thr + 0.08)
+        if lv.get('zhot'):                          # hotter towards some height (the rift, the head): (z0, z1)
+            zh = maprange(sep.outputs['Z'], lv['zhot'][0], lv['zhot'][1])
+            mm = N.new('ShaderNodeMath'); mm.operation = 'MAXIMUM'
+            Lk.new(mask, mm.inputs[0]); Lk.new(zh, mm.inputs[1])
+            mask = mm.outputs[0]
+
+        def mul(a, b_):
+            m_ = N.new('ShaderNodeMath'); m_.operation = 'MULTIPLY'
+            for s_, v_ in ((m_.inputs[0], a), (m_.inputs[1], b_)):
+                if isinstance(v_, float):
+                    s_.default_value = v_
+                else:
+                    Lk.new(v_, s_)
+            return m_.outputs[0]
+        halo = mul(maprange(d1, w * 4.5, w * 0.8), mask)
+        rim = maprange(d1, w * 1.4, w * 0.45)
+        core = mul(maprange(d1, w * 0.6, w * 0.05), mask)
+        col = mix(col, _lin(lv.get('halo_color', h_('8a2208'))), mul(halo, lv.get('halo', 0.55)))
+        col = mix(col, _lin(lv.get('cold', h_('0c0807'))), rim)           # every seam dark ...
+        col = mix(col, _lin(lv.get('warm', h_('ff6a12'))), mul(rim, mask))  # ... the hot ones orange
+        col = mix(col, _lin(lv.get('core', h_('ffd77a'))), core)
+        glows.append(mul(rim, mask))
+        hgt = maprange(d1, 0.0, w * 3.5, 0.0, 1.0)
+        if lv.get('fine'):                          # fine crazing on the plates: (scale, width, how hot)
+            fs, fw, fh = lv['fine']
+            d2 = seams(fs, fw, 0.25, 5.3)
+            r2 = maprange(d2, fw * 1.3, fw * 0.3)
+            col = mix(col, _lin(lv.get('cold', h_('0c0807'))), mul(r2, 0.6))
+            hot2 = mul(mul(r2, mask), fh)
+            col = mix(col, _lin(lv.get('warm', h_('ff6a12'))), hot2)
+            glows.append(hot2)
+            h2 = maprange(d2, 0.0, fw * 3.0, 0.75, 1.0)
+            hgt = mul(hgt, h2)
+        lava_glow = glows[0]
+        for gx in glows[1:]:
+            mx_ = N.new('ShaderNodeMath'); mx_.operation = 'MAXIMUM'
+            Lk.new(lava_glow, mx_.inputs[0]); Lk.new(gx, mx_.inputs[1])
+            lava_glow = mx_.outputs[0]
+        bump = N.new('ShaderNodeBump')
+        bump.name = 'BUMP'
+        bump.inputs['Strength'].default_value = 1.0
+        bump.inputs['Distance'].default_value = lv.get('bump', 0.25)
+        Lk.new(hgt, bump.inputs['Height'])
+        Lk.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
     if p.get('speckle'):
         # small dots of colour scattered over the surface (flowers in grass: simbelmynë on the barrows of Edoras):
         # [(cells per unit, dot radius 0..0.5 of a cell, colour)], Voronoi F1 distance in object space
@@ -359,6 +438,14 @@ def _material(name, glow=None):
     spec = p.get('spec') if p.get('spec') is not None else 0.3
     refl = p.get('refl') if p.get('refl') is not None else 6
     bsdf.inputs['Emission Color'].default_value = (spec, refl / 255.0, 1.0 if p.get('ao', True) else 0.0, 1.0)
+    if lava_glow is not None and p.get('ao', True):     # glowing seams: no AO / relief darkening (blue = 1 - glow)
+        inv = N.new('ShaderNodeMath'); inv.operation = 'SUBTRACT'
+        inv.inputs[0].default_value = 1.0
+        Lk.new(lava_glow, inv.inputs[1])
+        ec = N.new('ShaderNodeCombineColor')
+        ec.inputs[0].default_value, ec.inputs[1].default_value = spec, refl / 255.0
+        Lk.new(inv.outputs[0], ec.inputs[2])
+        Lk.new(ec.outputs[0], bsdf.inputs['Emission Color'])
     bsdf.inputs['Emission Strength'].default_value = 1.0
     target = N.new('ShaderNodeTexImage')
     target.name = 'BAKE_TARGET'
@@ -560,6 +647,21 @@ def _bake(ob, kind, px, colorspace, samples=1, src=None, extrusion=0.6):
     return a.reshape(px, px, 4)[::-1]               # top row first
 
 
+def _hires(b):
+    """b.hires = [(verts, tris)] full-resolution surfaces (sdf.py sculpts) as one object: the source of the AO and
+    relief bakes of the decimated game mesh."""
+    import sdf
+    V, T, o = [], [], 0
+    for v, t in b.hires:
+        V.append(np.asarray(v))
+        T.append(np.asarray(t) + o)
+        o += len(v)
+    ob = sdf.to_blender('hires', np.concatenate(V), np.concatenate(T))
+    ob.data.polygons.foreach_set('use_smooth', np.ones(len(ob.data.polygons), bool))
+    ob.select_set(False)
+    return ob
+
+
 def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     glow = glow_image(b) if getattr(b, 'glow', None) else None
     ob = _object(b, glow)
@@ -567,6 +669,10 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
     bpy.context.scene.world = bpy.data.worlds.new('W')
     bpy.context.scene.world.light_settings.distance = getattr(b, 'ao_distance', 3.0)
     diff = _bake(ob, 'DIFFUSE', px, 'Linear Rec.709')       # linear albedo
+    emit = _bake(ob, 'EMIT', px, 'Non-Color')
+    # lava materials: their glowing seams are exempt from the relief shading below (emission blue = 1 - glow)
+    has_lava = any(blib.PALETTE[n].get('lava') for n in b.mat_names)
+    wgt = emit[..., 2:3] if has_lava else 1.0
     bump_nodes = [sl.material.node_tree.nodes['BUMP'] for sl in ob.material_slots
                   if 'BUMP' in sl.material.node_tree.nodes]
     if bump_nodes:
@@ -581,10 +687,29 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
         L = np.array(e.get('light', (0.35, -0.55, 0.76)), np.float32)
         L /= np.linalg.norm(L)
         shade = np.clip(1.0 + e.get('k', 1.1) * ((n_b * L).sum(-1) - (n_0 * L).sum(-1)), *e.get('clip', (0.45, 1.5)))
-        diff[..., :3] *= shade[..., None]
+        diff[..., :3] *= 1.0 + (shade[..., None] - 1.0) * wgt
         print('bake: painted relief on %d materials, shade %.2f..%.2f' % (len(bump_nodes), shade.min(), shade.max()))
     hi = _relief(ob, b) if getattr(b, 'relief', None) else None
-    ao = _bake(ob, 'AO', px, 'Non-Color', samples=ao_samples, src=hi)[..., 0:1]
+    hr = _hires(b) if getattr(b, 'hires', None) else None
+    ao = _bake(ob, 'AO', px, 'Non-Color', samples=ao_samples, src=hi if hi is not None else hr,
+               extrusion=getattr(b, 'hires_extrusion', 0.6) if hr else 0.6)[..., 0:1]
+    if hr is not None:
+        # the SCULPT's full-resolution surface (sdf.py) against the decimated game mesh, lit from the game's sun side:
+        # every muscle, sinew and wrinkle the decimation took away comes back as shading in the texture
+        ex = getattr(b, 'hires_extrusion', 0.6)
+        for nd in bump_nodes:                       # the painted bumps were applied above
+            nd.inputs['Strength'].default_value = 0.0
+        n_hi = _bake(ob, 'NORMAL', px, 'Non-Color', src=hr, extrusion=ex)[..., :3] * 2.0 - 1.0
+        n_lo = _bake(ob, 'NORMAL', px, 'Non-Color')[..., :3] * 2.0 - 1.0
+        for nd in bump_nodes:
+            nd.inputs['Strength'].default_value = 1.0
+        L = np.array((0.35, -0.55, 0.76), np.float32)
+        L /= np.linalg.norm(L)
+        k = getattr(b, 'hires_emboss', 1.0)
+        shade = np.clip(1.0 + k * ((n_hi * L).sum(-1) - (n_lo * L).sum(-1)), 0.45, 1.5)[..., None]
+        diff[..., :3] *= 1.0 + (shade - 1.0) * wgt
+        print('bake: relief from the %d-triangle sculpt, shade %.2f..%.2f' % (
+            len(hr.data.polygons), shade.min(), shade.max()))
     if hi is not None:
         # relief shading: the high copy's normals against the game mesh's own, lit from the game's sun side, so the
         # fissures read in the texture (the building shader has no normal map)
@@ -594,10 +719,9 @@ def process(b, px=1024, ao_samples=48, ao_strength=0.65):
         L /= np.linalg.norm(L)
         k = b.relief.get('emboss', 0.9)
         shade = np.clip(1.0 + k * ((n_hi * L).sum(-1) - (n_lo * L).sum(-1)), 0.5, 1.4)[..., None]
-        diff[..., :3] *= shade
+        diff[..., :3] *= 1.0 + (shade - 1.0) * wgt
         print('bake: relief from %d high-resolution faces, shade %.2f..%.2f' % (
             len(hi.evaluated_get(bpy.context.evaluated_depsgraph_get()).data.polygons), shade.min(), shade.max()))
-    emit = _bake(ob, 'EMIT', px, 'Non-Color')
     # SWATCHES in the top strip: one cell of solid colour per material that needs it. A face points all its UVs at
     # its material's cell when the material is solid (palette solid=True, e.g. ithildin) or when the face is so small
     # in the texture (< b.tiny_px square pixels, a model opt-in) that its own island would be a speck: specks bake

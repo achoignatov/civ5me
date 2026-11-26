@@ -78,12 +78,15 @@ def topology(tris):
 
 
 # --------------------------------------------------------------------------- building .gr2
-def write_building(out_dir, name, static, eye=None, rig=None, skins=None):
+def write_building(out_dir, name, static, eye=None, rig=None, skins=None, extra_statics=()):
     """static / eye: dict(verts, tris, diffuse, sref) in MODEL units; verts = (pos, nrm, tan, bin, uv).
     rig: dict(pivot=(x,y,z), bones=[(name, parent_name, world_pos)]) for the skinned model; its bones
     are 'eyeroot' (origin) and 'eyepivot' (at pivot) plus the extra ones. Returns the bone list.
     skins (instead of eye/rig): ONE skinned model '<name>_Eye' with SEVERAL meshes and BLENDED weights, see
-    _skinned_model (Treebeard: the whole body bends on a chain of bones)."""
+    _skinned_model (Treebeard: the whole body bends on a chain of bones).
+    extra_statics: further STATIC models (dict(verts, tris, diffuse, sref)) named <name>_2, _3..., placed after the
+    main static model and before the skinned one (the Balrog, 2026-11-26: Smaug's proven multi-static layout + the
+    Eye's proven skinned part with effect bones)."""
     f = gr2.read(BUILDING_TEMPLATE)
     root = f.root()
     tc_mat, b_tmpl = root['Materials'][0], root['Materials'][1]
@@ -123,6 +126,30 @@ def write_building(out_dir, name, static, eye=None, rig=None, skins=None):
 
     mats, skels, vds, topos, meshes, models = [tc_mat, s_mat], [tc_skel, s_skel], [tc_vd, s_vd], \
         [tc_topo, s_topo], [tc_mesh, s_mesh], [tc_model, s_model]
+    for k, part in enumerate(extra_statics):
+        mname = '%s_%d' % (name, k + 2)
+        xv, xt = part['verts'], part['tris']
+        assert len(xv) < MAX_PART_VERTS, (mname, len(xv))
+        vb = bytearray()
+        for p, n, t, b, uv in xv:
+            vb += struct.pack('<15f', *p, *n, *t, *b, uv[0], uv[1], 0.0)
+        x_mat = building_material(b_tmpl, mname, part['diffuse'], part['sref'])
+        x_vd = {'Vertices': gr2.Variant(vmembers, bytes(vb)),
+                'VertexComponentNames': [{'String': c} for c in ('Position', 'Normal', 'Tangent', 'Binormal',
+                                                                  'TextureCoordinates0')],
+                'VertexAnnotationSets': []}
+        x_topo = topology(xt)
+        lo, hi = obb([v[0] for v in xv])
+        x_skel = {'Name': mname, 'Bones': [make_bone(bone_proto, mname, -1, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))],
+                  'LODType': 0, 'ExtendedData': None}
+        x_mesh = {'Name': mname, 'PrimaryVertexData': x_vd, 'MorphTargets': [], 'PrimaryTopology': x_topo,
+                  'MaterialBindings': [{'Material': x_mat}],
+                  'BoneBindings': [{'BoneName': mname, 'OBBMin': lo, 'OBBMax': hi, 'TriangleIndices': []}],
+                  'ExtendedData': None}
+        x_model = dict(tc_model)
+        x_model.update({'Name': mname, 'Skeleton': x_skel, 'MeshBindings': [{'Mesh': x_mesh}]})
+        mats.append(x_mat); skels.append(x_skel); vds.append(x_vd); topos.append(x_topo)
+        meshes.append(x_mesh); models.append(x_model)
     bones_out = []
     if eye is not None:
         ename = name + '_Eye'
@@ -380,15 +407,15 @@ def write_animation(path, anim_name, duration, groups):
     return gr2.write(path, f.root_type, root, f.tag)
 
 
-def write_idle(out_dir, name, bones, gaze):
+def write_idle(out_dir, name, bones, gaze, extra_models=()):
     """Idle animation for write_building's models: everything still except eyepivot, which turns
     about +Z by gaze['fn'](t) degrees. Returns (file name, curve dict)."""
     curves = Curves(gr2.read(ANIM_TEMPLATE).root())
     c = granim.yaw_curve_value(gaze['fn'], gaze['T'], gaze['spans'])
     eye_tracks = [track(curves, bname, local, yaw=c if bname == 'eyepivot' else None)
                   for bname, parent, wpos, local in bones]
-    groups = [('Tree cut', [track(curves, 'Tree cut')]), (name, [track(curves, name)]),
-              (name + '_Eye', eye_tracks)]
+    groups = [('Tree cut', [track(curves, 'Tree cut')]), (name, [track(curves, name)])] + \
+        [(m, [track(curves, m)]) for m in extra_models] + [(name + '_Eye', eye_tracks)]
     fn = name + '_Idle.gr2'
     write_animation(os.path.join(out_dir, fn), name + '_Idle', gaze['T'], groups)
     return fn, c
