@@ -6,6 +6,7 @@
 -- stock 1024x768 picture.
 local MEDLC_FULLSCREEN_DOM = {
 	["DOM_Hobbits.dds"] = { 3840, 2160 },
+	["DOM_Mordor.dds"] = { 3840, 2160 },
 }
 local g_MEDLC_DOMStretched = false
 
