@@ -858,10 +858,12 @@ def build_limbs(b):
 # coil like a blanket: the arm runs down the heap beside his neck to the wrist near his jaw (the thumb's claw hooked
 # into the coins), four fingers fan back towards his tail, the membrane between them drapes over the coins in loose
 # folds, its trailing edge scalloped between the finger tips, the last panel hanging from his flank.
-LW_ELBOW = (-11.0, -9.5)
+LW_ELBOW = (-12.0, -10.0)
 LW_WRIST = (-4.0, -18.0)
 LW_TIPS = [(3.0, -24.5), (15.0, -23.0), (17.5, -12.0), (10.0, -9.5)]   # fingers II..V (the third the longest)
-LW_FLANK = (36.5, 57.0)              # the membrane's attachment along his flank (percent of the length)
+LW_SHOULDER = (29.5, -0.55)          # (percent of the length, angle from the belly): the front of the chest where the
+                                     # neck joins it (the user: from his SHOULDER, not his belly)
+LW_FLANK = (33.0, 57.0)              # the membrane's attachment along his flank behind the armpit (percent)
 LW_CLEAR = 0.32                      # the membrane's height over the coins
 _LW = {}
 
@@ -882,6 +884,16 @@ def flank_point(sn):
             best = q
     nrm = (-up + (-side) * 0.4).normalized()
     return best + nrm * 0.35
+
+
+def shoulder_point():
+    """The shoulder joint: on the front of his chest at the root of the neck, a little inside the hide (the shoulder's
+    muscle swells out of it), with the outward normal there."""
+    p, t, side, up, s2 = at_s(LW_SHOULDER[0])
+    th = math.pi + LW_SHOULDER[1]
+    y, z = section(th, s2)
+    nrm = (side * math.sin(th) + up * math.cos(th)).normalized()
+    return p + side * y + up * z - nrm * 0.6, nrm
 
 
 def _arclen(P):
@@ -914,13 +926,14 @@ def lw_skeleton():
     the attachment line along his flank."""
     if _LW:
         return _LW
-    flank = [flank_point(sn) for sn in [LW_FLANK[0] + (LW_FLANK[1] - LW_FLANK[0]) * k / 24 for k in range(25)]]
-    S = flank[0]
+    S, Sn = shoulder_point()
+    flank = [S] + [flank_point(sn) for sn in [LW_FLANK[0] + (LW_FLANK[1] - LW_FLANK[0]) * k / 23 for k in range(24)]]
     E = Vector((LW_ELBOW[0], LW_ELBOW[1], 0.0))
     W = Vector((LW_WRIST[0], LW_WRIST[1], 0.0))
     E.z = gz(E.x, E.y) + 1.5
     W.z = gz(W.x, W.y) + 1.1
-    hum = resample([tuple(S), tuple(S.lerp(E, 0.5) + Vector((-1.0, 0.5, 0.0))), tuple(E)], 0.35)
+    hum = resample([tuple(S), tuple(S + Sn * 2.0 + (E - S) * 0.15), tuple(S.lerp(E, 0.55) + Vector((-0.8, 0.0, 0.6))),
+                    tuple(E)], 0.35)
     for i, q in enumerate(hum):                      # down from the chest onto the coins
         f = i / (len(hum) - 1)
         q.z = max(q.z, gz(q.x, q.y) + 1.5)
@@ -941,7 +954,7 @@ def lw_skeleton():
         for i in range(min(6, n)):                   # rising into the wrist
             P[i].z = max(P[i].z, W.z * (1 - i / 6) + P[i].z * i / 6)
         fingers.append((P, rr))
-    _LW.update(flank=flank, S=S, E=E, W=W, hum=hum, fore=fore, fingers=fingers)
+    _LW.update(flank=flank, S=S, Sn=Sn, E=E, W=W, hum=hum, fore=fore, fingers=fingers)
     return _LW
 
 
@@ -993,7 +1006,14 @@ def left_wing(b):
     S, E, W, hum, fore, fingers, flank = sk['S'], sk['E'], sk['W'], sk['hum'], sk['fore'], sk['fingers'], sk['flank']
     Z = Vector((0.0, 0.0, 1.0))
     # bones: the humerus, the forearm, the wrist, the thumb and its claw, the elbow's spur
-    ptube(b, 'scales', [tuple(q) for q in hum], [2.0 - 0.6 * i / (len(hum) - 1) for i in range(len(hum))], n=14)
+    # the shoulder: a heavy muscle swelling out of the chest at the root of the neck, the humerus out of it
+    Sn = sk['Sn']
+    dh = (hum[min(6, len(hum) - 1)] - S).normalized()
+    sh = resample([tuple(S - Sn * 2.6), tuple(S + Sn * 0.4 + dh * 0.8), tuple(S + Sn * 0.8 + dh * 3.2)], 0.35)
+    ptube(b, 'scales', [tuple(q) for q in sh],
+          [3.0 + 0.5 * math.sin(math.pi * min(1.0, 1.4 * i / (len(sh) - 1))) - 0.9 * i / (len(sh) - 1)
+           for i in range(len(sh))], n=16)
+    ptube(b, 'scales', [tuple(q) for q in hum], [2.1 - 0.7 * i / (len(hum) - 1) for i in range(len(hum))], n=14)
     ptube(b, 'scales', [tuple(q) for q in fore], [1.35 - 0.3 * i / (len(fore) - 1) for i in range(len(fore))], n=12)
     psphere(b, 'scales', tuple(E), (1.7, 1.7, 1.4))
     d = (E - S).normalized()
