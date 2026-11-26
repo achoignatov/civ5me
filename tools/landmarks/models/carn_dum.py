@@ -759,6 +759,7 @@ def rig():
             ('fxfire', 'eyeroot', (0.0, 0.0, 10.0), 'CARN_FIRE'),
             ('fxcrown', 'eyeroot', (KEEP_C[0], KEEP_C[1], KEEP_TOP), 'CARN_CROWN'),
             ('fxcloud', 'eyeroot', (0.0, 20.0, 60.0), 'CARN_CLOUD'),
+            ('fxfog', 'eyeroot', (0.0, -10.0, 2.0), 'CARN_FOG'),
             ('fxhalo', 'eyeroot', (0.5, 21.0, 112.0), 'CARN_HALO')]
 
 
@@ -779,7 +780,8 @@ def glow_effect(k):
 
 
 T_FLAME = 12.0
-CLOUD_STOPS = [(0.0, (0, 0, 0)), (0.5, (38, 44, 58)), (0.85, (120, 130, 150)), (1.0, (190, 200, 220))]
+FOG_STOPS = [(0.0, (8, 9, 12)), (0.5, (44, 49, 62)), (0.85, (86, 93, 110)), (1.0, (120, 128, 146))]   # dim: layers add up
+FOG_DRIFT = 10           # sideways scroll speed (the fire's upward scroll is 184): barely moving, never rising   # dim: a veil
 
 
 def _ensure():
@@ -815,23 +817,65 @@ def _crown_em():
 
 
 def _cloud_em():
+    """v2 (user: "more fog and mist, dark and creepy"): cloud wrapping both spires all round and up their whole
+    height, and the needles on the shoulders."""
     rng = random.Random(9)
     em = []
-    for sp, zs in ((SPIRES[0], (58.0, 76.0, 94.0)), (SPIRES[1], (52.0, 70.0))):
+    for sp, zs in ((SPIRES[0], np.arange(44.0, 118.0, 11.0)), (SPIRES[1], np.arange(42.0, 104.0, 11.0))):
         for z in zs:
             c, r = axis_at(sp, z)
-            for j in range(3):
-                a = -math.pi / 2 + (j - 1) * 0.9 + rng.uniform(-0.2, 0.2)
-                em.append((c + Vector((math.cos(a), math.sin(a), 0)) * (r + 1.5) + Vector((0, 0, -4.0)),
-                           rng.uniform(0.8, 1.1)))
+            n = 4 if z < 90 else 3
+            for j in range(n):                   # on the camera's side (cards behind the rock never show)
+                a = -math.pi + 0.35 + (math.pi - 0.7) * (j + rng.uniform(-0.25, 0.25)) / (n - 1)
+                em.append((c + Vector((math.cos(a), math.sin(a), 0)) * (r + 2.6) + Vector((0, 0, -5.0)),
+                           rng.uniform(0.75, 1.15) * (0.8 if z > 95 else 1.0)))
+    for (x, y, z0, z1, r) in NEEDLES:
+        em.append((Vector((x, y - r - 2.0, (z0 + z1) / 2 - 6.0)), rng.uniform(0.6, 0.8)))
+    for j in range(9):                       # v3: a belt of fog across the upper city, veiling the keep's foot
+        x = -16.0 + 32.0 * j / 8 + rng.uniform(-1.0, 1.0)
+        em.append((Vector((x, 2.0 + rng.uniform(-1.5, 1.5), TERR[2][1] + rng.uniform(2.0, 6.0))),
+                   rng.uniform(0.6, 0.8)))
+    return em
+
+
+def surface_z(x, y):
+    tz = float(terrace_z(x, y))
+    return tz if tz >= 0 else max(0.0, float(massif_h(x, y)))
+
+
+def _fog_em():
+    """v3 (the user: "much more fog and mist ... dense, suffocating, as if it was there forever; not steam; not moving
+    up at all"): a BLANKET of lying fog over the whole tile in two layers (near-flat banks, tilted back almost onto
+    the ground), through the terraces and round the foot of the massif, and a ring spilling a little past the tile's
+    edge round the city. Emitters (point, scale, height above the surface)."""
+    rng = random.Random(13)
+    em = []
+    step = 7.0
+    for layer, (dz, off, keep_p) in enumerate(((0.9, 0.0, 1.0), (4.2, 0.5, 0.75))):
+        for gy in np.arange(-36.0, 36.0, step):
+            for gx in np.arange(-31.0, 31.5, step):
+                x = gx + off * step + rng.uniform(-1.5, 1.5)
+                y = gy + off * step + rng.uniform(-1.5, 1.5)
+                if hex_d(x, y) > HEX - 1.5 or rng.random() > keep_p:
+                    continue
+                z = surface_z(x, y)
+                if z > 30.0:                         # (the cloud banks cover the heights)
+                    continue
+                em.append((Vector((x, y, z + dz)), rng.uniform(0.85, 1.15)))
+    for k in range(16):                              # round the city, spilling past the tile's edge
+        a = 2 * math.pi * (k + rng.uniform(-0.2, 0.2)) / 16
+        r = rng.uniform(34.0, 38.0)
+        em.append((Vector((r * math.cos(a), r * math.sin(a), 0.8)), rng.uniform(0.9, 1.2)))
     return em
 
 
 FIRE_SETS = {
     'CARN_FIRE': ('MEC_CarnDumFire', 'fxfire', _fire_em, 3.6, 2, 'fire'),
     'CARN_CROWN': ('MEC_CarnDumCrown', 'fxcrown', _crown_em, 5.0, 2, 'fire'),
-    'CARN_CLOUD': ('MEC_CarnDumCloud', 'fxcloud', _cloud_em, 20.0, 1, 'cloud'),
+    'CARN_CLOUD': ('MEC_CarnDumCloud', 'fxcloud', _cloud_em, 18.0, 1, 'cloud'),
+    'CARN_FOG': ('MEC_CarnDumFog', 'fxfog', _fog_em, 11.0, 1, 'fog'),
 }
+FX_TEX = {'fire': 'MEC_CarnDum', 'cloud': 'MEC_CarnDumF', 'fog': 'MEC_CarnDumF'}      # v3: one fog for both
 
 
 def flame_tongues(key, k):
@@ -841,10 +885,15 @@ def flame_tongues(key, k):
     bw = Vector(next(r[2] for r in rig() if r[0] == bone))
     rng = random.Random(zlib.crc32(name.encode()) & 0xffff)
     em = [(((p - bw) * k).x, ((p - bw) * k).y, ((p - bw) * k).z, s) for p, s in emf()]
-    tg = flames.steady_tongues(em, T_FLAME, rng, per=per, size=hgt * k)
+    # v3: fog lies almost flat on the ground (tilted back 76 degrees); cloud banks stand facing the camera
+    tg = flames.steady_tongues(em, T_FLAME, rng, per=per, size=hgt * k, tilt=-76.0 if kind == 'fog' else None,
+                               sink=0.0 if kind == 'fog' else 0.04)
     if kind == 'cloud':
         for t in tg:
-            t.w = t.h * rng.uniform(1.1, 1.5)
+            t.w = t.h * rng.uniform(1.4, 1.9)
+    elif kind == 'fog':
+        for t in tg:
+            t.w = t.h * rng.uniform(1.6, 2.1)
     return tg
 
 
@@ -876,10 +925,11 @@ def model_effects(out_dir, k):
     files = []
     bases, masks = flames.fire_textures(out_dir, 'MEC_CarnDum')
     files += bases + masks + ['MEC_CarnDum_FireUV.dds', 'MEC_CarnDum_EmberUV.dds']
-    cb, cm = flames.fire_textures(out_dir, 'MEC_CarnDumC', tint=CLOUD_STOPS, speed=45, ember_speed=40, soft=True)
-    files += cb + cm + ['MEC_CarnDumC_FireUV.dds', 'MEC_CarnDumC_EmberUV.dds', 'MEC_CarnDumC_Ember.dds']
+    fb, fm, other = flames.fog_textures(out_dir, 'MEC_CarnDumF', FOG_STOPS, hspeed=FOG_DRIFT)
+    files += fb + fm + other
+    tex = {'fire': (bases, masks), 'cloud': (fb, fm), 'fog': (fb, fm)}
     for key, (name, bone, _, _, _, kind) in FIRE_SETS.items():
-        files += flames.write_fire(out_dir, name, flame_tongues(key, k), *((cb, cm) if kind == 'cloud' else (bases, masks)))
+        files += flames.write_fire(out_dir, name, flame_tongues(key, k), *tex[kind])
     q = [(-HALO_W * k, HALO_W * k, -HALO_H * k, HALO_H * k, 0.0)]
     files += glow.write(out_dir, 'MEC_CarnDumHalo', q, dict(lines=[], box=(0, 1, 0, 1), px=64))
     _halo_texture(os.path.join(out_dir, 'MEC_CarnDumHalo_DIFF.dds'))
@@ -892,7 +942,7 @@ def preview_overlays(out_dir):
     import flames
     out = []
     for key, (name, bone, _, _, _, kind) in FIRE_SETS.items():
-        pre = 'MEC_CarnDumC' if kind == 'cloud' else 'MEC_CarnDum'
+        pre = FX_TEX[kind]
         b_ = dds.decode_dxt3(os.path.join(out_dir, pre + '_FireB0.dds')).astype(np.float32)
         m_ = dds.decode_dxt3(os.path.join(out_dir, pre + '_FireM0.dds')).astype(np.float32)
         img = b_.copy()

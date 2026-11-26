@@ -82,7 +82,8 @@ IMPROVEMENTS = [
     # (88) with its CROWN of iron tines (to 112) and the Watch; the city of red stone climbing four walled terraces by a
     # grand stair through gatehouses; ~110 houses under snowy roofs; forge yards; arched causeways east and west; the
     # outer gate of iron; the fell-water. Effects: red shader fire (forges, braziers, the crown, the Watch), cold clouds
-    # round the spires, a pale light between their tips, the gate's firelight. Nothing moves (the skinned part = stones
+    # round the spires (v2: all round, full height) and low banks of ground fog round the foot and through the
+    # lower terraces (v2, user: "more fog and mist, dark and creepy"), a pale light between their tips, the gate's firelight. Nothing moves (the skinned part = stones
     # carrying the bones, the Balrog's layout). Fits its own hex.
     dict(key='CARN_DUM', civ='CIVILIZATION_MEC_ANGMAR', title='Carn Dum', dir='CarnDum',
          gr2='MEC_LM_CarnDum.gr2',
@@ -90,7 +91,7 @@ IMPROVEMENTS = [
                   ['MEC_LM_CarnDum_%d_%s.dds' % (k, t) for k in (2, 3, 4, 5, 6) for t in ('DIFF', 'SREF')] +
                   ['MEC_LM_CarnDum_Eye_DIFF.dds', 'MEC_LM_CarnDum_Eye_SREF.dds'],
          animation=('MEC_LM_CarnDum_Idle.gr2', 'Idle'),
-         bones=['fxglow', 'fxfire', 'fxcrown', 'fxcloud', 'fxhalo'],
+         bones=['fxglow', 'fxfire', 'fxcrown', 'fxcloud', 'fxfog', 'fxhalo'],
          trigger=('FX_Triggers_MEC_LM_CarnDum.ftsxml', 'MEC_LM_CarnDum_Eye'),
          scale=0.25,
          name_keys=['TXT_KEY_CITY_NAME_MEC_CARN_DUN'],
@@ -315,6 +316,7 @@ VIS_EFFECTS = [
     ('ART_DEF_VEFFECT_MEC_CARN_CROWN', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_CROWN'),
     ('ART_DEF_VEFFECT_MEC_CARN_CLOUD', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_CLOUD'),
     ('ART_DEF_VEFFECT_MEC_CARN_HALO', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_HALO'),
+    ('ART_DEF_VEFFECT_MEC_CARN_FOG', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_CARN_FOG'),
     # Minas Morgul: all model effects in file units (Scale 1.0)
     ('ART_DEF_VEFFECT_MEC_MORGUL_GLOW', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_GLOW'),
     ('ART_DEF_VEFFECT_MEC_MORGUL_BEAM', 0.0, 1.0, None, 'ART_DEF_MEFFECT_MEC_MORGUL_BEAM'),
@@ -357,7 +359,8 @@ VIS_MODELS = [('ART_DEF_MEFFECT_MEC_EYE_BEAM', 'MEC_EyeBeam.fxsxml'),      # fil
               ('ART_DEF_MEFFECT_MEC_CARN_HALO', 'MEC_CarnDumHalo.fxsxml'),
               ('ART_DEF_MEFFECT_MEC_CARN_FIRE', 'MEC_CarnDumFire.fxsxml', BALROG_FIRE_LOOP),
               ('ART_DEF_MEFFECT_MEC_CARN_CROWN', 'MEC_CarnDumCrown.fxsxml', BALROG_FIRE_LOOP),
-              ('ART_DEF_MEFFECT_MEC_CARN_CLOUD', 'MEC_CarnDumCloud.fxsxml', BALROG_FIRE_LOOP)]
+              ('ART_DEF_MEFFECT_MEC_CARN_CLOUD', 'MEC_CarnDumCloud.fxsxml', BALROG_FIRE_LOOP),
+              ('ART_DEF_MEFFECT_MEC_CARN_FOG', 'MEC_CarnDumFog.fxsxml', BALROG_FIRE_LOOP)]
 
 # ----- test switches (all off in a release) -------------------------------------------------------------------
 # A key of IMPROVEMENTS: EVERY city and city-state gets that landmark, ignoring the names (render tests).

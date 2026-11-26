@@ -330,6 +330,8 @@ EFFECTS = {
                       file='MEC_CarnDumCrown.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'CARN_CLOUD': dict(name='ART_DEF_VEFFECT_MEC_CARN_CLOUD', model='ART_DEF_MEFFECT_MEC_CARN_CLOUD',
                       file='MEC_CarnDumCloud.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
+    'CARN_FOG': dict(name='ART_DEF_VEFFECT_MEC_CARN_FOG', model='ART_DEF_MEFFECT_MEC_CARN_FOG',
+                     file='MEC_CarnDumFog.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'CARN_HALO': dict(name='ART_DEF_VEFFECT_MEC_CARN_HALO', model='ART_DEF_MEFFECT_MEC_CARN_HALO',
                      file='MEC_CarnDumHalo.fxsxml', scale=1.0, rotation=(0.0, 0.0, 0.0)),
     'BRAZIER': dict(name='ART_DEF_VEFFECT_MEC_BRAZIER', particle='ART_DEF_PEFFECT_GREAT_LIGHTHOUSE_FIRE',

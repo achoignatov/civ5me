@@ -646,6 +646,71 @@ def fire_textures(out_dir, prefix, tint=None, speed=None, ember_speed=None, soft
     return bases, masks
 
 
+def periodic_cloud(w, h, seed, beta=1.9, lo_cut=2.0):
+    """A seamless (periodic) cloud texture: white noise filtered to a 1/f^beta spectrum in the frequency domain, so it
+    tiles in both directions (the shader scrolls it). Values 0..1."""
+    rng = np.random.default_rng(seed)
+    F = np.fft.fft2(rng.standard_normal((h, w)))
+    fy = np.fft.fftfreq(h)[:, None] * h
+    fx = np.fft.fftfreq(w)[None, :] * w
+    r = np.hypot(fx, fy * (w / h))
+    r[0, 0] = 1.0
+    F *= 1.0 / np.maximum(r, lo_cut) ** beta
+    F[0, 0] = 0.0
+    v = np.real(np.fft.ifft2(F))
+    v = (v - v.min()) / (v.max() - v.min() + 1e-9)
+    return v
+
+
+def bank_masks(seeds=(31, 32, 33, 34)):
+    """Silhouettes for lying FOG (Carn Dum v3, the user: "dense fog ... not steam"): broad banks filling the card with
+    soft ragged edges all round, densest a little below the middle; no plume, nothing thinning upwards."""
+    out = []
+    for s in seeds:
+        rng = np.random.default_rng(s)
+        h, w = 256, 128
+        v = 1.0 - (np.arange(h) + 0.5) / h
+        x = (np.arange(w) + 0.5) / w * 2 - 1
+        X, V = np.meshgrid(x, v)
+        n = _noise2(w, h, (3, 5), rng) * 0.6 + _noise2(w, h, (7, 12), rng) * 0.4
+        prof = np.exp(-((V - 0.42) / 0.3) ** 2)
+        side = np.clip((1 - np.abs(X)) / 0.35, 0, 1) ** 1.2
+        a = np.clip(prof * side * (0.8 + 0.7 * (n - 0.5)), 0, 1)
+        m = np.zeros((h, w, 4), np.float32)
+        m[..., :3] = 255
+        m[..., 3] = np.clip(a * 1.15, 0, 1) * 255
+        out.append(m)
+    return out
+
+
+def fog_textures(out_dir, prefix, tint, hspeed=10):
+    """The textures for DENSE, LYING FOG drawn with the stock fire material (write_fire): 4 seamless cloud bases
+    (periodic_cloud, tinted by the stops), 4 bank silhouettes, a UV map that drifts SIDEWAYS ONLY (vertical speed 0:
+    the user: "the fog should not move up at all"; horizontal speed hspeed, very slow), and NO embers (an empty ember
+    texture: the stock embers rise like sparks of steam). Returns (bases, masks, other files)."""
+    bases, masks = [], []
+    for k in range(4):
+        c = periodic_cloud(128, 256, 101 + k)
+        c2 = periodic_cloud(128, 256, 201 + k, beta=1.4, lo_cut=6.0)
+        dens = np.clip(0.62 * c + 0.38 * c2, 0, 1)
+        img = np.zeros((256, 128, 4), np.float32)
+        img[..., :3] = (255 * (0.55 + 0.45 * dens))[..., None]
+        img[..., 3] = 255 * np.clip(0.35 + 0.75 * dens, 0, 1)
+        img = tint_fire(img, tint)
+        n = '%s_FireB%d.dds' % (prefix, k)
+        dds.write_dxt3(os.path.join(out_dir, n), np.clip(img, 0, 255).astype(np.uint8))
+        bases.append(n)
+    for k, m in enumerate(bank_masks()):
+        n = '%s_FireM%d.dds' % (prefix, k)
+        dds.write_dxt3(os.path.join(out_dir, n), np.clip(m, 0, 255).astype(np.uint8))
+        masks.append(n)
+    uv_map(os.path.join(out_dir, prefix + '_FireUV.dds'), 255, 255, hspeed, 0)        # sideways, never up
+    uv_map(os.path.join(out_dir, prefix + '_EmberUV.dds'), 255, 255, 0, 0)            # (no embers anyway)
+    empty = np.zeros((64, 64, 4), np.uint8)
+    dds.write_dxt3(os.path.join(out_dir, prefix + '_Ember.dds'), empty)
+    return bases, masks, [prefix + '_FireUV.dds', prefix + '_EmberUV.dds', prefix + '_Ember.dds']
+
+
 def write_fire(out_dir, name, tongues, bases, masks):
     """v5 (2026-11-26, the user: "animated, but without the flicker; it must look like real fire"): the flame cards of
     write_still (in place, the steady layout) drawn the way the game draws its own fires: the stock fire pit's
